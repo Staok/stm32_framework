@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid</IncludePath>
+              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -805,6 +805,16 @@
               <FileName>ringbuf.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\SYSTEM\ringbuf\ringbuf.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys_menu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\menu\sys_menu.c</FilePath>
+            </File>
+            <File>
+              <FileName>MyString.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\MyString\MyString.c</FilePath>
             </File>
           </Files>
         </Group>

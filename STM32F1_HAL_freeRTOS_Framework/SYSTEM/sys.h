@@ -34,6 +34,8 @@
 													FreeRTOS版本：v10.3.1
 													默认用于任务的RAM堆栈大小为5KB，按需修改！
 												*/
+#define SYSTEM_SUPPORT_Menu		1				/*提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
+#define SYSTEM_SUPPORT_MyString	1				/*提供一个实现了string.h大部分字符操作函数的库*/
 #define SYSTEM_SUPPORT_sprintf	1				/*包含且编译printf.h，github开源文件，无依赖，功能比较全。
 													约占6KB，对于stm32够，对于其他小容量MCU则看“其他几个sprintf实现”文件夹里面的,不要纠结了。
 													https://github.com/mpaland/printf
@@ -61,6 +63,14 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 #include "stm32f1xx.h"
 #include "stm32f1xx_hal.h"						/*在里面的stm32f1xx_hal_conf.h里面选择用哪些外设的HAL库——————！按需要进行修改！*/
 #include "ringbuf.h"							/*实现的一个环形缓存，用于串口接收模式*/
+
+#if SYSTEM_SUPPORT_Menu
+	#include "sys_menu.h"
+#endif
+
+#if SYSTEM_SUPPORT_MyString
+	#include "MyString.h"
+#endif
 
 #if SYSTEM_SUPPORT_sprintf
 	#include "printf.h"

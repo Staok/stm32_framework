@@ -108,6 +108,10 @@ void sys_Device_Init_Seq(void)
 {
 	/*以下为用户应用的Device初始化序列*/
 	
+	/*用户IO初始化，可选择初始化某个特定器件或者所有器件*/
+	Devices_Init(UserDevices,ALL);
+	
+	/**/
 	
 	buzzer_bibi_once; //响一声表示初始化结束
 	

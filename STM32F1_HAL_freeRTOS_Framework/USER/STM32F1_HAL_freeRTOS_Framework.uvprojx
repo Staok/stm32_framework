@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString</IncludePath>
+              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -815,6 +815,11 @@
               <FileName>MyString.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\SYSTEM\MyString\MyString.c</FilePath>
+            </File>
+            <File>
+              <FileName>PeriphConfig.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\PeriphConfig\PeriphConfig.c</FilePath>
             </File>
           </Files>
         </Group>

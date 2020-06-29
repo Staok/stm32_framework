@@ -18,10 +18,13 @@ BaseType_t xTaskCreate_t(uint8_t taskIndex)
 
 //总任务数量
 #define task_Num	3 
-//任务索引：按照序号给每个任务编号向下写
-#define start_t 	0
-#define led0_t 		1
-#define led1_t 		2
+//任务索引枚举，公共变量，与Define_Task里面同样顺序的向下写
+enum taskIndex_enum{
+	start_t = 0,
+	
+	led0_t,
+	led1_t
+}taskIndex;
 
 //设置任务要素
 struct TaskStructure Define_Task[task_Num] = {

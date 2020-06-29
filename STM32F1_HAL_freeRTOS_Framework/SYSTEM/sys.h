@@ -19,15 +19,25 @@
 	/*
 	5、函数返回值0表示成功，非0表示失败，此非零数可以表示错误代码
 	6、一类或者一个模块内的变量尽量用结构体打包，多组数据就用结构体数组
+	7、MCU外设统称"外设"，即Periph，用户的MCU外围芯片和设备统称"器件"或"设备",即devices
 	*/
 	
 /*应用规范：（临时，待整理）
+	0、中断优先级分组选用分组4，即16级抢占优先级，0级响应优先级（即不用）
 	1、IO尽量设计为低电平有效，高电平截止。
 	2、使用C99模式编译！
 	3、I2C使用软件实现
 	4、FreeRTOS所有组件始终使用动态申请内存；FreeRTOS的配置文件除了用户按需更改区域，尽量不要动；一般不使用软件定时器，用硬件定时器或者周期延时替代即可
 	5、尽量减少数据传输过程中的拷贝，常用指针、结构体指针当传输数据
 	6、调用函数尽量不用NULL实参，尽量给一个具体的值
+	7、外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
+*/
+
+/*
+启动：	BOOT1	BOOT0
+		  x		  0			FLASH
+		  0		  1			系统储存器(ISP下载)
+		  1		  1			SRAM
 */
 
 #define SYSTEM_SUPPORT_OS		1				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
@@ -62,6 +72,7 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 #include "sysVar.h"								/*定义系统级常用的变量、数据类型和二进制表示宏*/
 #include "stm32f1xx.h"
 #include "stm32f1xx_hal.h"						/*在里面的stm32f1xx_hal_conf.h里面选择用哪些外设的HAL库——————！按需要进行修改！*/
+#include "PeriphConfig.h"
 #include "ringbuf.h"							/*实现的一个环形缓存，用于串口接收模式*/
 
 #if SYSTEM_SUPPORT_Menu
@@ -266,50 +277,6 @@ void delay_ms(uint16_t nms);
 void delay_xms(uint16_t nms);
 void delay_us(uint32_t nus);
 
-
-/*Author:	正点原子@ALIENTEK*/
-//IO口操作宏定义
-#define BITBAND(addr, bitnum) ((addr & 0xF0000000)+0x2000000+((addr &0xFFFFF)<<5)+(bitnum<<2)) 
-#define MEM_ADDR(addr)  *((volatile unsigned long  *)(addr)) 
-#define BIT_ADDR(addr, bitnum)   MEM_ADDR(BITBAND(addr, bitnum)) 
-//IO口地址映射
-#define GPIOA_ODR_Addr    (GPIOA_BASE+12) //0x4001080C 
-#define GPIOB_ODR_Addr    (GPIOB_BASE+12) //0x40010C0C 
-#define GPIOC_ODR_Addr    (GPIOC_BASE+12) //0x4001100C 
-#define GPIOD_ODR_Addr    (GPIOD_BASE+12) //0x4001140C 
-#define GPIOE_ODR_Addr    (GPIOE_BASE+12) //0x4001180C 
-#define GPIOF_ODR_Addr    (GPIOF_BASE+12) //0x40011A0C    
-#define GPIOG_ODR_Addr    (GPIOG_BASE+12) //0x40011E0C    
-
-#define GPIOA_IDR_Addr    (GPIOA_BASE+8) //0x40010808 
-#define GPIOB_IDR_Addr    (GPIOB_BASE+8) //0x40010C08 
-#define GPIOC_IDR_Addr    (GPIOC_BASE+8) //0x40011008 
-#define GPIOD_IDR_Addr    (GPIOD_BASE+8) //0x40011408 
-#define GPIOE_IDR_Addr    (GPIOE_BASE+8) //0x40011808 
-#define GPIOF_IDR_Addr    (GPIOF_BASE+8) //0x40011A08 
-#define GPIOG_IDR_Addr    (GPIOG_BASE+8) //0x40011E08 
- 
-//IO口操作,只对单一的IO口!确保n的值小于16!
-#define PAout(n)   BIT_ADDR(GPIOA_ODR_Addr,n)  //输出 
-#define PAin(n)    BIT_ADDR(GPIOA_IDR_Addr,n)  //输入 
-
-#define PBout(n)   BIT_ADDR(GPIOB_ODR_Addr,n)  //输出 
-#define PBin(n)    BIT_ADDR(GPIOB_IDR_Addr,n)  //输入 
-
-#define PCout(n)   BIT_ADDR(GPIOC_ODR_Addr,n)  //输出 
-#define PCin(n)    BIT_ADDR(GPIOC_IDR_Addr,n)  //输入 
-
-#define PDout(n)   BIT_ADDR(GPIOD_ODR_Addr,n)  //输出 
-#define PDin(n)    BIT_ADDR(GPIOD_IDR_Addr,n)  //输入 
-
-#define PEout(n)   BIT_ADDR(GPIOE_ODR_Addr,n)  //输出 
-#define PEin(n)    BIT_ADDR(GPIOE_IDR_Addr,n)  //输入
-
-#define PFout(n)   BIT_ADDR(GPIOF_ODR_Addr,n)  //输出 
-#define PFin(n)    BIT_ADDR(GPIOF_IDR_Addr,n)  //输入
-
-#define PGout(n)   BIT_ADDR(GPIOG_ODR_Addr,n)  //输出 
-#define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)  //输入
 
 /*Author:		MaxwellXyao*/
 #define BIT(n) 					(1 << n) 				//位mask

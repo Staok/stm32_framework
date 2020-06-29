@@ -7,7 +7,7 @@
 /*______________________输入信息，基本不动_________________________________*/
 //输入可以为独立按键、五项按键、AD Key、触摸按键、无线遥控、旋转编码器等
 //枚举，全局，常量，不能取地址
-enum inputValue{
+enum inputValue_enum{
 	none = 0,
 	up,			//对于旋转编码器输入，只用"上、下"标志位
 	down,
@@ -16,7 +16,7 @@ enum inputValue{
 	exit,
 	enter
 };
-enum inputMode{
+enum inputMode_enum{
 	once = 1,	//单击
 	doub,		//双击
 	lon			//长摁
@@ -24,8 +24,8 @@ enum inputMode{
 //输入信息结构体
 struct input_struct
 {
-	enum inputValue keyValue;
-	enum inputMode keyMode;
+	enum inputValue_enum keyValue;
+	enum inputMode_enum keyMode;
 	
 };
 

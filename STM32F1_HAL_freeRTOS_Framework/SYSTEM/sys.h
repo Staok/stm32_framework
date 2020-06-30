@@ -109,7 +109,7 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 	高级PWM（7路，具体在xxx引脚，重映射在xxx引脚，形式如HAL F1手册的225页的表）），
 通用定时器2-5（2、5为32位）
 	（4路，具体在xxx引脚，重映射在xxx引脚），定时中断，输入捕获，输出比较，PWM 生成(边缘或中间对齐模式)，单脉冲模式输出，正交编码中断
-基本定时器6、7（定时器中断，无PWM等）
+基本定时器6、7（仅定时器中断，无PWM等）
 说明：可用于ADC触发，
 */
 #define STSTEM_TIM4_ENABLE		1			/*模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断*/
@@ -122,13 +122,16 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 		#define STSTEM_TIM3PWM_REMAP_ENABLE		0	/*定时器3全部引脚重映射，Full remap     	(CH1/PC6, CH2/PC7, CH3/PC8, CH4/PC9)*/
 		#define STSTEM_TIM3PWM_CHANNEL_ENABLE	B0000_1000 /*输出通道选择，共四个通道，通道四必打开*/
 													/*可选  B0000_0001|B0000_0010|B0000_0100|B0000_1000	*/
-		#define arr 720-1
-		#define prsc STSTEM_TIM3PWM_Period_5K		/*选择定时器输出频率*/
-		#define STSTEM_TIM3PWM_Period_2K	(50-1)
-		#define STSTEM_TIM3PWM_Period_5K	(20-1)
-		#define STSTEM_TIM3PWM_Period_10K	(10-1)
-		#define STSTEM_TIM3PWM_Period_20K	(5-1)
-		#define STSTEM_TIM3PWM_Period_50K	(2-1)
+		#define STSTEM_TIM3PWM_TI_ENABLE		0	/*是否开启定时器3的定时中断，除非急需用，否则一般不开*/
+		
+		
+		#define tim3prsc STSTEM_TIM3PWM_Period_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为720，这里是选择预分频系数）*/
+			#define STSTEM_TIM3PWM_Period_2K	(50-1)
+			#define STSTEM_TIM3PWM_Period_5K	(20-1)
+			#define STSTEM_TIM3PWM_Period_10K	(10-1)
+			#define STSTEM_TIM3PWM_Period_20K	(5-1)
+			#define STSTEM_TIM3PWM_Period_50K	(2-1)
+			#define tim3arr 720-1
 		/*可用API：
 					HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_2);		开启TIM3的PWM通道2
 					HAL_TIM_PWM_Stop(&TIM3_Handler,TIM_CHANNEL_2);		关闭TIM3的PWM通道2，但看源码好像使所有通道都关闭了，待实验
@@ -137,9 +140,73 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_2,88.8);
 		*/
 		
+/*通过用定时器2：16位，四个独立通道可用于：输入捕获、输出比较、PWM、单脉冲，多种途径触发DMA中断*/
+#define STSTEM_TIM2_ENABLE		1			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
+	#define STSTEM_TIM2_TI_ENABLE	1		/*是否开启定时器2的定时中断*/
+	
+	#define STSTEM_TIM2_asPWMorCap	1		/*选择定时器2作为...*/
+											/*写2作为普通定时器中断使用*/
+											/*写1作为输入捕获：可以获取高电平或者低电平的时间，默认不分频，不滤波
+												输入捕获使用到TIM2的定时中断，必须打开！*/
+											/*写0作为PWM：默认PWM1模式，向上计数，低电平有效，一个周期内占空比越大低电平时间越长
+												引脚说明：			没有重映射			两种部分重映射			完全重映射
+												TIM2四个通道：		PA0 PA1 PA2 PA3		含有前面的引脚		PA15 PB3 PB10 PB11
+												注意：由于PA2 PA3串口2占用，PA0 PA1由ADC占用，所以TIM2的PWM只用完全重映射！！
+														但PB10 PB11串口3占用，要么不用串口3，要么串口3重映射
+											*/
+			#define tim2arr STSTEM_TIM2PWM_Period_5K			/*选择定时器输出频率（预分频系数为72，这里选择重装值）*/
+				#define STSTEM_TIM2PWM_Period_1K	(1000-1)	/*注意：这里是选择重装值，也是占空比的分辨率，频率高则分辨率低，反之亦然，慎选*/
+				#define STSTEM_TIM2PWM_Period_2K	(500-1)
+				#define STSTEM_TIM2PWM_Period_5K	(200-1)
+				#define STSTEM_TIM2PWM_Period_10K	(100-1)
+				#define STSTEM_TIM2PWM_Period_20K	(50-1)
+				#define STSTEM_TIM2PWM_Period_50K	(20-1)
+				#define STSTEM_TIM2PWM_Period_100K	(10-1)
+				#define STSTEM_TIM2PWM_Period_200K	(5-1)
+			#define STSTEM_TIM2PWM_CHANNEL_ENABLE	B0000_0001|B0000_0010 /*输出通道选择，共四个通道，可以相与打开多个通道，PA15 PB3 PB10 PB11*/
+			/*可用API：
+				HAL_TIM_PWM_Start(&TIM2_Handler,TIM_CHANNEL_2);		开启TIM2的PWM通道2
+				HAL_TIM_PWM_Stop(&TIM2_Handler,TIM_CHANNEL_2);		关闭TIM2的PWM通道2，但看源码好像使所有通道都关闭了，待实验
+				
+				设置TIM2的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。默认向上计数，默认设置为当计数值小于此值时输出低电平。
+				TIM2_set_Channel_Pulse(TIM2PWM_Channel_2,88.8);
+			*/
+			#define STSTEM_TIM2_Cap_trigV	1			/*写1高电平触发一次输入捕获，写0相反，写2双边沿触发*/
+			#define STSTEM_TIM2_Cap_Channel	B0000_0001	/*选择用哪个通道当输入捕获，只能四选一！！*/
+			/*可用API：
+				float Peek_TIM2_Cap_Val();		获取最近一次TIM2输入捕获的脉冲时间，单位 毫秒，按照设置的捕获沿进行，可以随时随地调用此函数
+			*/
+
+/*
+	ADC：STN32的是12位逐次逼近型，分ADC1、2和3，其中ADC1和ADC2的引脚一样（除了内部通道）；
+	最大速率1MHz，1us（在AD时钟14MHz（最高），采样时间为1.5个周期得到），总转换时间为 (采样时间 + 12.5个周期)，采样时间长则采样精度高；
+	参考电压 Vref-必须连到VSSA，Vref+可连到 2.4V~VDDA，ADC输入电压必须小于Vref+
+	ADC1本质就是一个AD转换器加16路选择器，所以ADC1同一时刻采样值只能是一个，如果用在规则组中扫描模式，无法得知当前结果是哪一路的，一个AD模块一个值
+	ADC1的通道与引脚映射：
+	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
+	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
+*/
+#define SYSTEM_ADC1_ENABLE		1			/*启否ADC1*/
+	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里连续采集
+												如果不启用，则为软件触发的单次转换*/
+	#define SYSTEM_ADC1_useChanlNum	3		/*定义共用多少路通道*/
+											/*定义共用哪些通道，可写B0in16~B15in16*/
+	#define SYSTEM_ADC1_useChanl	B0in16|B1in16|B3in16
+	#define SYSTEM_ADC1_useTIM2trig	1		/*定时器2触发ADC采集转换，由于ADC1触发源没有TIM2TRGO，
+												所以是在TIM2的定时中断中软件触发实现，必须打开TIM2的定时中断！*/
+	#define SYSTEM_ADC1_useDMA1		1		/*使用DAM1把转换结果放到目标位置*/
+		extern u16 adValue;						/*DMA1把ADC转换结果传送的目标位置*/
+	/*可用的API：
+			如果启用 SYSTEM_ADC1_useScan 连续扫描模式
+			 u16 temp =  (u16)HAL_ADC_GetValue(&ADC1_Handler);	//返回最近一次ADC1规则组的转换结果
+			如果不启用连续扫描模式
+			 u16 adcx = Get_Adc_Average(1,20);					//软件触发，获取通道1的转换值，20次取平均
+	*/
+		
 #define SYSTEM_IWDG_ENABLE		1			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/
 
 /*开启串口，x8/xB系列有三个串口，最好不超过2M位每秒。默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断*/
+/*串口方面可用API，看SYSTEM_SUPPORT_sprintf宏定义的注释*/
 #define SYSTEM_UART1_ENABLE			1		/*使能串口1	       TX/PA9, RX/PA10		*/
 #define SYSTEM_UART1_REMAP_ENABLE	0		/*串口1引脚重映射：TX/PB6, RX/PB7		*/
 #define SYSTEM_UART1_BOUND			115200	/*串口1波特率*/
@@ -155,7 +222,6 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 /*开启硬件SPI，x8/xB系列有两个SPI，最高18M位每秒*/
 #define SYSTEM_SPI_ENABLE		1
 
-/*_____________用户函数_______________*/
 
 /*_____________系统函数_______________*/
 //extern static uint8_t Init_OK_Num;

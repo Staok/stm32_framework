@@ -25,6 +25,7 @@
 ********************************/
 uint32_t UIDw[3]; /*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; /*获取HCLK频率，外设时钟均来自此再分频*/
+u16 adValue;		  /*DMA1把ADC转换结果传送的目标位置*/
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
 static uint8_t Init_OK_Num = 0;
@@ -33,6 +34,11 @@ void sys_MCU_Init_Seq(void)
 {
 	/*设置时钟,8M * 9 = 72M，涉及到延时准确性，不要乱动！*/
 	Stm32_Clock_Init(RCC_PLL_MUL9);
+	
+	/*关闭JTAG，启用SWD*/
+	__HAL_RCC_AFIO_CLK_ENABLE();
+	__HAL_AFIO_REMAP_SWJ_NOJTAG();
+	
 	Init_OK_Num++;
 	/*delay初始化*/
 	delay_init();
@@ -94,8 +100,6 @@ void sys_MCU_Init_Seq(void)
 	/*保存STM32内部UID识别码，全球唯一识别码*/
 	UIDw[0] = HAL_GetUIDw0();UIDw[1] = HAL_GetUIDw1();UIDw[2] = HAL_GetUIDw2(); 
 	
-	/*以下为用户应用的MCU外设初始化序列*/
-	
 }
 
 /*__________器件外设初始化，并开机自检_____________*/
@@ -106,15 +110,26 @@ void sys_MCU_Init_Seq(void)
 ********************************/
 void sys_Device_Init_Seq(void)
 {
-	/*以下为用户应用的Device初始化序列*/
+	/*以下为用户应用的MCU外设和Device初始化序列*/
 	
 	/*用户IO初始化，可选择初始化某个特定器件或者所有器件*/
 	Devices_Init(UserDevices,ALL);
 	
+	#if STSTEM_TIM2_ENABLE
+		/*说明TIM2的用途*/
+		sys_TIM2_ENABLE();
+	#endif
+	
+	#if SYSTEM_ADC1_ENABLE
+		/*说明ADC1的用途*/
+		sys_ADC1_ENABLE();
+	#endif
+	
 	/**/
 	
-	buzzer_bibi_once; //响一声表示初始化结束
 	
+	
+	buzzer_bibi_once; //响一声表示初始化结束
 }
 
 /*表示初始化有问题，串口提示，灯提示，声提示，并进入死循环*/
@@ -187,9 +202,19 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 	if(htim->Instance==TIM3)
 	{
 		__HAL_RCC_TIM3_CLK_ENABLE();            //使能TIM3时钟
-		HAL_NVIC_SetPriority(TIM3_IRQn,3,0);    //设置中断优先级，抢占优先级1，子优先级3
-		/*如果要开启定时中断，取消这个语句的注释和初始化函数中的使能更新IT注释*/
-		//HAL_NVIC_EnableIRQ(TIM3_IRQn);          //开启ITM3中断
+		HAL_NVIC_SetPriority(TIM3_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
+		
+		//#if STSTEM_TIM3PWM_TI_ENABLE
+			HAL_NVIC_EnableIRQ(TIM3_IRQn);      //开启ITM3中断
+		//#endif
+	}
+	if(htim->Instance==TIM2)
+	{
+		__HAL_RCC_TIM2_CLK_ENABLE();            //使能TIM2时钟
+		HAL_NVIC_SetPriority(TIM2_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
+		//#if STSTEM_TIM2_TI_ENABLE
+			HAL_NVIC_EnableIRQ(TIM2_IRQn);      //开启ITM2中断
+		//#endif
 	}
 }
 
@@ -283,9 +308,32 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
     }
 	
+	/*定时器3周期回调*/
 	if(htim==(&TIM3_Handler))
     {
         //LED1=!LED1;
+    }
+	
+	/*定时器2周期回调*/
+	if(htim==(&TIM2_Handler))
+    {
+		#if (SYSTEM_ADC1_useScan)
+			HAL_ADC_Start(&ADC1_Handler);               	//开启AD转换 
+		#endif
+		
+		#if (STSTEM_TIM2_asPWMorCap == 1)					//使用输入捕获功能，定时器溢出一次则溢出次数加一
+			if((TIM2CHx_CAPTURE_STA&0X80)==0)				//还未成功捕获
+			{
+				if(TIM2CHx_CAPTURE_STA&0X40)				//已经捕获到高电平了
+				{
+					if((TIM2CHx_CAPTURE_STA&0X3F)==0X3F)	//高电平太长了
+					{
+						TIM2CHx_CAPTURE_STA|=0X80;			//标记成功捕获了一次
+						TIM2CHx_CAPTURE_VAL=0XFFFF;
+					}else TIM2CHx_CAPTURE_STA++;
+				}	 
+			}
+		#endif
     }
 }
 
@@ -678,19 +726,24 @@ TIM_OC_InitTypeDef 	TIM3_CH1Handler,TIM3_CH2Handler,TIM3_CH3Handler,TIM3_CH4Hand
 void sys_TIM3PWM_ENABLE(void)
 {
 	TIM3_Handler.Instance=TIM3;          	//定时器3
-	TIM3_Handler.Init.Prescaler=prsc;       //定时器分频
+	TIM3_Handler.Init.Prescaler=tim3prsc;       //定时器分频
 	TIM3_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;//向上计数模式
-	TIM3_Handler.Init.Period=arr;          //自动重装载值
+	TIM3_Handler.Init.Period=tim3arr;          //自动重装载值
 	TIM3_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
-	HAL_TIM_Base_Init(&TIM3_Handler);
+	
+	
 	/*如果要开启定时中断，取消这个语句的注释和HAL_TIM_Base_MspInit中的TIM3的IRQ注释*/
-	//HAL_TIM_Base_Start_IT(&TIM3_Handler); //使能定时器3和定时器3更新中断：TIM_IT_UPDATE
+	#if STSTEM_TIM3PWM_TI_ENABLE
+		HAL_TIM_Base_Init(&TIM3_Handler);
+		HAL_TIM_Base_Start_IT(&TIM3_Handler); //使能定时器3和定时器3更新中断：TIM_IT_UPDATE
+	#endif
+	
 	HAL_TIM_PWM_Init(&TIM3_Handler);       //初始化PWM
     
 	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0010)
 	{
 		TIM3_CH2Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
-		TIM3_CH2Handler.Pulse=arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
+		TIM3_CH2Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
 		/*输出比较极性为低，对于PWM1模式时，当计数值小于比较值时输出低电平，PWM2与PWM1正好相反，注意规范定义低电平有效，高电平截止*/
 		/*即当计数值小于比较值时输出有效，器件可以工作，即这个比较值越大，器件工作时间越长，即 占空比 越大*/
 		TIM3_CH2Handler.OCPolarity=TIM_OCPOLARITY_LOW;
@@ -700,7 +753,7 @@ void sys_TIM3PWM_ENABLE(void)
 	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0001)
 	{
 		TIM3_CH1Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
-		TIM3_CH1Handler.Pulse=arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
+		TIM3_CH1Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
 		TIM3_CH1Handler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH1Handler,TIM_CHANNEL_1);//配置TIM3通道1
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_1);//开启PWM通道1
@@ -708,7 +761,7 @@ void sys_TIM3PWM_ENABLE(void)
 	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0100)
 	{
 		TIM3_CH3Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
-		TIM3_CH3Handler.Pulse=arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
+		TIM3_CH3Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
 		TIM3_CH3Handler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH3Handler,TIM_CHANNEL_3);//配置TIM3通道3
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_3);//开启PWM通道3
@@ -716,7 +769,7 @@ void sys_TIM3PWM_ENABLE(void)
 	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_1000)
 	{
 		TIM3_CH4Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
-		TIM3_CH4Handler.Pulse=arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
+		TIM3_CH4Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
 		TIM3_CH4Handler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH4Handler,TIM_CHANNEL_4);//配置TIM3通道4
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_4);//开启PWM通道4
@@ -788,6 +841,41 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
+	
+	if(htim->Instance==TIM2)
+	{
+		__HAL_RCC_TIM2_CLK_ENABLE();			//使能定时器2
+		__HAL_AFIO_REMAP_TIM2_ENABLE();			/*TIM2通道引脚完全重映射使能 (CH1/ETR/PA15, CH2/PB3, CH3/PB10, CH4/PB11)*/
+		
+		GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
+		GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
+		GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
+		
+		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_0001)	//CH1/ETR/PA15
+		{
+			__HAL_RCC_GPIOA_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_15;
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+		}
+		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_0010)	//CH2/PB3
+		{
+			__HAL_RCC_GPIOB_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_3;
+			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+		}
+		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_0100)	//CH3/PB10
+		{
+			__HAL_RCC_GPIOB_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_10;
+			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+		}
+		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_1000)	//CH4/PB11
+		{
+			__HAL_RCC_GPIOB_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_11;
+			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+		}
+	}
 }
 
 //设置TIM3通道的占空比
@@ -798,7 +886,7 @@ void TIM3_set_Channel_Pulse(u8 channel,float percent)
 	if(percent < 0) percent = 0;
 	if(percent > 100) percent = 100.0;
 	percent /= 100.0;
-	compare = (float)arr * percent;
+	compare = (float)tim3arr * percent;
 	switch(channel)
 	{
 		case TIM3PWM_Channel_1: TIM3->CCR1=(u32)compare;break;

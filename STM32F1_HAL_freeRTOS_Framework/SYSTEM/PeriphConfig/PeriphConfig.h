@@ -125,7 +125,44 @@ extern Devices_Init_Struct UserDevices[];
 #define PAmodeOut(x)	{if(x>7){PAmodeOutH(x);}else{PAmodeOutL(x);}}
 
 
-/*____________________IO操作：单点和位带读写、单点改变输入输出___________________________________*/
+/*____________________定时器2___________________________________*/
+extern TIM_HandleTypeDef TIM2_Handler;
+void sys_TIM2_ENABLE(void); //写在预编译外面为了外部文件能够调用
+#if STSTEM_TIM2_ENABLE
+	#if (STSTEM_TIM2_asPWMorCap == 0)
+		#define TIM2PWM_Channel_1	1
+		#define TIM2PWM_Channel_2	2
+		#define TIM2PWM_Channel_3	3
+		#define TIM2PWM_Channel_4	4
+		extern TIM_OC_InitTypeDef 	TIM2_CH1Handler,TIM2_CH2Handler,TIM2_CH3Handler,TIM2_CH4Handler;
+		void TIM2_set_Channel_Pulse(u8 channel,float percent);
+	#elif (STSTEM_TIM2_asPWMorCap == 1)
+		extern TIM_IC_InitTypeDef TIM2_CHxConfig;
+		void Process_TIM2_IC_CallBack_Channel_1(void);
+		void Process_TIM2_IC_CallBack_Channel_2(void);
+		void Process_TIM2_IC_CallBack_Channel_3(void);
+		void Process_TIM2_IC_CallBack_Channel_4(void);
+	#endif
+#endif
+
+extern u8  	TIM2CHx_CAPTURE_STA;	    				
+extern u16	TIM2CHx_CAPTURE_VAL;
+float Peek_TIM2_Cap_Val(void);
+
+/*____________________ADC1___________________________________*/
+extern ADC_HandleTypeDef ADC1_Handler;
+void sys_ADC1_ENABLE(void);
+u16 Get_Adc_Average(u32 ch,u8 times);
+#if SYSTEM_ADC1_ENABLE
+	void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
+	u16 Get_Adc(u32 ch);
+	#if SYSTEM_ADC1_useDMA1
+		extern DMA_HandleTypeDef  ADC1rxDMA_Handler;
+		void ADC_DMA_Cfg(void);
+	#endif
+#endif
+
+
 
 
 

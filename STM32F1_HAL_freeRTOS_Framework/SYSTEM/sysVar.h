@@ -67,6 +67,25 @@ typedef unsigned char   		boolean; /* 8-bit*/
 
 
 //二进制输入
+#define B0in16	0x0000
+#define B1in16 (B0000_0001|0x0000)
+#define B2in16 (B0000_0010|0x0000)
+#define B3in16 (B0000_0100|0x0000)
+#define B4in16 (B0000_1000|0x0000)
+#define B5in16 (B0001_0000|0x0000)
+#define B6in16 (B0010_0000|0x0000)
+#define B7in16 (B0100_0000|0x0000)
+#define B8in16 (B1000_0000|0x0000)
+
+#define B9in16 	((B0000_0001<<8)|0x0000)
+#define B10in16 ((B0000_0010<<8)|0x0000)
+#define B11in16 ((B0000_0100<<8)|0x0000)
+#define B12in16 ((B0000_1000<<8)|0x0000)
+#define B13in16 ((B0001_0000<<8)|0x0000)
+#define B14in16 ((B0010_0000<<8)|0x0000)
+#define B15in16 ((B0100_0000<<8)|0x0000)
+#define B16in16 ((B1000_0000<<8)|0x0000)
+
 #define B0000_0000 0x00
 
 #define B0000_0001 0x01

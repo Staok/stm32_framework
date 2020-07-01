@@ -152,7 +152,8 @@ float Peek_TIM2_Cap_Val(void);
 /*____________________ADC1___________________________________*/
 extern ADC_HandleTypeDef ADC1_Handler;
 void sys_ADC1_ENABLE(void);
-u16 Get_Adc_Average(u32 ch,u8 times);
+void Get_Adc_Average(u32 ch,u8 times,u32* result);
+float Get_Temprate(u32 adcx);
 #if SYSTEM_ADC1_ENABLE
 	void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
 	u16 Get_Adc(u32 ch);

@@ -86,6 +86,7 @@ typedef unsigned char   		boolean; /* 8-bit*/
 #define B15in16 ((B0100_0000<<8)|0x0000)
 #define B16in16 ((B1000_0000<<8)|0x0000)
 
+
 #define B0000_0000 0x00
 
 #define B0000_0001 0x01

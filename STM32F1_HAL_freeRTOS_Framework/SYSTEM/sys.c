@@ -25,7 +25,8 @@
 ********************************/
 uint32_t UIDw[3]; /*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; /*获取HCLK频率，外设时钟均来自此再分频*/
-u16 adValue;		  /*DMA1把ADC转换结果传送的目标位置*/
+u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
+u8 adValueDone = 0;		/*DMA把ADC1的值传送到adValue完成标志*/
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
 static uint8_t Init_OK_Num = 0;
@@ -317,9 +318,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	/*定时器2周期回调*/
 	if(htim==(&TIM2_Handler))
     {
-		#if (SYSTEM_ADC1_useScan)
-			HAL_ADC_Start(&ADC1_Handler);               	//开启AD转换 
-		#endif
+//		#if (SYSTEM_ADC1_useScan)
+//			HAL_ADC_Start(&ADC1_Handler);               	//开启AD转换 
+//		#endif
 		
 		#if (STSTEM_TIM2_asPWMorCap == 1)					//使用输入捕获功能，定时器溢出一次则溢出次数加一
 			if((TIM2CHx_CAPTURE_STA&0X80)==0)				//还未成功捕获

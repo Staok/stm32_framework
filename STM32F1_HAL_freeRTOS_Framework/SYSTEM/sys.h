@@ -144,7 +144,7 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 #define STSTEM_TIM2_ENABLE		1			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
 	#define STSTEM_TIM2_TI_ENABLE	1		/*是否开启定时器2的定时中断*/
 	
-	#define STSTEM_TIM2_asPWMorCap	1		/*选择定时器2作为...*/
+	#define STSTEM_TIM2_asPWMorCap	0		/*选择定时器2作为...*/
 											/*写2作为普通定时器中断使用*/
 											/*写1作为输入捕获：可以获取高电平或者低电平的时间，默认不分频，不滤波
 												输入捕获使用到TIM2的定时中断，必须打开！*/
@@ -187,20 +187,46 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
 */
 #define SYSTEM_ADC1_ENABLE		1			/*启否ADC1*/
-	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里连续采集
-												如果不启用，则为软件触发的单次转换*/
+	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里，
+												然后在定时器2中断中连续采集
+												如果不启用，则为软件触发的单次转换
+												是用连续扫描还是单次采集，定下后运行时不能改变
+											*/
 	#define SYSTEM_ADC1_useChanlNum	3		/*定义共用多少路通道*/
-											/*定义共用哪些通道，可写B0in16~B15in16*/
+											/*定义共用哪些通道，可写B0in16~B15in16，和InrTemp(内部温度通道)
+											如果只用采集内部温度，而不用其他通道，应设置：SYSTEM_ADC1_useChanlNum为1  SYSTEM_ADC1_useChanl单为InrTemp
+											如果不用
+											*/
 	#define SYSTEM_ADC1_useChanl	B0in16|B1in16|B3in16
-	#define SYSTEM_ADC1_useTIM2trig	1		/*定时器2触发ADC采集转换，由于ADC1触发源没有TIM2TRGO，
-												所以是在TIM2的定时中断中软件触发实现，必须打开TIM2的定时中断！*/
+		#define InrTemp B16in16
+		/*下面的定时器触发不用了，何必那么麻烦，直接调用启动ADC采集一次的函数一样...*/
+//	#define SYSTEM_ADC1_useTIM2trig	1		/*定时器2触发ADC采集转换，由于ADC1触发源没有TIM2TRGO，
+//												所以是在TIM2的定时中断中软件触发实现，必须打开TIM2的定时中断！*/
 	#define SYSTEM_ADC1_useDMA1		1		/*使用DAM1把转换结果放到目标位置*/
-		extern u16 adValue;						/*DMA1把ADC转换结果传送的目标位置*/
+		extern u16 adValue[SYSTEM_ADC1_useChanlNum];						/*DMA1把ADC转换结果传送的目标位置*/
+		extern u8 adValueDone;
 	/*可用的API：
-			如果启用 SYSTEM_ADC1_useScan 连续扫描模式
-			 u16 temp =  (u16)HAL_ADC_GetValue(&ADC1_Handler);	//返回最近一次ADC1规则组的转换结果
-			如果不启用连续扫描模式
-			 u16 adcx = Get_Adc_Average(1,20);					//软件触发，获取通道1的转换值，20次取平均
+			凡是启用 SYSTEM_ADC1_useDMA1 即用DMA传输ADC数据，读取顺序：
+				如果启用 SYSTEM_ADC1_useScan 循环一遍采集
+					先调用 HAL_ADC_Start(&ADC1_Handler); 调用SYSTEM_ADC1_useChanlNum次， 转换一遍每一个规则通道
+					判断 adValueDone 是否为1，是则从 adValue[x] 读值即可，如果启用 内部温度 通道，其值保存在adValue[SYSTEM_ADC1_useChanlNum-1]
+					adValueDone 清零
+				如果没有启用 SYSTEM_ADC1_useScan 循环一遍采集
+					先注入本次单次通道的规则，以下函数其参数只可以改通道，通道可以为ADC_CHANNEL_0~ADC_CHANNEL_15 和 ADC_CHANNEL_TEMPSENSOR
+						ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_TEMPSENSOR,1, ADC_SAMPLETIME_55CYCLES_5);
+					再调用调用 HAL_ADC_Start(&ADC1_Handler); 启动一次
+					判断 adValueDone 是否为1，是则从 adValue[x] 读值即可
+					adValueDone 清零
+			凡是没有启动 SYSTEM_ADC1_useDMA1 即没用用DMA传输ADC数据，读取顺序：
+				如果启用 SYSTEM_ADC1_useScan 循环一遍采集
+					调用 Get_Adc_Average(u32 ch,u8 times,u32* result); 
+					其中result为返回值，用result[0]~result[SYSTEM_ADC1_useChanlNum-1]分别保存每一通道AD值，如果启用 内部温度 通道，其值保存在result[SYSTEM_ADC1_useChanlNum-1]
+					其中 ch 通道 形参无效
+				如果没有启用 SYSTEM_ADC1_useScan 循环一遍采集
+					调用 Get_Adc_Average(u32 ch,u8 times,u32* result); 
+					其中 ch 通道 形参选择想转换的通道，可以为ADC_CHANNEL_TEMPSENSOR，其中result[0]保存本次本通道的转换结果
+					
+			注意：采集温度通道返回的是ADC的原始值，用 float Get_Temprate(u32 adcx) 把原始值转换为实际温度值(float类型)
 	*/
 		
 #define SYSTEM_IWDG_ENABLE		1			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/

@@ -4,7 +4,7 @@
 #include "sys.h"
 
 
-/*定义都有什么器件*/
+/*STEP1:定义都有什么器件*/
 enum devicesIndex_enum
 {
 	LCD = 0,
@@ -163,8 +163,21 @@ float Get_Temprate(u32 adcx);
 	#endif
 #endif
 
+/*____________________用户SPI1配置_________________________*/
 
+extern SPI_HandleTypeDef SPI1_Handler;  //SPI1句柄
+extern SPI_HandleTypeDef SPI2_Handler;  //SPI2句柄
+void sys_SPI1_ENABLE(void);
+void sys_SPI2_ENABLE(void);
+void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);
+void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);
+u8 SPI1_ReadWriteByte(u8 TxData);
+u8 SPI2_ReadWriteByte(u8 TxData);
 
+void sys_SPI1_SS_io_Init(void);
+#define	SPI1_CS PAout(4)  		//SPI1的片选信号
+void sys_SPI2_SS_io_Init(void);
+#define	SPI2_CS PBout(12)  		//SPI2的片选信号
 
 
 #endif

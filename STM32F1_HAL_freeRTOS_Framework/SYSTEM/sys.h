@@ -245,8 +245,33 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 #define SYSTEM_UART3_REMAP_ENABLE	0		/*串口3引脚重映射：TX/PD8,  RX/PD9，可以设置，但对于C8T6无此引脚*/
 #define SYSTEM_UART3_BOUND			115200	/*串口3波特率*/
 
-/*开启硬件SPI，x8/xB系列有两个SPI，最高18M位每秒*/
-#define SYSTEM_SPI_ENABLE		1
+/*开启硬件SPI，x8/xB系列有两个SPI，最高18M位每秒
+默认：尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射，默认一次发送八位bits数据，SS引脚用户单独定义！
+		master模式，MSB First，SS低电平选中器件
+		SCK空闲时刻为高电平(时钟极性CPOL=1)（默认）：
+			若使用第二跳变沿数据被采样(时钟相位CPHA=1)：数据线在 SCK 的偶数边沿采样（默认）
+			若使用第一跳变沿数据被采样(时钟相位CPHA=0)：数据线在 SCK 的奇数边沿采样
+引脚：
+	SPI1->CS	SPI1->CLK	SPI1->MISO	SPI1->MOSI 	—————— 	SPI2->CS	SPI2->CLK	SPI2->MISO	SPI2->MOSI
+	PA4			PA5			PA6			PA7					PB12		PB13		PB14		PB15
+*/
+#define SYSTEM_SPI1_ENABLE		1		/*使能SPI1*/
+#define SYSTEM_SPI2_ENABLE		1		/*使能SPI2*/
+/*提供API：
+	用户自定SS引脚：
+		到PeriphConfig.c里面的
+			sys_SPI1_SS_io_Init();		自行更改
+			sys_SPI2_SS_io_Init();		自行更改
+		以及 到PeriphConfig.h里面的
+			#define	SPI1_CS PAout(4)	自行更改
+			#define	SPI2_CS PBout(12)	自行更改
+	写读一体函数：
+		u8 SPI1_ReadWriteByte(u8 TxData);
+		u8 SPI2_ReadWriteByte(u8 TxData);
+	设置SPI速度函数： APB2为72MHz，APB1为二分频为36Mhz
+		void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI1由APB2分频得来
+		void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI2由APB1分频得来
+*/
 
 
 /*_____________系统函数_______________*/

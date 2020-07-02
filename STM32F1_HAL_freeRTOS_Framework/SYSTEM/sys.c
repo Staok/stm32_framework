@@ -34,6 +34,13 @@ uint8_t is_quitFault;
 void sys_MCU_Init_Seq(void)
 {
 	/*设置时钟,8M * 9 = 72M，涉及到延时准确性，不要乱动！*/
+	/*默认为：	PLLCLK和AHB均为72MHz，APB2为72MHz，APB1为二分频为36Mhz
+				定时器1~8的时钟源均为72MHz
+				ADC从AHB分频
+				SDIO、FSMC、DMA时钟源均为AHB
+				SP11时钟源为APB2，SP12时钟源为APB1
+				
+	*/
 	Stm32_Clock_Init(RCC_PLL_MUL9);
 	
 	/*关闭JTAG，启用SWD*/
@@ -124,6 +131,16 @@ void sys_Device_Init_Seq(void)
 	#if SYSTEM_ADC1_ENABLE
 		/*说明ADC1的用途*/
 		sys_ADC1_ENABLE();
+	#endif
+	
+	#if SYSTEM_SPI1_ENABLE
+		/*说明SPI1的用途*/
+		sys_SPI1_ENABLE();
+	#endif
+	
+	#if SYSTEM_SPI2_ENABLE
+		/*说明SPI2的用途*/
+		sys_SPI2_ENABLE();
 	#endif
 	
 	/**/

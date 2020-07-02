@@ -3,15 +3,19 @@
 /*
 ______________________________【PIN MAP】__________________________________________
 注：外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
-		[IO]											[描述]
-外设：	* PA8										MCO输出，默认时钟源为HSE
-		* CH1/PA6, CH2/PA7, CH3/PB0, CH4/PB1		TIM3默认PWM口
-		  CH1/PB4, CH2/PB5, CH3/PB0, CH4/PB1		TIM3部分重映射PWM口
-		  CH1/PC6, CH2/PC7, CH3/PC8, CH4/PC9		TIM3完全重映射PWM口
-		* TX/PA9, RX/PA10 - TX/PB6, RX/PB7			USART1默认引脚和重映射引脚
-		* TX/PA2, RX/PA3 - TX/PD5, RX/PD6			USART2默认引脚和重映射引脚
-		* TX/PB10, RX/PB11 - TX/PD8,  RX/PD9		USART3默认引脚和重映射引脚
-		* 											SPI1默认引脚和重映射引脚
+		[IO]														[描述]
+外设：	* PA8												MCO输出，默认时钟源为HSE
+		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
+		  CH1/PB4	CH2/PB5		CH3/PB0		CH4/PB1			TIM3部分重映射PWM口
+		  CH1/PC6	CH2/PC7		CH3/PC8		CH4/PC9			TIM3完全重映射PWM口
+		* TX/PA9	RX/PA10		TX/PB6		RX/PB7			USART1默认引脚和重映射引脚
+		  TX/PA2	RX/PA3		TX/PD5		RX/PD6			USART2默认引脚和重映射引脚
+		  TX/PB10	RX/PB11		TX/PD8		RX/PD9			USART3默认引脚和重映射引脚
+		* CS/PA4	CLK/PA5		MISO/PA6	MOSI/PA7		SPI1默认引脚
+		  CS/PB12	CLK/PB13	MISO/PB14 	MOSI/PB15		SPI2默认引脚
+		* 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15	ADC1各个通道引脚
+		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
+		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
 		*...
 
 用户：	*
@@ -25,8 +29,8 @@ ______________________________【PIN MAP】_______________________________________
 #define devicesNum	2
 
 /*STEP3:定义每个器件所用到的IO和其配置*/
-/*参数说明：
-	PIN：	GPIO_PIN_0~GPIO_PIN_15，GPIO_PIN_All
+/*参数说明：参数必须在以下列举中选
+	PIN：	GPIO_PIN_0~GPIO_PIN_15
 	MODE：	GPIO_MODE_INPUT、GPIO_MODE_ANALOG、GPIO_MODE_AF_INPUT							输入
 			GPIO_MODE_OUTPUT_PP、GPIO_MODE_OUTPUT_OD、GPIO_MODE_AF_PP、GPIO_MODE_AF_OD		输出
 			GPIO_MODE_IT_RISING、GPIO_MODE_IT_FALLING、GPIO_MODE_IT_RISING_FALLING  		选用IT表示启用EXTI，最多16线EXTI，如PA0和PB0共用EXTI0
@@ -39,8 +43,8 @@ ______________________________【PIN MAP】_______________________________________
 */
 GPIO_Init_Struct LCD_IO_Struct[] = 
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  TRUE}
+	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE}
 };
 
 GPIO_Init_Struct BUCK_IO_Struct[] =
@@ -65,7 +69,36 @@ Devices_Init_Struct UserDevices[devicesNum] =
 		.device_IOnum 		= 	2
 	}
 };
-
+/*初始化SPI1的SS器件选中引脚	默认PA4，用户可改*/
+void sys_SPI1_SS_io_Init(void)
+{
+	GPIO_InitTypeDef GPIO_Initure;
+	GPIO_Initure.Mode=GPIO_MODE_OUTPUT_PP;
+    GPIO_Initure.Pull=GPIO_PULLUP;
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;
+    
+	/*主要改这三行*/
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+    GPIO_Initure.Pin=GPIO_PIN_4;
+    HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+    
+	SPI1_CS=1;			                	//SPI1默认不选中
+}
+/*初始化SPI2的SS器件选中引脚	默认PB12，用户可改*/
+void sys_SPI2_SS_io_Init(void)
+{
+	GPIO_InitTypeDef GPIO_Initure;
+	GPIO_Initure.Mode=GPIO_MODE_OUTPUT_PP;
+    GPIO_Initure.Pull=GPIO_PULLUP;
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;
+    
+	/*主要改这三行*/
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+    GPIO_Initure.Pin=GPIO_PIN_12;
+    HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+    
+	SPI2_CS=1;			                	//SPI2默认不选中
+}
 
 /*___________________________器件IO配置函数___________________________________________*/
 void Devices_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2Init)
@@ -108,10 +141,10 @@ void deviceIO_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2
 		
 		//填入IO配置
 		HAL_GPIO_Init(Devices[dIndex].deviceIO_Struct[iIndex].GPIOx, \
-			&Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure);
+					 &Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure);
 		
 		//如果使用EXTI，配置中断线和优先级
-		if( (Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Mode == GPIO_MODE_IT_RISING) \
+		if(   (Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Mode == GPIO_MODE_IT_RISING) \
 			||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Mode == GPIO_MODE_IT_FALLING) \
 			||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Mode == GPIO_MODE_IT_RISING_FALLING) )
 		{		
@@ -135,7 +168,7 @@ void deviceIO_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2
 			{
 				HAL_NVIC_SetPriority(EXTI4_IRQn, Devices[dIndex].deviceIO_Struct[iIndex].PreemptPriority, 0);
 				if(Devices[dIndex].deviceIO_Struct[iIndex].isEnableExit)  HAL_NVIC_EnableIRQ(EXTI4_IRQn); else HAL_NVIC_DisableIRQ(EXTI4_IRQn);
-			}else if((Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_5) \
+			}else if( (Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_5) \
 					||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_6) \
 					||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_7) \
 					||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_8) \
@@ -143,7 +176,7 @@ void deviceIO_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2
 			{
 				HAL_NVIC_SetPriority(EXTI9_5_IRQn, Devices[dIndex].deviceIO_Struct[iIndex].PreemptPriority, 0);
 				if(Devices[dIndex].deviceIO_Struct[iIndex].isEnableExit)  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn); else HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-			}else if((Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_10) \
+			}else if( (Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_10) \
 					||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_11) \
 					||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_12) \
 					||(Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin == GPIO_PIN_13) \
@@ -156,9 +189,9 @@ void deviceIO_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2
 		}
 		
 		//配置默认IO状态
-		HAL_GPIO_WritePin(Devices[dIndex].deviceIO_Struct[iIndex].GPIOx, \
-			Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin, \
-			Devices[dIndex].deviceIO_Struct[iIndex].defaultState);
+		HAL_GPIO_WritePin(  Devices[dIndex].deviceIO_Struct[iIndex].GPIOx, \
+							Devices[dIndex].deviceIO_Struct[iIndex].GPIO_Initure.Pin, \
+							Devices[dIndex].deviceIO_Struct[iIndex].defaultState);
 	}
 }
 
@@ -208,7 +241,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 /*________________________________________用户定时器2配置_________________________________________________________*/
-
 #if STSTEM_TIM2_ENABLE
 
 TIM_HandleTypeDef TIM2_Handler;
@@ -886,6 +918,157 @@ void DMA1_Channel1_IRQHandler(void)
 
 #endif
 
+#endif
 
+
+
+
+//SPI底层驱动，时钟使能，引脚配置
+//此函数会被HAL_SPI_Init()调用
+//hspi:SPI句柄
+void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
+{
+    GPIO_InitTypeDef GPIO_Initure;
+    /*
+	SPI1->CS	SPI1->CLK	SPI1->MISO	SPI1->MOSI 	—————— 	SPI2->CS	SPI2->CLK	SPI2->MISO	SPI2->MOSI
+	PA4			PA5			PA6			PA7					PB12		PB13		PB14		PB15
+	*/
+	if(hspi->Instance == SPI1)
+	{
+		__HAL_RCC_GPIOA_CLK_ENABLE();       //使能GPIOA时钟
+		__HAL_RCC_SPI1_CLK_ENABLE();        //使能SPI1时钟
+		
+		//PB13,14,15
+		GPIO_Initure.Pin=GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+		GPIO_Initure.Mode=GPIO_MODE_AF_PP;              //复用推挽输出，MISO配置为复用推挽没问题
+		GPIO_Initure.Pull=GPIO_PULLUP;                  //上拉
+		GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;        //快速            
+		HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	}else if(hspi->Instance == SPI2)
+	{
+		__HAL_RCC_GPIOB_CLK_ENABLE();       //使能GPIOB时钟
+		__HAL_RCC_SPI2_CLK_ENABLE();        //使能SPI2时钟
+		
+		//PB13,14,15
+		GPIO_Initure.Pin=GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+		GPIO_Initure.Mode=GPIO_MODE_AF_PP;              //复用推挽输出，MISO配置为复用推挽没问题
+		GPIO_Initure.Pull=GPIO_PULLUP;                  //上拉
+		GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;        //快速            
+		HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+	}
+
+}
+
+/*___________________________________________用户SPI1配置_______________________________________________*/
+#if SYSTEM_SPI1_ENABLE
+
+SPI_HandleTypeDef SPI1_Handler;  //SPI1句柄
+
+void sys_SPI1_ENABLE(void)
+{
+    SPI1_Handler.Instance=SPI1;                         //SPI1
+    SPI1_Handler.Init.Mode=SPI_MODE_MASTER;             //设置SPI工作模式，设置为主模式
+    SPI1_Handler.Init.Direction=SPI_DIRECTION_2LINES;   //设置SPI单向或者双向的数据模式:SPI设置为双线模式
+    SPI1_Handler.Init.DataSize=SPI_DATASIZE_8BIT;       //设置SPI的数据大小:SPI发送接收8位帧结构
+    
+	SPI1_Handler.Init.CLKPolarity=SPI_POLARITY_HIGH;    //串行同步时钟的空闲状态为高电平
+    SPI1_Handler.Init.CLKPhase=SPI_PHASE_2EDGE;         //串行同步时钟的第二个跳变沿（上升或下降）数据被采样
+    
+	SPI1_Handler.Init.NSS=SPI_NSS_SOFT;                 //NSS信号由硬件（NSS管脚）还是软件（使用SSI位）管理:内部NSS信号有SSI位控制
+    SPI1_Handler.Init.BaudRatePrescaler=SPI_BAUDRATEPRESCALER_256;//定义波特率预分频的值:波特率预分频值为256
+    SPI1_Handler.Init.FirstBit=SPI_FIRSTBIT_MSB;        //指定数据传输从MSB位还是LSB位开始:数据传输从MSB位开始
+    SPI1_Handler.Init.TIMode=SPI_TIMODE_DISABLE;        //关闭TI模式
+    SPI1_Handler.Init.CRCCalculation=SPI_CRCCALCULATION_DISABLE;//关闭硬件CRC校验
+    SPI1_Handler.Init.CRCPolynomial=7;                  //CRC值计算的多项式
+    HAL_SPI_Init(&SPI1_Handler);//初始化
+    
+	sys_SPI1_SS_io_Init();
+	
+    __HAL_SPI_ENABLE(&SPI1_Handler);                    //使能SPI1
+	
+    SPI1_ReadWriteByte(0Xff);                           //启动传输
+}
+
+//SPI速度设置函数
+//SPI1速度=APB2/分频系数
+/*参数可选：
+SPI_BAUDRATEPRESCALER_2 SPI_BAUDRATEPRESCALER_4 SPI_BAUDRATEPRESCALER_8 SPI_BAUDRATEPRESCALER_16 
+SPI_BAUDRATEPRESCALER_32 SPI_BAUDRATEPRESCALER_64 SPI_BAUDRATEPRESCALER_128 SPI_BAUDRATEPRESCALER_256
+*/
+void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler)
+{
+    assert_param(IS_SPI_BAUDRATE_PRESCALER(SPI_BaudRatePrescaler));//判断有效性
+    __HAL_SPI_DISABLE(&SPI1_Handler);            //关闭SPI
+    SPI1_Handler.Instance->CR1&=0XFFC7;          //位3-5清零，用来设置波特率
+    SPI1_Handler.Instance->CR1|=SPI_BaudRatePrescaler;//设置SPI速度
+    __HAL_SPI_ENABLE(&SPI1_Handler);             //使能SPI
+    
+}
+
+//SPI1 读写一个字节
+//TxData:要写入的字节
+//返回值:读取到的字节
+u8 SPI1_ReadWriteByte(u8 TxData)
+{
+    u8 Rxdata;
+    HAL_SPI_TransmitReceive(&SPI1_Handler,&TxData,&Rxdata,1, 100); 
+ 	return Rxdata;          		    //返回收到的数据		
+}
+#endif
+
+#if SYSTEM_SPI2_ENABLE
+
+SPI_HandleTypeDef SPI2_Handler;  //SPI2句柄
+
+void sys_SPI2_ENABLE(void)
+{
+    SPI2_Handler.Instance=SPI2;                         //SPI2
+    SPI2_Handler.Init.Mode=SPI_MODE_MASTER;             //设置SPI工作模式，设置为主模式
+    SPI2_Handler.Init.Direction=SPI_DIRECTION_2LINES;   //设置SPI单向或者双向的数据模式:SPI设置为双线模式
+    SPI2_Handler.Init.DataSize=SPI_DATASIZE_8BIT;       //设置SPI的数据大小:SPI发送接收8位帧结构
+    
+	SPI2_Handler.Init.CLKPolarity=SPI_POLARITY_HIGH;    //串行同步时钟的空闲状态为高电平
+    SPI2_Handler.Init.CLKPhase=SPI_PHASE_2EDGE;         //串行同步时钟的第二个跳变沿（上升或下降）数据被采样
+    
+	SPI2_Handler.Init.NSS=SPI_NSS_SOFT;                 //NSS信号由硬件（NSS管脚）还是软件（使用SSI位）管理:内部NSS信号有SSI位控制
+    SPI2_Handler.Init.BaudRatePrescaler=SPI_BAUDRATEPRESCALER_256;//定义波特率预分频的值:波特率预分频值为256
+    SPI2_Handler.Init.FirstBit=SPI_FIRSTBIT_MSB;        //指定数据传输从MSB位还是LSB位开始:数据传输从MSB位开始
+    SPI2_Handler.Init.TIMode=SPI_TIMODE_DISABLE;        //关闭TI模式
+    SPI2_Handler.Init.CRCCalculation=SPI_CRCCALCULATION_DISABLE;//关闭硬件CRC校验
+    SPI2_Handler.Init.CRCPolynomial=7;                  //CRC值计算的多项式
+    HAL_SPI_Init(&SPI2_Handler);//初始化
+    
+	sys_SPI2_SS_io_Init();
+	
+    __HAL_SPI_ENABLE(&SPI2_Handler);                    //使能SPI2
+	
+    SPI2_ReadWriteByte(0Xff);                           //启动传输
+}
+
+//SPI速度设置函数
+//SPI2速度=APB1/分频系数
+/*参数可选：
+SPI_BAUDRATEPRESCALER_2 SPI_BAUDRATEPRESCALER_4 SPI_BAUDRATEPRESCALER_8 SPI_BAUDRATEPRESCALER_16 
+SPI_BAUDRATEPRESCALER_32 SPI_BAUDRATEPRESCALER_64 SPI_BAUDRATEPRESCALER_128 SPI_BAUDRATEPRESCALER_256
+*/
+void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler)
+{
+    assert_param(IS_SPI_BAUDRATE_PRESCALER(SPI_BaudRatePrescaler));//判断有效性
+    __HAL_SPI_DISABLE(&SPI2_Handler);            //关闭SPI
+    SPI2_Handler.Instance->CR1&=0XFFC7;          //位3-5清零，用来设置波特率
+    SPI2_Handler.Instance->CR1|=SPI_BaudRatePrescaler;//设置SPI速度
+    __HAL_SPI_ENABLE(&SPI2_Handler);             //使能SPI
+    
+}
+
+//SPI2 读写一个字节
+//TxData:要写入的字节
+//返回值:读取到的字节
+u8 SPI2_ReadWriteByte(u8 TxData)
+{
+    u8 Rxdata;
+    HAL_SPI_TransmitReceive(&SPI2_Handler,&TxData,&Rxdata,1, 100); 
+ 	return Rxdata;          		    //返回收到的数据		
+}
 #endif
 

@@ -148,6 +148,7 @@ void sys_Device_Init_Seq(void)
 	
 	
 	buzzer_bibi_once; //响一声表示初始化结束
+
 }
 
 /*表示初始化有问题，串口提示，灯提示，声提示，并进入死循环*/
@@ -158,6 +159,7 @@ void FaultASSERT(uint8_t errNum,char* message,uint8_t* is_quit)
 	printf_uart(UART1,"Fault : %d\t",errNum);
 	printf_uart(UART1,"Message : %s\n",message);
 	//灯提示，声提示
+	
 	buzzer_bibi_on;
 	if(!(*is_quit))
 	{
@@ -561,10 +563,12 @@ FIFO先进先出环形队列示意：	头指针出只读出，尾指针出只写入。
 							列队头的数据处理完了后，‘0’地址空间的数据进行释放掉，列队头指向下一个可以处理数据的地址‘1’，以此类推
 							在一定内存内，尾指针一直移动到最后，这时如果0地址空闲，则把尾指针指向0，从而形成环形
 */
-#define USART1_SetMode(x) USART1_RX_CONFIG |= (((u16)x)<<15) /*在任务中设置串口1接收协议*/
-#define USART1_SetDone USART1_RX_CONFIG |= USART1_RX_DONE_mask /*设置串口1接收完成标志位*/
-#define USART1_SetUnDone USART1_RX_CONFIG &= (~(USART1_RX_DONE_mask | USART1_RX_Rec_r_mask)) /*在任务中处理完后对串口1标志位进行复位*/
-#define USART1_RX_ByteNum (USART1_RX_CONFIG & USART1_RX_Num_mask)
+#define USART1_SetMode(x) 	USART1_RX_CONFIG |= (((u16)x)<<15) /*用户可用，在任务中设置串口1接收协议*/
+#define USART1_isDone 		(USART1_RX_CONFIG & USART1_RX_DONE_mask)/*用户用，用于判断是否接受完成一次*/
+
+#define USART1_SetDone 		USART1_RX_CONFIG |= USART1_RX_DONE_mask /*设置串口1接收完成标志位*/
+#define USART1_SetUnDone 	USART1_RX_CONFIG &= USART1_RX_MODE_mask /*在任务中处理完后对串口1标志位进行复位，除了mode位，其他位都写0*/
+#define USART1_RX_ByteNum 	(USART1_RX_CONFIG & USART1_RX_Num_mask)/*用户可用，返回接收的字符数量*/
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -579,11 +583,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					if(aRxBuffer1[0] == '\n') /*如果接受到了\r\n*/
 					{
 						USART1_SetDone;
-						USART1_RX_CONFIG++; /*保证接受完成后的 接受数据字节计数 算上 '\r\n' 两个*/
+						//USART1_RX_CONFIG++; 
+						/*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
 					}else{USART1_SetUnDone;}
 				}else
 				{
-					if(aRxBuffer1[0] == '\r') {USART1_RX_CONFIG |= USART1_RX_Rec_r_mask;USART1_RX_CONFIG++;}
+					if(aRxBuffer1[0] == '\r') {USART1_RX_CONFIG |= USART1_RX_Rec_r_mask;
+												//USART1_RX_CONFIG++; /*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
+					}
 					else{
 						USART1_RX_BUF[USART1_RX_CONFIG & USART1_RX_Num_mask] = aRxBuffer1[0];
 						USART1_RX_CONFIG++;
@@ -592,7 +599,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 				}
 			}
-		}else 								/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时接受，如果缓存满了则新入数据丢失*/
+		}else 								/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时拿走，如果缓存满了则新入数据丢失*/
 		{									/*从ReadDataFromRingbuff(&RingBuff_forUSART1);RingBuff_forUSART1.data接收数据，注意要检查是否成功读出！*/
 			WriteDataToRingbuff(&RingBuff_forUSART1,aRxBuffer1[0]);
 			//if(!(USART1_RX_CONFIG & USART1_RX_DONE_mask)) {;}/*如果接收未完成*/

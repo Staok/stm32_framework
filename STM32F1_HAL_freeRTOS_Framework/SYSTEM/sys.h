@@ -44,8 +44,8 @@
 													FreeRTOS版本：v10.3.1
 													默认用于任务的RAM堆栈大小为5KB，按需修改！
 												*/
-#define SYSTEM_SUPPORT_Menu		1				/*提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
-#define SYSTEM_SUPPORT_MyString	1				/*提供一个实现了string.h大部分字符操作函数的库*/
+#define SYSTEM_SUPPORT_Menu		0				/*提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
+#define SYSTEM_SUPPORT_MyString	0				/*提供一个实现了string.h大部分字符操作函数的库*/
 #define SYSTEM_SUPPORT_sprintf	1				/*包含且编译printf.h，github开源文件，无依赖，功能比较全。
 													约占6KB，对于stm32够，对于其他小容量MCU则看“其他几个sprintf实现”文件夹里面的,不要纠结了。
 													https://github.com/mpaland/printf
@@ -138,13 +138,17 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 					
 					设置TIM3的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。默认向上计数，默认设置为当计数值小于此值时输出低电平。
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_2,88.8);
+					
+					buzzer_bibi_once;			用户使用，蜂鸣器叫唤一声
+					define buzzer_bibi_on;		用户使用，蜂鸣器间歇叫唤开启
+					define buzzer_bibi_off;		用户使用，蜂鸣器间歇叫唤关闭
 		*/
 		
 /*通过用定时器2：16位，四个独立通道可用于：输入捕获、输出比较、PWM、单脉冲，多种途径触发DMA中断*/
-#define STSTEM_TIM2_ENABLE		1			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
+#define STSTEM_TIM2_ENABLE		0			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
 	#define STSTEM_TIM2_TI_ENABLE	1		/*是否开启定时器2的定时中断*/
 	
-	#define STSTEM_TIM2_asPWMorCap	0		/*选择定时器2作为...*/
+	#define STSTEM_TIM2_asPWMorCap	2		/*选择定时器2作为...*/
 											/*写2作为普通定时器中断使用*/
 											/*写1作为输入捕获：可以获取高电平或者低电平的时间，默认不分频，不滤波
 												输入捕获使用到TIM2的定时中断，必须打开！*/
@@ -186,7 +190,7 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
 	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
 */
-#define SYSTEM_ADC1_ENABLE		1			/*启否ADC1*/
+#define SYSTEM_ADC1_ENABLE		0			/*启否ADC1*/
 	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里，
 												然后在定时器2中断中连续采集
 												如果不启用，则为软件触发的单次转换
@@ -233,6 +237,7 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 
 /*开启串口，x8/xB系列有三个串口，最好不超过2M位每秒。默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断*/
 /*串口方面可用API，看SYSTEM_SUPPORT_sprintf宏定义的注释*/
+/*注：串口2、3的接收回调函数没有补全，用时再补，和串口1的同理*/
 #define SYSTEM_UART1_ENABLE			1		/*使能串口1	       TX/PA9, RX/PA10		*/
 #define SYSTEM_UART1_REMAP_ENABLE	0		/*串口1引脚重映射：TX/PB6, RX/PB7		*/
 #define SYSTEM_UART1_BOUND			115200	/*串口1波特率*/
@@ -244,6 +249,32 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 #define SYSTEM_UART3_ENABLE			0		/*使能串口3	       TX/PB10, RX/PB11		*/
 #define SYSTEM_UART3_REMAP_ENABLE	0		/*串口3引脚重映射：TX/PD8,  RX/PD9，可以设置，但对于C8T6无此引脚*/
 #define SYSTEM_UART3_BOUND			115200	/*串口3波特率*/
+/*可用的API：
+	发送：	如果启用 SYSTEM_SUPPORT_sprintf ，则可用：不要用printf！
+				参数：UART1~UART3
+				printf_uart(UART1,"Fault : %d\t",x);
+				也可以用	sprintf(char* buffer, const char* format, ...); 				不带字节数量限制
+							snprintf(char* buffer, size_t count, const char* format, ...); 	带字节数量限制，更安全
+			如果没有启用 SYSTEM_SUPPORT_sprintf ，则可用：
+			参数：UART1_Handler~UART3_Handler ， 发送数据的字符类型指针 ， 数据长度(字节数} ， 超时时间
+				HAL_UART_Transmit(&UART1_Handler,UART_BUF,12,10); 				发送函数
+				while(__HAL_UART_GET_FLAG(&UART1_Handler,UART_FLAG_TC)!=SET); 	等待发送结束
+	接收：（以下只针对串口1说明）（一次接收字符不要超过200个字节，如果超出则丢弃之后的数据）
+			接受协议设置(默认协议0)：USART1_SetMode(0);	串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出的环形缓存实现接受区，无协议
+			接受协议设置可用随时切换，切换后接收方式也随下面的说明换。
+			协议0：
+				接受区缓存大小设置：#define USART1_RX_BUF_MaxNum 200 这个语句在下面串口宏定义区里面
+				判断是否接收完成一次：USART1_isDone		用于判断是否接受完成一次 例子： if(USART1_isDone){表示接收完成一次}
+				查询本次接收完成一次后接收到的字符数量：USART1_RX_ByteNum u8类型 不包含"\r\n"两个字符！
+				接收缓存区：	USART1_RX_BUF[x] ，x : 0~USART1_RX_ByteNum
+				接受成功一次之后，处理完数据之后，清接收完成标志：USART1_SetUnDone;
+			协议1：
+				接受区缓存大小设置：#define ringbuf_MaxNum 200 这个语句在ringbuf.h里面
+				res = ReadDataFromRingbuff(&RingBuff_forUSART1); 返回值如果为 ReturnOK 则为成功，若为 ReturnErr 则失败，不要从下一条语句拿取数据
+				RingBuff_forUSART1.data 从这里拿取数据 char类型
+				可用一直拿到 ReadDataFromRingbuff 返回为 ReturnErr 为止，由于没有协议，只是储存，所以没有接收完成标志
+				
+*/
 
 /*开启硬件SPI，x8/xB系列有两个SPI，最高18M位每秒
 默认：尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射，默认一次发送八位bits数据，SS引脚用户单独定义！
@@ -255,8 +286,8 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 	SPI1->CS	SPI1->CLK	SPI1->MISO	SPI1->MOSI 	—————— 	SPI2->CS	SPI2->CLK	SPI2->MISO	SPI2->MOSI
 	PA4			PA5			PA6			PA7					PB12		PB13		PB14		PB15
 */
-#define SYSTEM_SPI1_ENABLE		1		/*使能SPI1*/
-#define SYSTEM_SPI2_ENABLE		1		/*使能SPI2*/
+#define SYSTEM_SPI1_ENABLE		0		/*使能SPI1*/
+#define SYSTEM_SPI2_ENABLE		0		/*使能SPI2*/
 /*提供API：
 	用户自定SS引脚：
 		到PeriphConfig.c里面的

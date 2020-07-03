@@ -5,7 +5,7 @@ RingBuff_Typedef RingBuff_forUSART1 =
 	.ad2write = 0,
 	.ad2read = 0,
 	.writeOverRing = 0,
-	.readOverRing = 1,
+	.readOverRing = 1,	/*可千万别动！*/
 	.is_success = 0
 }; 
 

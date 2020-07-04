@@ -143,6 +143,11 @@ void sys_Device_Init_Seq(void)
 		sys_SPI2_ENABLE();
 	#endif
 	
+	#if SYSTEM_StdbyWKUP_ENABLE
+		/*使能待机-低功耗模式，默认长按PA0(WKUP)3秒关开机*/
+		sys_StdbyWKUP_ENABLE();
+	#endif
+	
 	/**/
 	
 	
@@ -231,10 +236,15 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 	if(htim->Instance==TIM2)
 	{
 		__HAL_RCC_TIM2_CLK_ENABLE();            //使能TIM2时钟
-		HAL_NVIC_SetPriority(TIM2_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
-		//#if STSTEM_TIM2_TI_ENABLE
-			HAL_NVIC_EnableIRQ(TIM2_IRQn);      //开启ITM2中断
-		//#endif
+		
+		#if STSTEM_TIM2_TI_ENABLE
+			__HAL_TIM_CLEAR_IT(&TIM2_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
+			__HAL_TIM_URS_ENABLE(&TIM2_Handler);               // 仅允许计数器溢出才产生更新中断
+			__HAL_TIM_ENABLE_IT(&TIM2_Handler,TIM_IT_UPDATE);  // 使能更新中断
+		#endif
+		
+		HAL_NVIC_SetPriority(TIM2_IRQn,3,0);
+		HAL_NVIC_EnableIRQ(TIM2_IRQn);
 	}
 }
 

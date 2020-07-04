@@ -163,7 +163,7 @@ float Get_Temprate(u32 adcx);
 	#endif
 #endif
 
-/*____________________用户SPI1配置_________________________*/
+/*____________________SPI1、2_________________________*/
 
 extern SPI_HandleTypeDef SPI1_Handler;  //SPI1句柄
 extern SPI_HandleTypeDef SPI2_Handler;  //SPI2句柄
@@ -179,6 +179,14 @@ void sys_SPI1_SS_io_Init(void);
 void sys_SPI2_SS_io_Init(void);
 #define	SPI2_CS PBout(12)  		//SPI2的片选信号
 
+/*______________________低功耗StandbyMode________________________________*/
+
+void sys_StdbyWKUP_ENABLE(void);
+#if SYSTEM_StdbyWKUP_ENABLE
+	#define WKUP_KD HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0)  //PA0 检测是否外部WK_UP按键按下
+	u8 Check_WKUP(void);  			//检测WKUP脚的信号
+	void Sys_Enter_Standby(void);	//系统进入待机模式
+#endif
 
 #endif
 

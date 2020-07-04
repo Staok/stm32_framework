@@ -16,6 +16,7 @@ ______________________________【PIN MAP】_______________________________________
 		* 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15	ADC1各个通道引脚
 		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
 		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
+		* PA0												StandBy待机低功耗模式的唤醒按键WKUP
 		*...
 
 用户：	*
@@ -228,6 +229,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     switch(GPIO_Pin)
     {
         case GPIO_PIN_0:
+			#if SYSTEM_StdbyWKUP_ENABLE
+				if(Check_WKUP())
+				{
+					Sys_Enter_Standby();//进入待机模式
+				}
+			#endif
             break;
 		case GPIO_PIN_1:
 			break;
@@ -259,9 +266,15 @@ void sys_TIM2_ENABLE(void)
     TIM2_Handler.Init.Period=		tim2arr;                       	//自动装载值
     TIM2_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;			//时钟分频因子
     
-	#if STSTEM_TIM2_TI_ENABLE
-		HAL_TIM_Base_Init(&TIM2_Handler);		//这个不影响PWM和Cap功能吧，不知道
-		HAL_TIM_Base_Start_IT(&TIM2_Handler);
+	#if (STSTEM_TIM2_asPWMorCap == 2)
+		HAL_TIM_Base_Init(&TIM2_Handler);
+		
+		#if (!STSTEM_TIM2_TI_ENABLE)
+			HAL_TIM_Base_Start(&TIM2_Handler);	//不带IT的开启定时器
+		#else
+			HAL_TIM_Base_Start_IT(&TIM2_Handler);//带IT的开启定时器
+		#endif
+		
 	#endif
 	
 	
@@ -1071,4 +1084,68 @@ u8 SPI2_ReadWriteByte(u8 TxData)
  	return Rxdata;          		    //返回收到的数据		
 }
 #endif
+
+#if SYSTEM_StdbyWKUP_ENABLE
+
+void sys_StdbyWKUP_ENABLE(void)
+{
+    GPIO_InitTypeDef GPIO_Initure;
+    __HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+	
+    GPIO_Initure.Pin=GPIO_PIN_0;            //PA0
+    GPIO_Initure.Mode=GPIO_MODE_IT_RISING;  //中断,上升沿
+    GPIO_Initure.Pull=GPIO_PULLDOWN;        //下拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//快速
+    HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	/*PA0外部中断函数在 HAL_GPIO_EXTI_Callback 里*/
+    
+//    //检查是否是正常开机
+//    if(Check_WKUP()==0)
+//    {
+//        Sys_Enter_Standby();//不是开机，进入待机模式
+//    }
+
+    HAL_NVIC_SetPriority(EXTI0_IRQn,2,0);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+}
+
+
+//系统进入待机模式
+void Sys_Enter_Standby(void)
+{
+    __HAL_RCC_APB2_FORCE_RESET();       //复位所有IO口 
+   	__HAL_RCC_PWR_CLK_ENABLE();         //使能PWR时钟
+			  	
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);                  //清除Wake_UP标志
+    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);           //设置WKUP用于唤醒
+    HAL_PWR_EnterSTANDBYMode();                         //进入待机模式     
+}
+
+//检测WKUP脚的信号
+//返回值1:连续按下3s以上
+//      0:错误的触发	
+u8 Check_WKUP(void) 
+{
+	u8 t=0;	//记录按下的时间
+	while(1)
+	{
+		if(WKUP_KD)
+		{
+			t++;			//已经按下了 
+			delay_ms(30);
+			if(t>=100)		//按下超过3秒钟
+			{
+				return 1; 	//按下3s以上了
+			}
+		}else 
+		{ 
+			return 0; //按下不足3秒
+		}
+	}
+} 
+
+#endif
+
+
 

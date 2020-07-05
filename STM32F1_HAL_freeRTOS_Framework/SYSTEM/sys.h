@@ -151,16 +151,18 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 	#define STSTEM_TIM2_TI_ENABLE	1		/*是否开启定时器2的定时中断*/
 	
 	#define STSTEM_TIM2_asPWMorCap	3		/*选择定时器2作为...注：PWM(输出比较)、输入捕获和正交解码三个功能不能共用！*/
-											/*写3作为正交编码器的解码使用*/
+											/*写3作为正交编码器的解码使用，只能使用CH1和CH2，即PA15和PB3，默认使用两路边沿触发，计数值为单路上升沿数的四倍
+												正交解码使用到TIM2的定时中断，必须打开！但在初始化时已经默认打开*/
 											/*写2作为普通定时器中断使用*/
 											/*写1作为输入捕获：可以获取高电平或者低电平的时间，默认不分频，不滤波
-												输入捕获使用到TIM2的定时中断，必须打开！*/
+												输入捕获使用到TIM2的定时中断，必须打开！但在初始化时已经默认打开*/
 											/*写0作为PWM：默认PWM1模式，向上计数，低电平有效，一个周期内占空比越大低电平时间越长
 												引脚说明：			没有重映射			两种部分重映射			完全重映射
 												TIM2四个通道：		PA0 PA1 PA2 PA3		含有前面的引脚		PA15 PB3 PB10 PB11
 												注意：由于PA2 PA3串口2占用，PA0 PA1由ADC占用，所以TIM2的PWM只用完全重映射！！
 														但PB10 PB11串口3占用，要么不用串口3，要么串口3重映射
 											*/
+			/*PWM输出比较功能选项*/
 			#define tim2arr STSTEM_TIM2PWM_Period_5K			/*选择定时器输出频率（预分频系数为72，这里选择重装值）*/
 				#define STSTEM_TIM2PWM_Period_1K	(1000-1)	/*注意：这里是选择重装值，也是占空比的分辨率，频率高则分辨率低，反之亦然，慎选*/
 				#define STSTEM_TIM2PWM_Period_2K	(500-1)
@@ -178,10 +180,23 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 				设置TIM2的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。默认向上计数，默认设置为当计数值小于此值时输出低电平。
 				TIM2_set_Channel_Pulse(TIM2PWM_Channel_2,88.8);
 			*/
+			
+			/*输入捕获功能选项*/
 			#define STSTEM_TIM2_Cap_trigV	1			/*写1高电平触发一次输入捕获，写0相反，写2双边沿触发*/
 			#define STSTEM_TIM2_Cap_Channel	B0000_0001	/*选择用哪个通道当输入捕获，只能四选一！！*/
 			/*可用API：
 				float Peek_TIM2_Cap_Val();		获取最近一次TIM2输入捕获的脉冲时间，单位 毫秒，按照设置的捕获沿进行，可以随时随地调用此函数
+			*/
+			
+			/*正交解码功能选项*/
+			// 4 : 			使用定时器编码器接口捕获AB相的上升沿和下降沿，一个脉冲*4
+			// ENCODER：	编码器线数(转速一圈输出脉冲数)
+			// SPEEDRATIO：	电机减数比，内部电机转动圈数与电机输出轴转动圈数比，即减速齿轮比，编码器一般和电机转速一致，即直接把编码器安装到电机轴上！
+			#define ENCODER     300    	// 编码器线数
+			#define SPEEDRATIO  1   	// 电机减速比
+			#define PPR         (SPEEDRATIO*ENCODER*4) // Pulse/r 每圈可捕获的脉冲数，不用动！
+			/*可用API：
+				只需去定时器溢出中断函数HAL_TIM_PeriodElapsedCallback的TIM4中用一个速度变量接着 peek_TIM2_Encoder_Speed()返回的速度值 单位 转/秒
 			*/
 
 /*
@@ -289,7 +304,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 	SPI1->CS	SPI1->CLK	SPI1->MISO	SPI1->MOSI 	—————— 	SPI2->CS	SPI2->CLK	SPI2->MISO	SPI2->MOSI
 	PA4			PA5			PA6			PA7					PB12		PB13		PB14		PB15
 */
-#define SYSTEM_SPI1_ENABLE		0		/*使能SPI1*/
+#define SYSTEM_SPI1_ENABLE		1		/*使能SPI1*/
 #define SYSTEM_SPI2_ENABLE		0		/*使能SPI2*/
 /*提供API：
 	用户自定SS引脚：
@@ -314,8 +329,8 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 		唤醒条件：WKUP按键上升沿，RTC警告事件，复位按键，看门狗复位，典型电流值为2uA，为三个模式中最低 	类似于开关机				（可用）
 		WKUP 在PA0
 */
-#define SYSTEM_StdbyWKUP_ENABLE	0		/*使用低功耗模式*/
-/*当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复*/
+#define SYSTEM_StdbyWKUP_ENABLE	0		/*使用待机-低功耗模式*/
+/*当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复，进入待机模式函数在PA0的外部中断里*/
 /*WKUP IO不用外接下拉电阻，在配置时STM32内部已经上拉*/
 
 

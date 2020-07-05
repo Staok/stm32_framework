@@ -266,6 +266,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		Timer_IT_flags._10msec_flag = 1;
 		//发送10ms标志的信号量任务通知
 		
+		/*如果启用定时器2的正交解码功能，这里定时10ms周期计算正交计数值并计算返回速度 单位 转/秒*/
+		#if (STSTEM_TIM2_ENABLE)&&(STSTEM_TIM2_asPWMorCap == 3)
+			//如果接着速度的变量是x，下句应写成 x = peek_TIM2_Encoder_Speed();
+			peek_TIM2_Encoder_Speed();
+		#endif
+		
 		if(++Timer_IT_flags._10msec >= 10)
 		{
 			Timer_IT_flags._10msec = 0;
@@ -363,6 +369,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 					}else TIM2CHx_CAPTURE_STA++;
 				}	 
 			}
+		#endif
+		
+		#if (STSTEM_TIM2_asPWMorCap == 3)					//使用正交解码功能，计数溢出次数记录
+			if(__HAL_TIM_IS_TIM_COUNTING_DOWN(&TIM2_Handler))
+			EncoderOverflowCount--;       //向下计数溢出
+			else
+			EncoderOverflowCount++;       //向上计数溢出
 		#endif
     }
 }

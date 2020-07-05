@@ -142,12 +142,19 @@ void sys_TIM2_ENABLE(void); //写在预编译外面为了外部文件能够调用
 		void Process_TIM2_IC_CallBack_Channel_2(void);
 		void Process_TIM2_IC_CallBack_Channel_3(void);
 		void Process_TIM2_IC_CallBack_Channel_4(void);
+	#elif (STSTEM_TIM2_asPWMorCap == 3)
+		extern TIM_Encoder_InitTypeDef sEncoderConfig;
 	#endif
 #endif
 
+/*输入捕获私有变量*/
 extern u8  	TIM2CHx_CAPTURE_STA;	    				
 extern u16	TIM2CHx_CAPTURE_VAL;
 float Peek_TIM2_Cap_Val(void);
+
+/*正交解码私有变量*/
+extern int32_t EncoderOverflowCount;//定时器溢出次数
+float peek_TIM2_Encoder_Speed(void);
 
 /*____________________ADC1___________________________________*/
 extern ADC_HandleTypeDef ADC1_Handler;

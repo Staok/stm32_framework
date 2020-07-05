@@ -252,10 +252,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 TIM_HandleTypeDef TIM2_Handler;
 
-#if (!STSTEM_TIM2_asPWMorCap)
+#if (STSTEM_TIM2_asPWMorCap == 0)
 	TIM_OC_InitTypeDef 	TIM2_CH1Handler,TIM2_CH2Handler,TIM2_CH3Handler,TIM2_CH4Handler;
-#else
+#elif (STSTEM_TIM2_asPWMorCap == 1)
 	TIM_IC_InitTypeDef TIM2_CHxConfig;
+#elif (STSTEM_TIM2_asPWMorCap == 3)
+	TIM_Encoder_InitTypeDef sEncoderConfig;
 #endif
 
 void sys_TIM2_ENABLE(void)
@@ -350,10 +352,94 @@ void sys_TIM2_ENABLE(void)
 			default:break;
 		}
 		__HAL_TIM_ENABLE_IT(&TIM2_Handler,TIM_IT_UPDATE);   //使能更新中断
-	#elif (STSTEM_TIM2_asPWMorCap == 2)
-		
+	#elif (STSTEM_TIM2_asPWMorCap == 3)
+		TIM2_Handler.Init.Prescaler=	0;
+		TIM2_Handler.Init.Period=		0xFFFF;
+
+	  sEncoderConfig.EncoderMode        = TIM_ENCODERMODE_TI12;
+	  sEncoderConfig.IC1Polarity        = TIM_ICPOLARITY_RISING;
+	  sEncoderConfig.IC1Selection       = TIM_ICSELECTION_DIRECTTI;
+	  sEncoderConfig.IC1Prescaler       = TIM_ICPSC_DIV1;
+	  sEncoderConfig.IC1Filter          = 0;
+
+	  sEncoderConfig.IC2Polarity        = TIM_ICPOLARITY_RISING;
+	  sEncoderConfig.IC2Selection       = TIM_ICSELECTION_DIRECTTI;
+	  sEncoderConfig.IC2Prescaler       = TIM_ICPSC_DIV1;
+	  sEncoderConfig.IC2Filter          = 0;
+	  __HAL_TIM_SET_COUNTER(&TIM2_Handler,0);
+	  
+	  HAL_TIM_Encoder_Init(&TIM2_Handler, &sEncoderConfig);
+	  
+	__HAL_TIM_CLEAR_IT(&TIM2_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
+	__HAL_TIM_URS_ENABLE(&TIM2_Handler);               // 仅允许计数器溢出才产生更新中断
+	__HAL_TIM_ENABLE_IT(&TIM2_Handler,TIM_IT_UPDATE);  // 使能更新中断
+
+	HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(TIM2_IRQn);
+
+	HAL_TIM_Encoder_Start(&TIM2_Handler, TIM_CHANNEL_ALL);
+	
 	#endif
 }
+
+//定时器2中断服务函数
+void TIM2_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&TIM2_Handler);
+}
+
+#if (STSTEM_TIM2_asPWMorCap == 3)				//如果使用正交解码
+void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* htim_base)
+{
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(htim_base->Instance==TIM2)
+  {
+    /* 基本定时器外设时钟使能 */
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+
+    __HAL_AFIO_REMAP_TIM2_ENABLE();
+	  
+	/*PA15 PB3*/
+	  
+    /* 定时器通道1功能引脚IO初始化 */
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull=GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* 定时器通道2功能引脚IO初始化 */
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  }
+}
+
+/*在定时器溢出中断回调函数里面进行加减操作*/
+int32_t EncoderOverflowCount = 0;//定时器溢出次数
+
+
+/*获取一次正交编码器的旋转速度 单位 转/秒，本函数放到TIM4的10ms定时中断中*/
+float peek_TIM2_Encoder_Speed(void)
+{
+	float Speed = 0;
+	int32_t CaptureNumber=0;     // 输入捕获数
+	
+	/* 速度定时器编码器接口捕获值 */
+	CaptureNumber = ( int32_t )__HAL_TIM_GET_COUNTER(&TIM2_Handler) + EncoderOverflowCount*65536;
+	
+	Speed = (float)(CaptureNumber / PPR);
+	Speed *= 100.0;	//本函数10ms计算一次，这里换算成1秒
+	
+	/* 数据清零,等待下一秒重新记录数据 */
+	EncoderOverflowCount = 0;
+	__HAL_TIM_SET_COUNTER(&TIM2_Handler,0);
+	
+	return Speed;
+}
+
+#endif
 
 #if (STSTEM_TIM2_asPWMorCap == 1)				//如果使用Cap功能
 
@@ -691,14 +777,7 @@ void Process_TIM2_IC_CallBack_Channel_4(void)
 
 
 #endif
-
-//定时器2中断服务函数
-void TIM2_IRQHandler(void)
-{
-    HAL_TIM_IRQHandler(&TIM2_Handler);
-}
-
-#if (!STSTEM_TIM2_asPWMorCap)
+#if (STSTEM_TIM2_asPWMorCap == 0)				//如果使用PWM
 	//设置TIM2通道的占空比
 	//percent:占空比百分数
 	void TIM2_set_Channel_Pulse(u8 channel,float percent)
@@ -936,6 +1015,12 @@ void DMA1_Channel1_IRQHandler(void)
 
 
 
+
+
+/*___________________________________________用户SPI1配置_______________________________________________*/
+
+#if ((SYSTEM_SPI1_ENABLE)||(SYSTEM_SPI2_ENABLE))
+
 //SPI底层驱动，时钟使能，引脚配置
 //此函数会被HAL_SPI_Init()调用
 //hspi:SPI句柄
@@ -972,7 +1057,8 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
 
 }
 
-/*___________________________________________用户SPI1配置_______________________________________________*/
+#endif
+
 #if SYSTEM_SPI1_ENABLE
 
 SPI_HandleTypeDef SPI1_Handler;  //SPI1句柄
@@ -1084,6 +1170,9 @@ u8 SPI2_ReadWriteByte(u8 TxData)
  	return Rxdata;          		    //返回收到的数据		
 }
 #endif
+
+
+/*__________________________________低功耗StandbyMode__________________________________________*/
 
 #if SYSTEM_StdbyWKUP_ENABLE
 

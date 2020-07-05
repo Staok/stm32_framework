@@ -34,7 +34,43 @@
 */
 
 /*
-启动：	BOOT1	BOOT0
+STM32F10xx系列命名规范：
+
+STM32F
+	  101 = 		基本型
+	  102 = 		USB基本型， USB 2.0全速设备
+	  103 = 		增强型
+	  105或107 = 	互联型
+			  T = 36脚
+			  C = 48脚
+			  R = 64脚
+			  V = 100脚
+			  Z = 144脚
+			   4 = 16K字节
+			   6 = 32K
+			   8 = 64K
+			   B = 128K
+			   C = 256K
+			   D = 384K
+			   E = 512K
+			    H = BGA封装
+				T = LQFP封装
+				 6 = -40~85℃
+			FLASH               RAM
+			
+			16K(ld)				6K			ld:2个USART，2个16位定时器，1个SPI，1个I2C，USB，CAN，1个高级定时器，2个ADC
+			32K(ld)				10K
+			
+			64K(md)				20K			md:3个USART，3个16位定时器，2个SPI，2个I2C，USB，CAN，1个高级定时器，1个ADC
+			128K(md)			20K						(x8/xB系列有1、2、3、4定时器)
+			
+			256K(hd)			48K或64K	hd:5个串口，4个16位定时器，2个基本定时器，3个SPI，2个I2S，2个I2C，USB，CAN，
+			384K(hd)			64K				2个高级定时器，3个ADC，1个DAC，1个SDIO，FSMC(100和144脚封装)
+			512K(hd)			64K
+*/
+
+/*
+启动：	BOOT1	BOOT0		启动区域
 		  x		  0			FLASH
 		  0		  1			系统储存器(ISP下载)
 		  1		  1			SRAM
@@ -333,6 +369,24 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 /*当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复，进入待机模式函数在PA0的外部中断里*/
 /*WKUP IO不用外接下拉电阻，在配置时STM32内部已经上拉*/
 
+/*不同容量的FLASH组织方式：
+小容量：32个	1K字节/页
+中容量：128个	1K字节/页
+大容量：256个	2K字节/页
+*/
+#define SYSTEM_FLASH_IAP_ENABLE	0		/*启用对内部FLASH储存空间编程*/
+	#define STM32_FLASH_WREN	1		/*启用写功能，否则只读不写*/
+	#define STM32_FLASH_SIZE 	64 		/*所选STM32的FLASH容量大小(单位为KB)*/
+	#define FLASH_SAVE_ADDR  0X0800F000					//设置FLASH 保存地址(必须为页的首地址！且其值要大于本代码所占用FLASH的大小+0X08000000)
+	#define FLASH_SAVE_ADDR1 (0X08000000 + (u32)(60*1024))
+/*可用API：
+	注：当启用本功能后，在系统初始化序列中将加入读存开机次数的一个用例，一个u16的变量会储存在最后一个或倒数第二个页
+	例：	const u8 TEXT_Buffer[]={"STM32F103 FLASH TEST"};	//用于存入的数据
+			u8 datatemp[sizeof(TEXT_Buffer)];					//用于接读出的数据
+	写：(一次写入长度最多为一个页的字节数，对于中小容量的为1KB，对于大容量的为2KB！)
+		STMFLASH_Write(	FLASH_SAVE_ADDR1,	(u16*)TEXT_Buffer,	sizeof(TEXT_Buffer));
+	读：STMFLASH_Read(	FLASH_SAVE_ADDR1,	(u16*)datatemp,		sizeof(TEXT_Buffer));
+*/
 
 /*_____________系统函数_______________*/
 //extern static uint8_t Init_OK_Num;

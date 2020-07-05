@@ -195,6 +195,19 @@ void sys_StdbyWKUP_ENABLE(void);
 	void Sys_Enter_Standby(void);	//系统进入待机模式
 #endif
 
+/*____________________________FLASH编程___________________________________*/
+void STMFLASH_Read(		u32 ReadAddr,	u16 *pBuffer,	u16 NumToRead);		//可用API
+void STMFLASH_Write(	u32 WriteAddr,	u16 *pBuffer,	u16 NumToWrite);	//可用API
+#if SYSTEM_FLASH_IAP_ENABLE
+	
+	#if STM32_FLASH_WREN	//如果使能了写   
+		extern void FLASH_PageErase(uint32_t PageAddress);
+		void STMFLASH_Write_NoCheck(u32 WriteAddr,u16 *pBuffer,u16 NumToWrite);
+	#endif
+
+	u16 STMFLASH_ReadHalfWord(u32 faddr);
+#endif
+
 #endif
 
 

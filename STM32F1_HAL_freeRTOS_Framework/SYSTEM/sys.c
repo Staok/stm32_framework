@@ -23,6 +23,7 @@
 *参数：		1、NULL
 *返回值：	1、NULL
 ********************************/
+u16	StartUpTimes;	/*用于保存开机次数，储存在最后一个或倒数第二个页*/
 uint32_t UIDw[3]; /*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; /*获取HCLK频率，外设时钟均来自此再分频*/
 u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
@@ -107,6 +108,13 @@ void sys_MCU_Init_Seq(void)
 	sysCoreClock = HAL_RCC_GetHCLKFreq(); 
 	/*保存STM32内部UID识别码，全球唯一识别码*/
 	UIDw[0] = HAL_GetUIDw0();UIDw[1] = HAL_GetUIDw1();UIDw[2] = HAL_GetUIDw2(); 
+	
+	#if SYSTEM_FLASH_IAP_ENABLE
+		//获取开机次数
+		STMFLASH_Read( 	(0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
+		StartUpTimes += 1;
+		STMFLASH_Write( (0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
+	#endif
 	
 }
 

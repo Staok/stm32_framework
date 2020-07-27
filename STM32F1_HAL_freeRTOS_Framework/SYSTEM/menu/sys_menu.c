@@ -240,21 +240,95 @@ void adjustFunctionsOption(struct MenuItem *MenuItemNow,	struct input_struct inp
 	//同理
 }
 
-/*______________________外部中断服务函数_________________________________*/
-/*
+
+/*_____________________以下皆为标准形式，固定的，不用动___________________________________*/
+
+/*外部输入处理函数
 为了能够识别按键是单击还是长按，应设置外部中断为“低电平触发”，详情看下面的话：
 如果是低电平触发，那么在低电平时间内中断一直有效；
 因此如果在电平没有恢复之前中断程序就已经执行完成从而退出，那么会在退出后又再次进入中断；但只要中断没有退出是不会重复触发的。
 */
-void interruptFun_Down()
+/*此函数必须一直循环执行*/
+void keyProcess(void)
 {
-	//...
-	inputKey.keyValue = down;
-	//...
+	char _10msCountDown = 100; /*1s内的双击有效，这里不要动*/
+	static u16 _10msNum = 0,isKeySetOnce = FALSE; 
+	
+	//稍微延时消抖
+	if(Timer_IT_flags._10msec_flag == TRUE)
+	{
+		Timer_IT_flags._10msec_flag = FALSE;
+		
+		//如果发生了外部中断
+		if(key_Up_Interrupted == TRUE)
+		{
+			//再次判断
+			if( key_Up_ReadIn == GPIO_PIN_RESET) //规范：低电平有效，此时按键被按下
+			{
+				inputKey.keyValue	=	up; 
+				
+				_10msNum++;_10msCountDown--;
+				
+				if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在1秒内第二次被按下，则切换按键模式为长按
+				{
+					inputKey.keyMode	=	doub;
+				}else
+				{
+					_10msCountDown = 100;
+				}
+				
+				if(_10msNum > 30) //超过了300ms按键仍然时被按下状态，则把按键模式切换为长按
+				{
+					inputKey.keyMode	=	lon; 
+				}
+			}else//如果按键被抬起，则清中断标志位等下一次中断到来
+			{
+				if(inputKey.keyMode	!=	doub)
+					isKeySetOnce = TRUE;
+				else isKeySetOnce = FALSE;
+				
+				_10msNum = 0;
+				key_Up_Interrupted = FALSE; 
+				inputKey.keyValue	= 	none; 
+				inputKey.keyMode	=	once; 
+			}
+			
+		}else if(key_Down_Interrupted == TRUE)
+		{
+			//再次判断
+			if( key_Down_ReadIn == GPIO_PIN_RESET) //规范：低电平有效，此时按键被按下
+			{
+				inputKey.keyValue	=	down; 
+				
+				_10msNum++;_10msCountDown--;
+				
+				if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在1秒内第二次被按下，则切换按键模式为长按
+				{
+					inputKey.keyMode	=	doub;
+				}else
+				{
+					_10msCountDown = 100;
+				}
+				
+				if(_10msNum > 30) //超过了300ms按键仍然时被按下状态，则把按键模式切换为长按
+				{
+					inputKey.keyMode	=	lon; 
+				}
+			}else//如果按键被抬起，则清中断标志位等下一次中断到来
+			{
+				if(inputKey.keyMode	!=	doub)
+					isKeySetOnce = TRUE;
+				else isKeySetOnce = FALSE;
+				
+				_10msNum = 0;
+				key_Down_Interrupted = FALSE; 
+				inputKey.keyValue	= 	none; 
+				inputKey.keyMode	=	once; 
+			}
+		}
+	}
 }
 
-//以下皆为标准形式
-//固定的，不用动
 //显示索引函数，刷新屏幕和串口，用以显示当前菜单所在的位置，屏幕显示仿照上面“索引格式例子：”里的样子
 char *Locate(struct MenuItem *MenuItemNow,char menuid[3]) 
 {
@@ -299,6 +373,7 @@ void Nop(void)
 /*刷屏函数Locate是直接调用，刷屏需要的时间可能比较长，这里按需修改成标志位控制*/
 /*用户功能函数的标准形式都是只改变数值，不加入复杂的具体功能，所以这个菜单处理函数不会占用太多时间，
 只要保证用户功能函数按照标准去写*/
+/*此函数必须一直循环执行*/
 void menuProcess(void)
 {
 	
@@ -306,31 +381,66 @@ void menuProcess(void)
 	static char i=0; //上面数组的下标
 	static struct MenuItem *menuPointer = &m0_main[0]; //菜单的漫游指针，并指定开始的位置
 	
-	if(inputKey.keyValue != none)
+	if(Timer_IT_flags._100msec_flag == TRUE)
 	{
-		switch(inputKey.keyValue)
+		Timer_IT_flags._100msec_flag = FALSE;
+		
+		if(inputKey.keyValue != none)
 		{
-			case up:
-										//在当前菜单级别跳到上一个菜单项
-										if (menuid[i]==0) menuid[i] = (menuPointer->MenuCount-1);
-										else menuid[i]--;
-										//Locate(menuPointer+menuid[i]);//刷新显示
-										Locate(menuPointer,menuid);
-										break;
-			
-			case down:
-										//在当前菜单级别跳到下一个菜单项
-										menuid[i]++;
-										if (menuid[i] > (menuPointer->MenuCount-1)) menuid[i]=0;
-										//Locate(menuPointer+menuid[i]);//刷新显示
-										Locate(menuPointer,menuid);
-										break;
-			
-			case left:
-										Run(menuPointer+menuid[i],inputKey);
-										break;
-			
-			case right:
+			switch(inputKey.keyValue)
+			{
+				case up:
+											//在当前菜单级别跳到上一个菜单项
+											if (menuid[i]==0) menuid[i] = (menuPointer->MenuCount-1);
+											else menuid[i]--;
+											//Locate(menuPointer+menuid[i]);//刷新显示
+											Locate(menuPointer,menuid);
+											break;
+				
+				case down:
+											//在当前菜单级别跳到下一个菜单项
+											menuid[i]++;
+											if (menuid[i] > (menuPointer->MenuCount-1)) menuid[i]=0;
+											//Locate(menuPointer+menuid[i]);//刷新显示
+											Locate(menuPointer,menuid);
+											break;
+				
+				case left:
+											Run(menuPointer+menuid[i],inputKey);
+											break;
+				
+				case right:
+												//到下一级菜单,无下级时执行某功能
+												if ((menuPointer+menuid[i])->Childrenms !=NULL) 
+												{ 
+													menuPointer = (menuPointer+menuid[i])->Childrenms; 
+													i++; 
+													menuid[i]=0; 
+													//Locate(menuPointer+menuid[i]);//刷新显示
+													Locate(menuPointer,menuid);
+												} 
+												else 
+												{ 
+													Run(menuPointer+menuid[i],inputKey);
+												}
+												break;
+				
+				case exit:
+											//到上一级菜单，没有上一级时不用动
+											if ((menuPointer+menuid[i])->Parentms !=NULL) 
+											{ 
+												menuPointer = (menuPointer+menuid[i])->Parentms; 
+												i--; 
+												//Locate(menuPointer+menuid[i]);//刷新显示
+												Locate(menuPointer,menuid);
+											} 
+											else 
+											{ 
+												//printf("You are at the top of menu"); 
+											}
+											break;
+				
+				case enter:
 											//到下一级菜单,无下级时执行某功能
 											if ((menuPointer+menuid[i])->Childrenms !=NULL) 
 											{ 
@@ -343,44 +453,14 @@ void menuProcess(void)
 											else 
 											{ 
 												Run(menuPointer+menuid[i],inputKey);
-											}
+											}				
 											break;
-			
-			case exit:
-										//到上一级菜单，没有上一级时不用动
-										if ((menuPointer+menuid[i])->Parentms !=NULL) 
-										{ 
-											menuPointer = (menuPointer+menuid[i])->Parentms; 
-											i--; 
-											//Locate(menuPointer+menuid[i]);//刷新显示
-											Locate(menuPointer,menuid);
-										} 
-										else 
-										{ 
-											//printf("You are at the top of menu"); 
-										}
-										break;
-			
-			case enter:
-										//到下一级菜单,无下级时执行某功能
-										if ((menuPointer+menuid[i])->Childrenms !=NULL) 
-										{ 
-											menuPointer = (menuPointer+menuid[i])->Childrenms; 
-											i++; 
-											menuid[i]=0; 
-											//Locate(menuPointer+menuid[i]);//刷新显示
-											Locate(menuPointer,menuid);
-										} 
-										else 
-										{ 
-											Run(menuPointer+menuid[i],inputKey);
-										}				
-										break;
-			
-			default:break;
+				
+				default:break;
+			}
+			inputKey.keyValue = none;
+			inputKey.keyMode = once;
 		}
-		inputKey.keyValue = none;
-		inputKey.keyMode = once;
 	}
 }
 

@@ -3,7 +3,7 @@
 /*
 ______________________________【PIN MAP】__________________________________________
 注：外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
-		[IO]														[描述]
+						[IO]										[描述]
 外设：	* PA8												MCO输出，默认时钟源为HSE
 		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
 		  CH1/PB4	CH2/PB5		CH3/PB0		CH4/PB1			TIM3部分重映射PWM口
@@ -27,7 +27,7 @@ ______________________________【PIN MAP】_______________________________________
 /*STEP1:去.h文件里的"定义都有什么器件"里面写都有哪些器件*/
 
 /*STEP2:定义一共有多少个器件*/
-#define devicesNum	2
+#define devicesNum	3
 
 /*STEP3:定义每个器件所用到的IO和其配置*/
 /*参数说明：参数必须在以下列举中选
@@ -44,15 +44,29 @@ ______________________________【PIN MAP】_______________________________________
 */
 GPIO_Init_Struct LCD_IO_Struct[] = 
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  FALSE},
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE}
+	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE}
 };
 
 GPIO_Init_Struct BUCK_IO_Struct[] =
-{
+{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
 	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},
 	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  TRUE}
 };
+
+//用于菜单的外部输入按键
+GPIO_Init_Struct KEY_IO_Struct[] =
+{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
+	{{GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},
+	{{GPIO_PIN_2, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE}
+};
+
+/*STEP3.5:填写用于外部中断的IO的中断标志位*/
+//当IO使用外部中断时，用一个标志位记录中断是否发生，把长时间的处理函数放到中断外面！
+u8 key_Up_Interrupted 		= 	FALSE; 
+u8 key_Down_Interrupted 	= 	FALSE;
+//继续：去PeriphConfig.h里面修改用于外部中断的IO的标志位定义和读入函数宏定义
+//继续：再去外部中断回调函数HAL_GPIO_EXTI_Callback()中填写IO的外部中断标志为置位
 
 /*STEP4:按照器件的数量，按照"定义都有什么器件"里面的顺序！完善每个器件的信息*/
 Devices_Init_Struct UserDevices[devicesNum] = 
@@ -60,13 +74,19 @@ Devices_Init_Struct UserDevices[devicesNum] =
 	{	
 		.deviceIO_Struct 	= 	LCD_IO_Struct	,		//器件IO配置结构体
 		.deviceIndex 		= 	LCD				,		//器件enum格式索引
-		.deviceName 		= 	"LCD device"	,		//器件名称
+		.deviceName 		= 	"LCD"			,		//器件名称
 		.device_IOnum 		= 	8						//器件有多少个IO口
 	},
 	{
 		.deviceIO_Struct 	= 	BUCK_IO_Struct	,
 		.deviceIndex		= 	BUCK			,
-		.deviceName 		= 	"BUCK device"	,
+		.deviceName 		= 	"BUCK"			,
+		.device_IOnum 		= 	2
+	},
+	{
+		.deviceIO_Struct 	= 	KEY_IO_Struct	,
+		.deviceIndex		= 	KEY				,
+		.deviceName 		= 	"Menu Key"		,
 		.device_IOnum 		= 	2
 	}
 };
@@ -83,7 +103,7 @@ void sys_SPI1_SS_io_Init(void)
     GPIO_Initure.Pin=GPIO_PIN_4;
     HAL_GPIO_Init(GPIOA,&GPIO_Initure);
     
-	SPI1_CS=1;			                	//SPI1默认不选中
+	SPI1_CS = IO_High;			                	//SPI1默认不选中
 }
 /*初始化SPI2的SS器件选中引脚	默认PB12，用户可改*/
 void sys_SPI2_SS_io_Init(void)
@@ -98,7 +118,7 @@ void sys_SPI2_SS_io_Init(void)
     GPIO_Initure.Pin=GPIO_PIN_12;
     HAL_GPIO_Init(GPIOB,&GPIO_Initure);
     
-	SPI2_CS=1;			                	//SPI2默认不选中
+	SPI2_CS = IO_High;			                	//SPI2默认不选中
 }
 
 /*___________________________器件IO配置函数___________________________________________*/
@@ -117,6 +137,7 @@ void Devices_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2I
 			case LCD:	deviceIO_Init(Devices,LCD);
 				break;
 			case BUCK:	deviceIO_Init(Devices,BUCK);
+			case KEY:	deviceIO_Init(Devices,KEY);
 			default:break;
 		}
 	}
@@ -237,8 +258,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			#endif
             break;
 		case GPIO_PIN_1:
+			/*当配置GPIOA的引脚1为菜单按键的上按键时*/
+			key_Up_Interrupted = TRUE;
 			break;
         case GPIO_PIN_2:
+			/*当配置GPIOA的引脚2为菜单按键的下按键时*/
+			key_Down_Interrupted = TRUE;
             break;
         case GPIO_PIN_3:
             break;
@@ -419,6 +444,11 @@ void HAL_TIM_Encoder_MspInit(TIM_HandleTypeDef* htim_base)
 /*在定时器溢出中断回调函数里面进行加减操作*/
 int32_t EncoderOverflowCount = 0;//定时器溢出次数
 
+/*获取一次编码器的当前计数值，用于表示编码器当前的绝对位置*/
+int32_t peek_TIM2_Encoder_Value(void)
+{
+	return ( int32_t )__HAL_TIM_GET_COUNTER(&TIM2_Handler);
+}
 
 /*获取一次正交编码器的旋转速度 单位 转/秒，本函数放到TIM4的10ms定时中断中*/
 float peek_TIM2_Encoder_Speed(void)

@@ -3,6 +3,8 @@
 
 #include "stm32f1xx.h"
 
+#define IO_Low 0
+#define IO_High 1
 
 #define TRUE 1
 #define FALSE 0

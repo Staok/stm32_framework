@@ -24,7 +24,7 @@
 	
 /*应用规范：（临时，待整理）
 	0、中断优先级分组选用分组4，即16级抢占优先级，0级响应优先级（即不用）
-	1、IO尽量设计为低电平有效，高电平截止。
+	1、IO尽量设计为低电平有效，高电平截止；按键IO尽量使用外部中断。
 	2、使用C99模式编译！
 	3、I2C使用软件实现
 	4、FreeRTOS所有组件始终使用动态申请内存；FreeRTOS的配置文件除了用户按需更改区域，尽量不要动；一般不使用软件定时器，用硬件定时器或者周期延时替代即可
@@ -81,7 +81,22 @@ STM32F
 													默认用于任务的RAM堆栈大小为5KB，按需修改！
 												*/
 #define SYSTEM_SUPPORT_Menu		0				/*提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
+/*
+	keyProcess(); 	//获取键值输入函数；对于RTOS，直接放一个任务；对于裸机，放while大循环里（默认没放）
+	menuProcess();	//菜单处理的主函数；对于RTOS，直接放一个任务；对于裸机，放while大循环里（默认没放）
+*/
 #define SYSTEM_SUPPORT_MyString	0				/*提供一个实现了string.h大部分字符操作函数的库*/
+/*具体作用看MyString.c文件里的注释
+int mystrlen (const char *str);
+char * mystrcat (char *dest, const char *src);
+char * mystrncat (char *dest, const char *src, int n);
+char * mystrcpy (char *dest, const char *src);
+char * mystrncpy (char *dest, const char *src, int n);
+int mystrcmp (const char *s1, const char *s2);
+int mystrncmp (const char *s1, const char *s2, int n);
+void * mymemset (void *s, int c, unsigned n);
+*/
+int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 #define SYSTEM_SUPPORT_sprintf	1				/*包含且编译printf.h，github开源文件，无依赖，功能比较全。
 													约占6KB，对于stm32够，对于其他小容量MCU则看“其他几个sprintf实现”文件夹里面的,不要纠结了。
 													https://github.com/mpaland/printf
@@ -93,7 +108,6 @@ STM32F
 													int snprintf(char* buffer, size_t count, const char* format, ...); 	带字节数量限制，更安全
 												注意：另在SYSTEM文件夹内提供strprintf.h，功能比较单一，但很小。
 												*/
-int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 #define SYSTEM_SUPPORT_pid		0				/*提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面*/
 
 /*所有main的头文件都放在这里*/
@@ -148,6 +162,18 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 基本定时器6、7（仅定时器中断，无PWM等）
 */
 #define STSTEM_TIM4_ENABLE		1			/*模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断*/
+/*提供用于同步和计时的时基：
+	Timer_IT_flags._10msec_flag		//10毫秒标志
+	Timer_IT_flags._100msec_flag	//100毫秒标志
+	Timer_IT_flags._300msec_flag	//300毫秒标志
+	Timer_IT_flags._1sec_flag		//1秒标志
+	Timer_IT_flags._1min_flag		//1分钟标志
+	
+	Timer_IT_flags._10msec			//10毫秒计数
+	Timer_IT_flags._100msec			//100毫秒计数
+	Timer_IT_flags._1sec			//1秒计数
+	Timer_IT_flags._1min			//1分钟计数
+*/
 
 /*PWM即输出比较，基本原理就是，每个定时器都有唯一一个CNT计数值，随着时钟源加一，到了Period值就会产生溢出中断即定时中断，
 PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独立的PWM*/
@@ -232,7 +258,8 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 			#define SPEEDRATIO  1   	// 电机减速比
 			#define PPR         (SPEEDRATIO*ENCODER*4) // Pulse/r 每圈可捕获的脉冲数，不用动！
 			/*可用API：
-				只需去定时器溢出中断函数HAL_TIM_PeriodElapsedCallback的TIM4中用一个速度变量接着 peek_TIM2_Encoder_Speed()返回的速度值 单位 转/秒
+				得到当前计数值：int32_t peek_TIM2_Encoder_Value(void); //用于表示编码器当前的绝对位置
+				速度：只需去定时器溢出中断函数HAL_TIM_PeriodElapsedCallback的TIM4中用一个速度变量接着 peek_TIM2_Encoder_Speed()返回的速度值 单位 转/秒
 			*/
 
 /*

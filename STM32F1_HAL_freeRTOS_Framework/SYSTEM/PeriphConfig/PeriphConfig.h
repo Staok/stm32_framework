@@ -2,6 +2,7 @@
 #define __PERIPHCONFIG_H
 
 #include "sys.h"
+#include "sys_menu.h"
 
 
 /*STEP1:定义都有什么器件*/
@@ -9,10 +10,16 @@ enum devicesIndex_enum
 {
 	LCD = 0,
 	BUCK,
+	KEY,
 	
 	ALL		//最后这个固定的不要删
 };
 
+/*STEP3.5:填写用于外部中断的IO的中断标志位*/
+extern u8 key_Up_Interrupted;
+extern u8 key_Down_Interrupted;
+#define key_Up_ReadIn	HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_1)
+#define key_Down_ReadIn	HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
 
 /*___________________________________以下不用动_________________________________________________*/
 /*单个IO口初始化结构体*/
@@ -155,6 +162,7 @@ float Peek_TIM2_Cap_Val(void);
 /*正交解码私有变量*/
 extern int32_t EncoderOverflowCount;//定时器溢出次数
 float peek_TIM2_Encoder_Speed(void);
+int32_t peek_TIM2_Encoder_Value(void);
 
 /*____________________ADC1___________________________________*/
 extern ADC_HandleTypeDef ADC1_Handler;

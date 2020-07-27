@@ -271,7 +271,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	/*注意：不要写入太多程序从而占用时间！*/
     if(htim==(&TIM4_Handler))
     {
-		Timer_IT_flags._10msec_flag = 1;
+		Timer_IT_flags._10msec_flag = TRUE;
 		//发送10ms标志的信号量任务通知
 		
 		/*如果启用定时器2的正交解码功能，这里定时10ms周期计算正交计数值并计算返回速度 单位 转/秒*/
@@ -283,7 +283,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if(++Timer_IT_flags._10msec >= 10)
 		{
 			Timer_IT_flags._10msec = 0;
-			Timer_IT_flags._100msec_flag = 1;
+			Timer_IT_flags._100msec_flag = TRUE;
 			Timer_IT_flags._100msec++;
 			
 			//发送100ms标志的信号量任务通知
@@ -291,7 +291,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		
 		if(Timer_IT_flags._100msec % 3 == 0)
 		{
-			Timer_IT_flags._300msec_flag = 1;
+			Timer_IT_flags._300msec_flag = TRUE;
 			
 			#if SYSTEM_IWDG_ENABLE
 				IWDG_Feed();//1s周期的看门狗，来喂狗了
@@ -300,13 +300,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			if(is_buzzer_once)
 			{
 				TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,80.0); //打开蜂鸣器
-				is_buzzer_once = 0;
-				is_runOnce4biOnce = 0;
+				is_buzzer_once = FALSE;
+				is_runOnce4biOnce = FALSE;
 			}else{
 				if(!is_runOnce4biOnce)
 				{
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,0); //关闭蜂鸣器
-					is_runOnce4biOnce = 1;
+					is_runOnce4biOnce = TRUE;
 				}
 			}
 			
@@ -316,20 +316,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if(Timer_IT_flags._100msec >= 10)
 		{
 			Timer_IT_flags._100msec = 0;
-			Timer_IT_flags._1sec_flag = 1;
+			Timer_IT_flags._1sec_flag = TRUE;
 			Timer_IT_flags._1sec++;
 			
 			if(is_buzzer_bibi)
 			{
 				if(is_reversal) TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,80.0); //打开蜂鸣器
 				else TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,0); //关闭蜂鸣器
-				is_runOnce4bibi = 0;
+				is_runOnce4bibi = FALSE;
 				is_reversal = ~is_reversal;
 			}else{
 				if(!is_runOnce4bibi)
 				{
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,0);//关闭蜂鸣器
-					is_runOnce4bibi = 1;
+					is_runOnce4bibi = TRUE;
 				}
 				
 			}
@@ -339,16 +339,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		if(Timer_IT_flags._1sec >= 60)
 		{
             Timer_IT_flags._1sec = 0;
-			Timer_IT_flags._1min_flag = 1;
+			Timer_IT_flags._1min_flag = TRUE;
 			Timer_IT_flags._1min++;
 			
 			//发送1min标志的信号量任务通知
 			
 			if((Timer_IT_flags._1min > 666)){
-			Timer_IT_flags._1min = 0;
-			//_OutofTime_Running_flag = 1;
-			//CTRL_DCDC_ON_OFF = DCDC_OFF;
-			}//超过时间，可以设定强制关闭
+				Timer_IT_flags._1min = 0;
+				
+				//超过时间，可以设定强制关闭
+				//_OutofTime_Running_flag = 1;
+				//CTRL_DCDC_ON_OFF = DCDC_OFF;
+			}
 		}
     }
 	

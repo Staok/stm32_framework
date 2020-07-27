@@ -10,15 +10,17 @@ void Bare_Begin(void)
 	
 	for(;;)
 	{
+		/*注意：这里尽量不要用10毫秒中断标志！这里只用100毫秒、300毫秒、1秒和一分钟的中断标志，够用了*/
+		
 		/*100ms周期执行：可以为按键检测和处理等*/
-		if(Timer_IT_flags._100msec_flag == 1)
+		if(Timer_IT_flags._100msec_flag == TRUE)
         {
-            Timer_IT_flags._100msec_flag = 0;
+            Timer_IT_flags._100msec_flag = FALSE;
 		}
 		/*300ms周期执行：通常为运行时错误自检以及处理，刷屏等*/
-		if(Timer_IT_flags._300msec_flag == 1)
+		if(Timer_IT_flags._300msec_flag == TRUE)
 		{
-			Timer_IT_flags._300msec_flag = 0;
+			Timer_IT_flags._300msec_flag = FALSE;
 			/*集中故障巡检START*/
 			if(RunTimeFaultCheck_ENABLE)
 			{
@@ -44,15 +46,15 @@ void Bare_Begin(void)
 			
 		}
 		
-		if(Timer_IT_flags._1sec_flag == 1)
+		if(Timer_IT_flags._1sec_flag == TRUE)
 		{
-			Timer_IT_flags._1sec_flag = 0;
+			Timer_IT_flags._1sec_flag = FALSE;
 			
 		}
 		
-		if(Timer_IT_flags._1min_flag == 1)
+		if(Timer_IT_flags._1min_flag == TRUE)
 		{
-			Timer_IT_flags._1min_flag = 0;
+			Timer_IT_flags._1min_flag = FALSE;
 			
 		}
 	}

@@ -1,10 +1,11 @@
 #ifndef __SYS_MENU_H
 #define __SYS_MENU_H
 
+#include "sys.h"
 #include "printf.h"
 #include "MyString.h"
 
-/*______________________输入信息，基本不动_________________________________*/
+/*______________________按键输入信息，基本不动_________________________________*/
 //输入可以为独立按键、五项按键、AD Key、触摸按键、无线遥控、旋转编码器等
 //枚举，全局，常量，不能取地址
 enum inputValue_enum{
@@ -41,6 +42,7 @@ struct MenuItem
 	struct MenuItem *Childrenms;  		//指向子节点的指针
 	struct MenuItem *Parentms;  		//指向父节点的指针
 }; 
+void keyProcess(void);
 void menuProcess(void);
 char *Locate(struct MenuItem *MenuItemNow,char menuid[3]);
 void Run(struct MenuItem *MenuItemNow,	struct input_struct input);

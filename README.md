@@ -62,19 +62,21 @@
 
     （再次说明，具体实用方法看相应宏定义旁的注释，均在sys.h里）
     
-    -   SYSTEM_MCO_PA8_OUT：设置PA8为MCO输出，默认时钟源为HSE
-    -   SYSTEM_RTC_ENABLE：配置使用RTC
-    -   SYSTEM_CRC_ENABLE：配置使用CRC循环冗余校验
-    -   STSTEM_TIM4_ENABLE：模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断
-    -   STSTEM_TIM3PWM_ENABLE：模板基本功能，必须开启！使用通用定时器3，默认不开启中断，提供四路PWM输出；引脚重映射、中断、频率、占空比均提供修改
-    -   STSTEM_TIM2_ENABLE：通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义；提供定时器中断、PWM、输入捕获和正交解码功能，用户按需自定
-    -   SYSTEM_ADC1_ENABLE：启否ADC1；提供添加规则组通道、是否连续扫描、是否使用DMA等可选功能；有详细注释
-    -   SYSTEM_IWDG_ENABLE：开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4
-    -   SYSTEM_UARTx_ENABLE：开启串口，x = 1、2和3；引脚重映射和波特率可选
-    -   SYSTEM_SPIx_ENABLE：开启SPI，x = 1和2；尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射
-    -   SYSTEM_StdbyWKUP_ENABLE：使用待机-低功耗模式
-    -   SYSTEM_FLASH_IAP_ENABLE：启用对内部FLASH储存空间编程
-    -   GPIO相关的初始化、输入出和位带操作以及改变入出模式的调用口均在PeriphCconfig.c和PeriphCconfig.h里，有详细注释
+     MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ IAP \ IO \ SDIO \ LTDC LCD \ DCMI \ FSMC \ DMA \ DSP \ FPU \ USB \ CAN \ 以太网
+    
+    -   MCO：SYSTEM_MCO_PA8_OUT：设置PA8为MCO输出，默认时钟源为HSE
+    -   RTC：SYSTEM_RTC_ENABLE：配置使用RTC
+    -   CRC：SYSTEM_CRC_ENABLE：配置使用CRC循环冗余校验
+    -   TIM4：STSTEM_TIM4_ENABLE：模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断
+    -   TIM3：STSTEM_TIM3PWM_ENABLE：模板基本功能，必须开启！使用通用定时器3，默认不开启中断，提供四路PWM输出；引脚重映射、中断、频率、占空比均提供修改
+    -   TIM2：STSTEM_TIM2_ENABLE：通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义；提供定时器中断、PWM、输入捕获和正交解码功能，用户按需自定
+    -   ADC1：SYSTEM_ADC1_ENABLE：启否ADC1；提供添加规则组通道、是否连续扫描、是否使用DMA等可选功能；有详细注释
+    -   IWDG：SYSTEM_IWDG_ENABLE：开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4
+    -   USART：SYSTEM_UARTx_ENABLE：开启串口，x = 1、2和3；引脚重映射和波特率可选
+    -   SPI：SYSTEM_SPIx_ENABLE：开启SPI，x = 1和2；尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射
+    -   WFI：SYSTEM_StdbyWKUP_ENABLE：使用待机-低功耗模式
+    -   FLASH：SYSTEM_FLASH_IAP_ENABLE：启用对内部FLASH储存空间编程
+    -   IO：GPIO相关的初始化、输入出和位带操作以及改变入出模式的调用口均在PeriphCconfig.c和PeriphCconfig.h里，有详细注释
     -   DAC：缺省
     -   SDIO：缺省
     -   IAP：缺省
@@ -85,4 +87,6 @@
     -   DCMI：缺省
     -   USB：缺省
     -   CAN：缺省
+
+如果觉得好用，使用时还请别忘加上本仓库的地址哦：https://github.com/Staok/stm32_framework
 

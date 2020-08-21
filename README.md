@@ -1,5 +1,5 @@
 # stm32_framework
-一个计划实现STM32F1和F4的工程模板，包含高级封装的HAL库外设驱动、Menu、FreeRTOS、STemWin、LWIP、USB、FATFS、DSP等，以及包含加密、BPNN、最小二乘等诸多便利的组件和算法，并具有良好的易用性。
+一个计划实现STM32F1和F4工程模板的项目，包含高级封装的HAL库外设驱动、Menu、FreeRTOS、STemWin、LWIP、USB、FATFS、DSP等，以及包含加密、BPNN、最小二乘等诸多便利的组件和算法，并具有良好的易用性。
 
 目前只有F1，当F1完成后，F4就快了...吧。
 
@@ -13,17 +13,16 @@
 -   LWIP
 -   FATFS
 -   PID算法
--   ringbuf
+-   ringbuf环形缓冲（类FIFO）
 -   Menu框架
--   string、sprintf库
 -   无依赖的string库和sprintf库
 -   软件模拟I2C\SPI
 -   线性回归
 -   常用校验、加密算法（MD5 \ ...）
--   音频编解码（MP3转幅度数据，外接一个功放直接播放）
--   Modbus
--   MQTT（包含cjson）
--   JPEG GIF BMP解析+BMP编码
+-   音频编解码（MP3转PCM，外接一个功放直接播放）
+-   Modbus协议
+-   MQTT协议（包含cjson）
+-   JPEG、GIF解码和BMP编解码
 
 ## 组件说明
 
@@ -56,7 +55,7 @@
     -   音频编解码：缺省
     -   Modbus：缺省
     -   MQTT：缺省
-    -   JPEG GIF BMP解析+BMP编码：缺省
+    -   JPEG、GIF解码和BMP编解码：缺省
 
 3.  ### 框架基础外设
 

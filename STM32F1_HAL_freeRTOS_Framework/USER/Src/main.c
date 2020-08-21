@@ -20,4 +20,12 @@ int main(void)
 	}
 }
 
+/*
+*项目说明：STM32F1编程框架
+*作者：Staok
+*联系：邮箱 superxhy@qq.com
+*开源地址：仓库地址 https://github.com/Staok/stm32_framework
+*如果觉得好用，请注明开源仓库地址，待我以后研究下开源协议再加上开源协议嘿嘿
+*/
+
 

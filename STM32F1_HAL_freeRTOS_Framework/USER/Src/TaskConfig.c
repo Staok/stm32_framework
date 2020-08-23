@@ -57,8 +57,8 @@ void Task_Begin(void)
     {
         vTaskStartScheduler();          //开启任务调度
     }else{
-		FaultASSERT(0,"AT : Creating start_t failed",((uint8_t*)is_error));
-        //for(;;){;}
+		FaultASSERT("AT : Creating start_t failed,sys stoped");
+        for(;;){;}
     }
 }
 

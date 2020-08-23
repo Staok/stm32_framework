@@ -3,6 +3,7 @@
 
 /*
 命名规范：（临时）
+	0、函数命名规则为“属什么是什么做什么”，如：sys_irq_disable()
 	1、系统使用外设功能的启用与否均用宏定义SYSTEM_SUPPORT_XX
 	2、RTOS任务函数均使用xx_task()命名
 	3、任务函数与任务名称一致，任务索引与函数一致，只是task部分简写为t
@@ -31,6 +32,7 @@
 	5、尽量减少数据传输过程中的拷贝，常用指针、结构体指针当传输数据
 	6、调用函数尽量不用NULL实参，尽量给一个具体的值
 	7、外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
+	8、函数返回值：负数表错误，0表正确，正数表正确并带返回信息
 */
 
 /*
@@ -152,7 +154,7 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 这个CRC计算模块使用常见的、在以太网中使用的计算多项式：
 X32 + X26 + X23 + X22 + X16 + X12 + X11 + X10 +X8 + X7 + X5 + X4 + X2 + X + 1
 写成16进制就是：0x04C11DB7*/
-#define SYSTEM_CRC_ENABLE		0
+#define SYSTEM_CRC_ENABLE		1
 /*
 F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 高级定时器1、8（定时器中断，
@@ -212,7 +214,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 #define STSTEM_TIM2_ENABLE		1			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
 	#define STSTEM_TIM2_TI_ENABLE	1		/*是否开启定时器2的定时中断*/
 	
-	#define STSTEM_TIM2_asPWMorCap	3		/*选择定时器2作为...注：PWM(输出比较)、输入捕获和正交解码三个功能不能共用！*/
+	#define STSTEM_TIM2_asPWMorCap	2		/*选择定时器2作为...注：PWM(输出比较)、输入捕获和正交解码三个功能不能共用！*/
 											/*写3作为正交编码器的解码使用，只能使用CH1和CH2，即PA15和PB3，默认使用两路边沿触发，计数值为单路上升沿数的四倍
 												正交解码使用到TIM2的定时中断，必须打开！但在初始化时已经默认打开*/
 											/*写2作为普通定时器中断使用*/
@@ -425,8 +427,8 @@ void sys_MCU_Init_Seq(void);				/*MCU外设初始化序列，所有初始化写到这里面*/
 void sys_Device_Init_Seq(void);				/*器件外设初始化，并开机自检*/
 
 extern uint8_t is_quitFault;
-void FaultASSERT(uint8_t errNum,char* message,uint8_t* is_quit);				/*表示初始化有问题，串口提示，指示灯或者蜂鸣器进行提示，并进入死循环*/
-uint8_t Stm32_Clock_Init(uint32_t PLL);		/*时钟系统配置*/
+void FaultASSERT(char* FaultMessage);				/*表示初始化有问题，串口提示，指示灯或者蜂鸣器进行提示，并进入死循环*/
+int8_t Stm32_Clock_Init(uint32_t PLL);		/*时钟系统配置*/
 
 #if SYSTEM_UART1_ENABLE||SYSTEM_UART2_ENABLE||SYSTEM_UART3_ENABLE
 	#define UART1	1

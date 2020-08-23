@@ -9,7 +9,7 @@
 #define TRUE 1
 #define FALSE 0
 #define ReturnOK 0
-#define ReturnErr 1
+#define ReturnErr -1
 #define M_PI  3.14159265358979323846
 
 //定义一些常用的数据类型短关键字 

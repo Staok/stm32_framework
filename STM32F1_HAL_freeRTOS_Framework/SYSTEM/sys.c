@@ -5,15 +5,15 @@
 
 
 3、写顺序：
-	移植菜单模板，连带按键检测也都搞了
-	FLASH存储开机次数
-	定时器：RTOS发送任务通知
-	开始完成裸机基本框架，加个菜单框架，再按照我的计划里有的
-	开始完成RTOS框架，写上所有API
-	歇会儿
-	开始所有HAL库的罗列！可以参考的：原子的HAL手册和历程直接复制；硬石的HAL每天一例（这个很多）；安富莱
-	其他FATFS等更多器件的驱动，参考优秀工程框架
-	LWIP STemWIN
+	完成	移植菜单模板，连带按键检测也都搞了
+	完成	FLASH存储开机次数
+	待做	定时器：RTOS发送任务通知
+	待完善	开始完成裸机基本框架，加个菜单框架，再按照我的计划里有的
+	完成	开始完成RTOS框架，写上所有API
+	...		歇会儿
+	待做	开始所有HAL库的罗列！可以参考的：原子的HAL手册和历程直接复制；硬石的HAL每天一例（这个很多）；安富莱
+	待做	其他FATFS等更多器件的驱动，参考优秀工程框架
+	待做	LWIP STemWIN
 
 */
 
@@ -30,7 +30,6 @@ u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
 u8 adValueDone = 0;		/*DMA把ADC1的值传送到adValue完成标志*/
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
-static uint8_t Init_OK_Num = 0;
 uint8_t is_quitFault;
 void sys_MCU_Init_Seq(void)
 {
@@ -48,72 +47,60 @@ void sys_MCU_Init_Seq(void)
 	__HAL_RCC_AFIO_CLK_ENABLE();
 	__HAL_AFIO_REMAP_SWJ_NOJTAG();
 	
-	Init_OK_Num++;
 	/*delay初始化*/
 	delay_init();
-	Init_OK_Num++;
 	/*设置MCO*/
 	#if SYSTEM_MCO_PA8_OUT
 		sys_MCO_Out_Enable();
-		Init_OK_Num++;
 	#endif
 	/*设置RTC*/
 	#if SYSTEM_RTC_ENABLE
-		if(sys_RTC_Enable() != ReturnOK)
-		{
-			FaultASSERT(Init_OK_Num,"AT : sys_RTC_Enable",&is_quitFault);
-			if(sys_RTC_Enable() == ReturnOK) is_quitFault = TRUE;
-		}
-		Init_OK_Num++;
+		sys_RTC_Enable();
 	#endif
 	/*设置CRC*/
 	#if SYSTEM_CRC_ENABLE
-		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) != uwExpectedCRCValue)
-		{
-			FaultASSERT(Init_OK_Num,"AT : HAL_CRC_Accumulate",&is_quitFault);
-			if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue) is_quitFault = TRUE;
-		}
-		Init_OK_Num++;
+		sys_CRC_ENABLE();
+		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
+		{}else{FaultASSERT("AT : CRC init");}
 	#endif
 	/*初始化并启动TIM4*/
 	#if STSTEM_TIM4_ENABLE
 		sys_TIM4_ENABLE();
-		Init_OK_Num++;
 	#endif
 	/*初始化并启动TIM3PWM通道*/
 	#if STSTEM_TIM3PWM_ENABLE
 		sys_TIM3PWM_ENABLE();
-		Init_OK_Num++;
 	#endif
 	/*按照设定初始化串口1、2、3*/
 	#if SYSTEM_UART1_ENABLE
 		sys_USART1_ENABLE();
-		Init_OK_Num++;
 	#endif
 	#if SYSTEM_UART2_ENABLE
 		sys_USART2_ENABLE();
-		Init_OK_Num++;
 	#endif
 	#if SYSTEM_UART3_ENABLE
 		sys_USART3_ENABLE();
-		Init_OK_Num++;
 	#endif
 	/*初始化看门狗*/
 	#if SYSTEM_IWDG_ENABLE
 		sys_IWDG_ENABLE();
-		Init_OK_Num++;
 	#endif
 	
-	/*获取HCLK频率，外设时钟均来自此再分频*/
+	printf_uart(UART1,"Author : Staok\nEmail : superxhy@qq.com\nRepo : https://github.com/Staok/stm32_framework\nSystem starting...\n");
+	
+	/*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
 	sysCoreClock = HAL_RCC_GetHCLKFreq(); 
-	/*保存STM32内部UID识别码，全球唯一识别码*/
+	printf_uart(UART1,"sysCoreClock/HCLK : %d\n",sysCoreClock);
+	/*保存STM32内部UID识别码并打印，全球唯一识别码*/
 	UIDw[0] = HAL_GetUIDw0();UIDw[1] = HAL_GetUIDw1();UIDw[2] = HAL_GetUIDw2(); 
+	printf_uart(UART1,"UID : %d %d %d\n",UIDw[0],UIDw[1],UIDw[2]);
 	
 	#if SYSTEM_FLASH_IAP_ENABLE
 		//获取开机次数
 		STMFLASH_Read( 	(0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
 		StartUpTimes += 1;
 		STMFLASH_Write( (0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
+		printf_uart(UART1,"StartUpTimes : %d\n",StartUpTimes);
 	#endif
 	
 }
@@ -161,25 +148,18 @@ void sys_Device_Init_Seq(void)
 	
 	
 	buzzer_bibi_once; //响一声表示初始化结束
-
+	printf_uart(UART1,"System init over\n");
 }
 
 /*表示初始化有问题，串口提示，灯提示，声提示，并进入死循环*/
-/*传入参数：错误代码，错误提示信息，退出本函数的标志位*/
-void FaultASSERT(uint8_t errNum,char* message,uint8_t* is_quit)
+/*传入参数：错误提示信息*/
+void FaultASSERT(char* FaultMessage)
 {
 	/*往串口1发送数据*/
-	printf_uart(UART1,"Fault : %d\t",errNum);
-	printf_uart(UART1,"Message : %s\n",message);
+	printf_uart(UART1,"Fault Message : %s\n",FaultMessage);
 	//灯提示，声提示
 	
 	buzzer_bibi_on;
-	if(!(*is_quit))
-	{
-		delay_ms(233);
-		return ;//这里仍可以进行检测，如果恢复正常则可以继续跑或者复位
-	}
-	buzzer_bibi_off;
 }
 /*__________时钟系统配置函数_____________*/
 /********************************
@@ -188,7 +168,7 @@ void FaultASSERT(uint8_t errNum,char* message,uint8_t* is_quit)
 *返回值：	1、ReturnOK,成功
 			2、ReturnErr,失败
 ********************************/
-uint8_t Stm32_Clock_Init(uint32_t PLL)
+int8_t Stm32_Clock_Init(uint32_t PLL)
 {
     HAL_StatusTypeDef ret = HAL_OK;
     RCC_OscInitTypeDef RCC_OscInitStructure; 

@@ -19,7 +19,7 @@ typedef struct
 extern RingBuff_Typedef RingBuff_forUSART1;
 
 #define ReturnOK	0
-#define ReturnErr	1
+#define ReturnErr	-1
 char WriteDataToRingbuff(RingBuff_Typedef* ringbuf_Struct, char Data);
 char ReadDataFromRingbuff(RingBuff_Typedef* ringbuf_Struct);
 

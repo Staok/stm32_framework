@@ -28,7 +28,7 @@ char WriteDataToRingbuff(RingBuff_Typedef* ringbuf_Struct, char Data)
 		}
 		
 		ringbuf_Struct->ringbuf[ringbuf_Struct->ad2write] = ringbuf_Struct->data;
-		ringbuf_Struct->is_success = ReturnOK;
+		ringbuf_Struct->is_success = (char)ReturnOK;
 		return ringbuf_Struct->is_success;
 	}else{ /*此时 ad2write <= ad2read*/
 		/*		      												       ad2read(指向第一个有数据的前一个位置)
@@ -39,11 +39,11 @@ char WriteDataToRingbuff(RingBuff_Typedef* ringbuf_Struct, char Data)
 		if((ringbuf_Struct->ad2write > ringbuf_Struct->ad2read)&&(!ringbuf_Struct->readOverRing))
 		{
 			ringbuf_Struct->ad2write--;
-			ringbuf_Struct->is_success = ReturnErr;
+			ringbuf_Struct->is_success = (char)ReturnErr;
 			return ringbuf_Struct->is_success;
 		}else{
 			ringbuf_Struct->ringbuf[ringbuf_Struct->ad2write] = ringbuf_Struct->data;
-			ringbuf_Struct->is_success = ReturnOK;
+			ringbuf_Struct->is_success = (char)ReturnOK;
 			return ringbuf_Struct->is_success;
 		}
 	}
@@ -61,11 +61,11 @@ char ReadDataFromRingbuff(RingBuff_Typedef* ringbuf_Struct)
 		if((ringbuf_Struct->ad2read > ringbuf_Struct->ad2write)&&(!ringbuf_Struct->writeOverRing))
 		{
 			ringbuf_Struct->ad2read--;
-			ringbuf_Struct->is_success = ReturnErr;
+			ringbuf_Struct->is_success = (char)ReturnErr;
 			return ringbuf_Struct->is_success;
 		}
 		ringbuf_Struct->data = ringbuf_Struct->ringbuf[ringbuf_Struct->ad2read];
-		ringbuf_Struct->is_success = ReturnOK;
+		ringbuf_Struct->is_success = (char)ReturnOK;
 		return ringbuf_Struct->is_success;
 	}else{ /*此时ad2write < ad2read*/
 		/*		      												        ad2read(指向第一个有数据的前一个位置)
@@ -81,7 +81,7 @@ char ReadDataFromRingbuff(RingBuff_Typedef* ringbuf_Struct)
 		}
 		
 		ringbuf_Struct->data = ringbuf_Struct->ringbuf[ringbuf_Struct->ad2read];
-		ringbuf_Struct->is_success = ReturnOK;
+		ringbuf_Struct->is_success = (char)ReturnOK;
 		return ringbuf_Struct->is_success;
 	}
 }

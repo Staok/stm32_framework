@@ -71,8 +71,6 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
-//#include "sys.h"
-//#include "usart.h"
 //针对不同的编译器调用不同的stdint.h文件
 #if defined(__ICCARM__) || defined(__CC_ARM) || defined(__GNUC__)
     #include <stdint.h>
@@ -86,6 +84,7 @@
 /***************************************************************************************************************/
 /*                                        FreeRTOS基础配置配置选项                                              */
 /***************************************************************************************************************/
+#define SYSTEM_SUPPORT_OS						0						//注意：还要在sys.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则FreeRTOS跑不起来！*/
 #define configCHECK_FOR_STACK_OVERFLOW			0                       //大于0时启用堆栈溢出检测功能，如果使用此功能
                                                                         //用户必须提供一个栈溢出钩子函数，如果使用的话
                                                                         //此值可以为1或者2表示用哪种方法监测，1快速但会有遗漏，2略慢但是更全面
@@ -126,7 +125,7 @@
 /*                                FreeRTOS与内存申请有关配置选项                                                */
 /***************************************************************************************************************/
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       //支持动态内存申请
-#define configTOTAL_HEAP_SIZE					((size_t)(5*1024))     //系统所有总的堆大小
+#define configTOTAL_HEAP_SIZE					((size_t)(10*1024))     //系统所有总的堆大小
 //->等待设置<-
 /*
 FLASH               RAM

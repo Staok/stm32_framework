@@ -1,9 +1,25 @@
 #ifndef __SYS_H
-#define __SYS_H	
+#define __SYS_H
+
+#include "sysVar.h"								/*定义系统级常用的变量、数据类型和二进制表示宏*/
+#include "stm32f1xx.h"
+#include "stm32f1xx_hal.h"						/*在里面的stm32f1xx_hal_conf.h里面选择用哪些外设的HAL库——————！按需要进行修改！*/
+#include "PeriphConfig.h"
+#include "FIFO.h"								/*用Github上面的一个开源仓库，
+												一个实现对任何形式数据的环形缓存，默认已经用于串口接收，参考程序看.h文件内
+												开源仓库地址：https://github.com/geekfactory/FIFO.git*/
+												
+												
+												
+/*用户设备驱动和APP文件调用*/
+#include "lcd.h"
+#include "GUI.h"
+												
+												
 
 /*
 编程规范：
-	Nu.1：紧凑，通用，可迭代，高内聚低耦合，广泛借鉴
+	No.1：紧凑，通用，可迭代，高内聚低耦合，广泛借鉴
 
 */
 
@@ -84,16 +100,17 @@ STM32F
 		  1		  1			SRAM
 */
 
-#define SYSTEM_SUPPORT_OS		1				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
+#define SYSTEM_SUPPORT_OS		0				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
 													FreeRTOS版本：v10.3.1
 													默认用于任务的RAM堆栈大小为5KB，按需修改！
-												*/
-#define SYSTEM_SUPPORT_Menu		0				/*提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
+												注意：还要在FreeRTOSConfig.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则系统不会调用FreeRTOS的任务切换SVC中断函数，跑不起来！*/
+
+#define SYSTEM_SUPPORT_Menu		0				/*模板固定搭配！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
 /*
 	keyProcess(); 	//获取键值输入函数；对于RTOS，直接放一个任务；对于裸机，放while大循环里（默认没放）
 	menuProcess();	//菜单处理的主函数；对于RTOS，直接放一个任务；对于裸机，放while大循环里（默认没放）
 */
-#define SYSTEM_SUPPORT_MyString	0				/*提供一个实现了string.h大部分字符操作函数的库*/
+#define SYSTEM_SUPPORT_MyString	1				/*提供一个实现了string.h大部分字符操作函数的库*/
 /*具体作用看MyString.c文件里的注释
 int mystrlen (const char *str);
 char * mystrcat (char *dest, const char *src);
@@ -105,9 +122,10 @@ int mystrncmp (const char *s1, const char *s2, int n);
 void * mymemset (void *s, int c, unsigned n);
 */
 int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
-#define SYSTEM_SUPPORT_sprintf	1				/*包含且编译printf.h，github开源文件，无依赖，功能比较全。
+u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*提供获取系统运行时间的函数，具体看源函数处注释*/
+#define SYSTEM_SUPPORT_sprintf	1				/*模板固定搭配！包含且编译printf.h，github开源文件，无依赖，功能比较全。
 													约占6KB，对于stm32够，对于其他小容量MCU则看“其他几个sprintf实现”文件夹里面的,不要纠结了。
-													https://github.com/mpaland/printf
+													开源仓库地址：https://github.com/mpaland/printf
 													提供API：
 													int printf(const char* format, ...); 								不用
 													int printf_uart(unsigned char uart,const char* format, ...); 		用，可选发送串口
@@ -117,6 +135,9 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 												注意：另在SYSTEM文件夹内提供strprintf.h，功能比较单一，但很小。
 												*/
 #define SYSTEM_SUPPORT_pid		0				/*提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面*/
+												/*里面另提供一个一阶低通滤波实现函数*/
+												/*一阶低通滤波器 float FirstOrderLPF(float NewValue);*/
+												
 
 /*所有main的头文件都放在这里*/
 #if SYSTEM_SUPPORT_OS
@@ -126,12 +147,6 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 #else
 	#include "BareConfig.h"
 #endif
-
-#include "sysVar.h"								/*定义系统级常用的变量、数据类型和二进制表示宏*/
-#include "stm32f1xx.h"
-#include "stm32f1xx_hal.h"						/*在里面的stm32f1xx_hal_conf.h里面选择用哪些外设的HAL库——————！按需要进行修改！*/
-#include "PeriphConfig.h"
-#include "ringbuf.h"							/*实现的一个环形缓存，用于串口接收模式*/
 
 #if SYSTEM_SUPPORT_Menu
 	#include "sys_menu.h"
@@ -153,13 +168,32 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 #define SYSTEM_MCO_PA8_OUT		0				/*设置PA8为MCO输出，默认时钟源为HSE*/
 
 /*配置使用RTC，确保LSE连接有36.768kHz的晶振，确保RTC有VBAT备用电源
-说明：按需要在配置函数内设置：时间，闹钟，读存BKP
-其他：系统在待机模式下可选被闹钟唤醒*/
-#define SYSTEM_RTC_ENABLE		0				
+说明：	按需要在配置函数内设置：时间，闹钟，读存BKP
+		默认开启RTC闹钟中断，系统在待机模式下可选被闹钟唤醒
+API:
+	RTC_Set(2049,10,1,17,7,0); 				//设置RTC日期和时间，年月日时分秒，2049年10月1日，17点07分0秒
+	RTC_Alarm_Set(2149,10,1,17,7,0);		//设置RTC闹钟日期和时间，年月日时分秒，2149年10月1日，17点07分0秒
+	
+	typedef struct //时间结构体
+	{
+		vu8 hour;
+		vu8 min;
+		vu8 sec;			
+		//公历日月年周
+		vu16 w_year;
+		vu8  w_month;
+		vu8  w_date;
+		vu8  week;	
+	}_calendar_obj;					 
+	extern _calendar_obj calendar;				//用户用！RTC结构体，实际用时只需要读这个结构体获取时间即可
+*/
+#define SYSTEM_RTC_ENABLE		1				
 /*配置使用CRC循环冗余校验
 这个CRC计算模块使用常见的、在以太网中使用的计算多项式：
 X32 + X26 + X23 + X22 + X16 + X12 + X11 + X10 +X8 + X7 + X5 + X4 + X2 + X + 1
-写成16进制就是：0x04C11DB7*/
+写成16进制就是：0x04C11DB7
+API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    114
+	HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE); //返回值为uint32_t的计算结果*/
 #define SYSTEM_CRC_ENABLE		1
 /*
 F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
@@ -217,7 +251,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 
 
 /*通过用定时器2：16位，四个独立通道可用于：输入捕获、输入比较、PWM、单脉冲，多种途径触发DMA中断*/
-#define STSTEM_TIM2_ENABLE		1			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
+#define STSTEM_TIM2_ENABLE		0			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
 	#define STSTEM_TIM2_TI_ENABLE	1		/*是否开启定时器2的定时中断*/
 	
 	#define STSTEM_TIM2_asPWMorCap	2		/*选择定时器2作为...注：PWM(输出比较)、输入捕获和正交解码三个功能不能共用！*/
@@ -323,6 +357,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 	*/
 		
 #define SYSTEM_IWDG_ENABLE		1			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/
+											/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
 
 /*开启串口，x8/xB系列有三个串口，最好不超过2M位每秒。默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断*/
 /*串口方面可用API，看SYSTEM_SUPPORT_sprintf宏定义的注释*/
@@ -331,6 +366,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 #define SYSTEM_UART1_REMAP_ENABLE	0		/*串口1引脚重映射：TX/PB6, RX/PB7		*/
 #define SYSTEM_UART1_BOUND			115200	/*串口1波特率*/
 
+/*注：串口2在目前不能用，没有反应，不知道是HAL库问题还是芯片问题*/
 #define SYSTEM_UART2_ENABLE			0		/*使能串口2	       TX/PA2, RX/PA3		*/
 #define SYSTEM_UART2_REMAP_ENABLE	0		/*串口2引脚重映射：TX/PD5, RX/PD6，可以设置，但对于C8T6无此引脚*/
 #define SYSTEM_UART2_BOUND			115200	/*串口2波特率*/
@@ -338,19 +374,29 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 #define SYSTEM_UART3_ENABLE			0		/*使能串口3	       TX/PB10, RX/PB11		*/
 #define SYSTEM_UART3_REMAP_ENABLE	0		/*串口3引脚重映射：TX/PD8,  RX/PD9，可以设置，但对于C8T6无此引脚*/
 #define SYSTEM_UART3_BOUND			115200	/*串口3波特率*/
-/*可用的API：
+/*可用的API： 目前串口接收的问题就是一次涌入数据过多会崩，可能是存储数据时栈溢出，但是暂时找不到在哪里，小数据量接收没大问题
 	发送：	如果启用 SYSTEM_SUPPORT_sprintf ，则可用：不要用printf！
 				参数：UART1~UART3
 				printf_uart(UART1,"Fault : %d\t",x);
 				也可以用	sprintf(char* buffer, const char* format, ...); 				不带字节数量限制
 							snprintf(char* buffer, size_t count, const char* format, ...); 	带字节数量限制，更安全
-			如果没有启用 SYSTEM_SUPPORT_sprintf ，则可用：
+			如果没有启用 SYSTEM_SUPPORT_sprintf ，则可用以下：
 			参数：UART1_Handler~UART3_Handler ， 发送数据的字符类型指针 ， 数据长度(字节数} ， 超时时间
 				HAL_UART_Transmit(&UART1_Handler,UART_BUF,12,10); 				发送函数
 				while(__HAL_UART_GET_FLAG(&UART1_Handler,UART_FLAG_TC)!=SET); 	等待发送结束
 	接收：（以下只针对串口1说明）（一次接收字符不要超过200个字节，如果超出则丢弃之后的数据）
-			接受协议设置(默认协议0)：USART1_SetMode(0);	串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出的环形缓存实现接受区，无协议
-			接受协议设置可用随时切换，切换后接收方式也随下面的说明换。
+			接受协议设置(默认协议0)：USART1_SetMode(0);	串口1接受协议：0为只接受以'\r\n'结尾的数据（数据以去掉\r\n保存），1为以FIFO先进先出的环形缓存实现接受区，数据原样保存，无协议
+				接受协议设置可用随时切换，切换后接收方式也随下面的说明换。
+			统一接收函数： 返回returnOK即有数据可以取，反之为ReturnErr；is_print：是否打印接收到的数据；buf用于存放接收到的数据，必须先给个足够大的容器
+							char sys_USART1_RX_Fetch(u8 is_print, char* buf)
+							用例：
+								char buf4uart1[(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum) ? (USART1_RX_BUF_MaxNum):(USART1_RX_FIFO_MaxNum)];
+								if(sys_USART1_RX_Fetch(FALSE, buf4uart1) == ReturnOK)
+								{
+									printf_uart(UART1,"%s-",buf4uart1);
+									printf_uart(UART1,"%d",mystrlen(buf4uart1));
+								}
+			以下两个是协议0、1的接收细节，已经在sys_USART1_RX_Fetch()内实现，一般不用看
 			协议0：
 				接受区缓存大小设置：#define USART1_RX_BUF_MaxNum 200 这个语句在下面串口宏定义区里面
 				判断是否接收完成一次：USART1_isDone		用于判断是否接受完成一次 例子： if(USART1_isDone){表示接收完成一次}
@@ -358,10 +404,15 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 				接收缓存区：	USART1_RX_BUF[x] ，x : 0~USART1_RX_ByteNum
 				接受成功一次之后，处理完数据之后，清接收完成标志：USART1_SetUnDone;
 			协议1：
-				接受区缓存大小设置：#define ringbuf_MaxNum 200 这个语句在ringbuf.h里面
-				res = ReadDataFromRingbuff(&RingBuff_forUSART1); 返回值如果为 ReturnOK 则为成功，若为 ReturnErr 则失败，不要从下一条语句拿取数据
-				RingBuff_forUSART1.data 从这里拿取数据 char类型
-				可用一直拿到 ReadDataFromRingbuff 返回为 ReturnErr 为止，由于没有协议，只是储存，所以没有接收完成标志
+				以FIFO储存区接收保存数据，FIFO初始化函数在sys.c里面的串口初始化函数中
+				接受区缓存大小设置：#define USART1_RX_FIFO_MaxNum 200 这个语句在下面串口宏定义区里面
+				while (!fifo_is_empty(Uart1_fifo))
+				{
+					char/int/float/struct... fifodata;
+					fifo_get(Uart1_fifo, &fifodata);	//fifodata可以为各种字符型、整形、浮点型、结构体型等等
+					printf_uart(UART1,"%c",fifodata); 
+				}
+				由于没有协议，只是储存，所以没有接收完成标志
 				
 */
 
@@ -375,7 +426,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 	SPI1->CS	SPI1->CLK	SPI1->MISO	SPI1->MOSI 	—————— 	SPI2->CS	SPI2->CLK	SPI2->MISO	SPI2->MOSI
 	PA4			PA5			PA6			PA7					PB12		PB13		PB14		PB15
 */
-#define SYSTEM_SPI1_ENABLE		1		/*使能SPI1*/
+#define SYSTEM_SPI1_ENABLE		0		/*使能SPI1*/
 #define SYSTEM_SPI2_ENABLE		0		/*使能SPI2*/
 /*提供API：
 	用户自定SS引脚：
@@ -397,11 +448,13 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 睡眠： WFI操作进入，任意中断恢复，CPU时钟关，其他外设时钟维持																		（不可用）
 停止：HSI、HSE时钟关，电压调节器开关需设置，任一外部中断唤醒，典型电流值为20uA														（不可用）
 待机：HSI、HSE时钟关，电压调节器关，SRAM和寄存器内容丢失，仅电源控制寄存器和备份区域不受影响
-		唤醒条件：WKUP按键上升沿，RTC警告事件，复位按键，看门狗复位，典型电流值为2uA，为三个模式中最低 	类似于开关机				（可用）
+		唤醒条件：WKUP按键上升沿，RTC警告事件，复位按键，看门狗复位（！），典型电流值为2uA，为三个模式中最低 	类似于开关机		（可用）
 		WKUP 在PA0
 */
-#define SYSTEM_StdbyWKUP_ENABLE	0		/*使用待机-低功耗模式*/
+#define SYSTEM_StdbyWKUP_ENABLE	0		/*使用待机-低功耗模式（占用0线外部中断）*/
+										/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
 /*当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复，进入待机模式函数在PA0的外部中断里*/
+//对于PA0，按下为高电平，按下3s后松开，延时一秒（给时间做保存数据等关机前的准备）后进入待机状态（关机），再次按下开机
 /*WKUP IO不用外接下拉电阻，在配置时STM32内部已经上拉*/
 
 /*不同容量的FLASH组织方式：
@@ -433,10 +486,14 @@ void sys_MCU_Init_Seq(void);				/*MCU外设初始化序列，所有初始化写到这里面*/
 void sys_Device_Init_Seq(void);				/*器件外设初始化，并开机自检*/
 
 extern uint8_t is_quitFault;
-void FaultASSERT(char* FaultMessage);				/*表示初始化有问题，串口提示，指示灯或者蜂鸣器进行提示，并进入死循环*/
+void FaultASSERT(char* FaultMessage);				/*表示初始化有问题，串口提示，指示灯或者蜂鸣器进行提示*/
 int8_t Stm32_Clock_Init(uint32_t PLL);		/*时钟系统配置*/
 
 #if SYSTEM_UART1_ENABLE||SYSTEM_UART2_ENABLE||SYSTEM_UART3_ENABLE
+	
+	#define USART1_RX_BUF_MaxNum 	500 	/*定义用协议0只接受以'\r\n'结尾的数据时可以存在字符数组里面的最大字节数目*/
+	#define USART1_RX_FIFO_MaxNum	200		/*定义用协议1用FIFO存储数据时可以存的最大字节数目*/
+	
 	#define UART1	1
 	#define UART2	2
 	#define UART3	3
@@ -447,11 +504,32 @@ int8_t Stm32_Clock_Init(uint32_t PLL);		/*时钟系统配置*/
 	void sys_USART2_ENABLE(void);
 	void sys_USART3_ENABLE(void);
 	
-	#define USART1_RX_BUF_MaxNum 200
+	
+	#define USART1_RX_DONE_mask 0x8000
+	#define USART1_RX_MODE_mask 0x4000
+	#define USART1_RX_Rec_r_mask 0x2000
+	#define USART1_RX_Num_mask 0x1fff /*0001 1111 1111 1111*/
+	
+
 	extern char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; /*串口1的模式1数据接受区*/
 	extern u16 USART1_RX_CONFIG;	/*    x            x           x        x xxxx xxxx xxxx      */
 									/*(接受完成) (协议模式0/1) (接收到\r)   串口1接受数据字节计数 */
 									/*串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出实现接受区，无协议*/
+									
+	#define USART1_SetDone 		USART1_RX_CONFIG |= USART1_RX_DONE_mask /*设置串口1接收完成标志位*/
+	#define USART1_SetUnDone 	USART1_RX_CONFIG &= USART1_RX_MODE_mask /*在任务中处理完后对串口1标志位进行复位，除了mode位，其他位都写0*/
+	#define USART1_Set_r_UnDone	USART1_RX_CONFIG &= (!USART1_RX_Rec_r_mask)
+	#define USART1_SetMode(x) 	USART1_RX_CONFIG |= (((u16)x)<<14) 		/*用户可用，在任务中设置串口1接收协议*/
+	#define USART1_isDone 		(USART1_RX_CONFIG & USART1_RX_DONE_mask)/*用户用，用于判断是否接受完成一次*/
+	#define USART1_RX_ByteNum 	(USART1_RX_CONFIG & USART1_RX_Num_mask)/*用户可用，返回接收的字符数量*/
+	
+//	extern char USART1_RX_FIFO_buf[USART1_RX_FIFO_MaxNum]; /*串口1的模式0的FIFO数据接受区*/
+//	extern fifo_t Test_fifo;
+//	extern fifo_t Test2_fifo;
+	extern fifo_t Uart1_fifo;
+	char sys_USART1_RX_Fetch(u8 is_print, char* buf);
+	
+	
 #endif
 
 #if SYSTEM_MCO_PA8_OUT
@@ -528,7 +606,7 @@ int8_t Stm32_Clock_Init(uint32_t PLL);		/*时钟系统配置*/
 		vu8  week;	
 	}_calendar_obj;					 
 	extern _calendar_obj calendar;				//用户用！RTC结构体，实际用时只需要读这个结构体获取时间即可
-	uint8_t sys_RTC_Enable(void);						/*RTC配置*/
+	char sys_RTC_Enable(void);						/*RTC配置*/
 	u8 Is_Leap_Year(u16 year);					//平年,闰年判断
 	u8 RTC_Get(void);         					//获取时间，在RTC秒中断中执行，自动更新calendar时间，用户不用管
 	u8 RTC_Get_Week(u16 year,u8 month,u8 day);

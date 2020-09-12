@@ -14,7 +14,7 @@ enum inputValue_enum{
 	down,
 	left,
 	right,
-	exit,
+	back,
 	enter
 };
 enum inputMode_enum{

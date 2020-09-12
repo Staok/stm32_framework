@@ -312,7 +312,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>3</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig</IncludePath>
+              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\Devices\LCD ILI9341</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -802,11 +802,6 @@
               <FilePath>..\SYSTEM\printf\printf.c</FilePath>
             </File>
             <File>
-              <FileName>ringbuf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\SYSTEM\ringbuf\ringbuf.c</FilePath>
-            </File>
-            <File>
               <FileName>sys_menu.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\SYSTEM\menu\sys_menu.c</FilePath>
@@ -820,6 +815,11 @@
               <FileName>PeriphConfig.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\SYSTEM\PeriphConfig\PeriphConfig.c</FilePath>
+            </File>
+            <File>
+              <FileName>FIFO.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\ringbuf\FIFO.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -905,6 +905,21 @@
         </Group>
         <Group>
           <GroupName>APP</GroupName>
+        </Group>
+        <Group>
+          <GroupName>Devices</GroupName>
+          <Files>
+            <File>
+              <FileName>GUI.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Devices\LCD ILI9341\GUI.c</FilePath>
+            </File>
+            <File>
+              <FileName>lcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Devices\LCD ILI9341\lcd.c</FilePath>
+            </File>
+          </Files>
         </Group>
       </Groups>
     </Target>

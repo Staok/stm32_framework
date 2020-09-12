@@ -8,9 +8,9 @@
 /*STEP1:定义都有什么器件*/
 enum devicesIndex_enum
 {
-	LCD = 0,
-	BUCK,
+	TestLED = 0,
 	KEY,
+	LCD,
 	
 	ALL		//最后这个固定的不要删
 };
@@ -18,8 +18,18 @@ enum devicesIndex_enum
 /*STEP3.5:填写用于外部中断的IO的中断标志位*/
 extern u8 key_Up_Interrupted;
 extern u8 key_Down_Interrupted;
+
+
+/*STEP5:定义IO控制的宏和改变入出模式的宏*/
 #define key_Up_ReadIn	HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_1)
 #define key_Down_ReadIn	HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
+
+#define	SPI1_CS PAout(4)  		//SPI1的片选信号
+#define	SPI2_CS PBout(12)  		//SPI2的片选信号
+
+#define TestLED_Ctrl	PBout(1)
+
+
 
 /*___________________________________以下不用动_________________________________________________*/
 /*单个IO口初始化结构体*/
@@ -72,6 +82,7 @@ extern Devices_Init_Struct UserDevices[];
 #define GPIOF_IDR_Addr    (GPIOF_BASE+8) //0x40011A08 
 #define GPIOG_IDR_Addr    (GPIOG_BASE+8) //0x40011E08 
  
+/*____________________________________________________________用户使用____________*/
 //IO口操作,只对单一的IO口!确保n的值小于16!
 #define PAout(n)   BIT_ADDR(GPIOA_ODR_Addr,n)  //输出 
 #define PAin(n)    BIT_ADDR(GPIOA_IDR_Addr,n)  //输入 
@@ -94,22 +105,32 @@ extern Devices_Init_Struct UserDevices[];
 #define PGout(n)   BIT_ADDR(GPIOG_ODR_Addr,n)  //输出 
 #define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)  //输入
 
+
+
 /*位带操作，8位或者16位一同读入读出*/
 /*注：x为16位数据类型：
 用法：	u16 data = 0xaaaa;
 		data = PBdataIn; 		//16位读入
 		PAdataOut(data);		//16位输出
-*/
+*//*____________________________________________________________用户使用____________*/
 #define PAdataOut(x) 	GPIOA->ODR=x; //数据输出
 #define PAdataIn     	GPIOA->IDR;   //数据输入
 
+/*____________________________________________________________用户使用____________*/
 #define PAh8dataOut(x)	PAdataOut(((GPIOA->IDR)&0x00ff)|((x<<8)&0xff00));	//PA高八位输出
 #define PAl8dataOut(x)	PAdataOut(((GPIOA->IDR)&0xff00)|(x&0x00ff));		//PA低八位输出
 #define PAh8dataIn		(((GPIOA->IDR)>>8)&0x00ff);							//PA高八位读取
 #define PAl8dataIn		((GPIOA->IDR)&0x00ff);								//PA低八位读取
 
+/*____________________________________________________________用户使用____________*/
 #define PBdataOut(x) 	GPIOB->ODR=x; //数据输出
 #define PBdataIn     	GPIOB->IDR;   //数据输入
+
+/*____________________________________________________________用户使用____________*/
+#define PBh8dataOut(x)	PBdataOut(((GPIOB->IDR)&0x00ff)|((x<<8)&0xff00));	//PB高八位输出
+#define PBl8dataOut(x)	PBdataOut(((GPIOB->IDR)&0xff00)|(x&0x00ff));		//PB低八位输出
+#define PBh8dataIn		(((GPIOB->IDR)>>8)&0x00ff);							//PB高八位读取
+#define PBl8dataIn		((GPIOB->IDR)&0x00ff);								//PB低八位读取
 
 /*输入输出模切换（不提供上下拉切换，应在初始化IO时想好上下拉）*/
 /*用法：
@@ -128,6 +149,7 @@ extern Devices_Init_Struct UserDevices[];
 #define PAmodeOutH(x)	{GPIOA->CRH &= (~(0x0000000F<<(calMove(x))));GPIOA->CRH|=(u32)3<<(calMove(x));}
 #define PAmodeOutL(x)	{GPIOA->CRL &= (~(0x0000000F<<(calMove(x))));GPIOA->CRL|=(u32)3<<(calMove(x));}
 
+/*____________________________________________________________用户使用____________*/
 #define PAmodeIn(x)		{if(x>7){PAmodeInH(x);}else{PAmodeInL(x);}}
 #define PAmodeOut(x)	{if(x>7){PAmodeOutH(x);}else{PAmodeOutL(x);}}
 
@@ -186,17 +208,25 @@ void sys_SPI1_ENABLE(void);
 void sys_SPI2_ENABLE(void);
 void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);
 void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);
-u8 SPI1_ReadWriteByte(u8 TxData);
+
+//写读8字节
+u8 SPI1_ReadWriteByte_8Byte(u8 TxData);
+//写读16字节，传入一个包含2字节的u8*指针
+u8 SPI1_ReadWriteByte_16Byte(u8* TxData);
+//写8字节
+u8 SPI1_WriteByte_8Byte(u8 TxData);
+//写16字节，传入一个包含2字节的u8*指针
+u8 SPI1_WriteByte_16Byte(u8* TxData);
+
 u8 SPI2_ReadWriteByte(u8 TxData);
 
 void sys_SPI1_SS_io_Init(void);
-#define	SPI1_CS PAout(4)  		//SPI1的片选信号
 void sys_SPI2_SS_io_Init(void);
-#define	SPI2_CS PBout(12)  		//SPI2的片选信号
 
 /*______________________低功耗StandbyMode________________________________*/
 
 void sys_StdbyWKUP_ENABLE(void);
+void sys_CheckWKUP_4RTOS(void);
 #if SYSTEM_StdbyWKUP_ENABLE
 	#define WKUP_KD HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0)  //PA0 检测是否外部WK_UP按键按下
 	u8 Check_WKUP(void);  			//检测WKUP脚的信号

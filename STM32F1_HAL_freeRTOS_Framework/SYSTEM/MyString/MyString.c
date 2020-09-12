@@ -146,4 +146,17 @@ void * mymemset (void *s, int c, unsigned n)
     return s;
 }
 
-/****************************************************************/
+/***************************ÄÚ´æ¿½±´*****************************/
+void *memcpy(void *des,const void *src,size_t len)
+{
+	char * result =des;
+	const char * from = src;
+	//assert(des&&src);
+	while(len--)
+	{   
+		 *(result++) = *(from++);
+	}      
+	return des;
+}
+
+

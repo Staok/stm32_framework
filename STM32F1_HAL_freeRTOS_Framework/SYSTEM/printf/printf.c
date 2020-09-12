@@ -944,7 +944,6 @@ __weak void _putchar(char character)
 			break;
 		default:break;
 	}
-	uart2sent = 0; /*»Ö¸´*/
   // send char to console etc.
 }
 

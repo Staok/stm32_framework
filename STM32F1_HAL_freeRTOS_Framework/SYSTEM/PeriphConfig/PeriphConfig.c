@@ -16,10 +16,21 @@ ______________________________【PIN MAP】_______________________________________
 		* 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15	ADC1各个通道引脚
 		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
 		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
-		* PA0												StandBy待机低功耗模式的唤醒按键WKUP
+		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
 		*...
 
 用户：	*
+*/
+
+/*_______________________________外设优先级划分___________________________________________*/
+/*
+优先级分组为4，只有0~15的16级抢占优先级
+
+  优先级
+	0			1				2				3				4				5				...
+   保留	   TIM4(时基)	 	按键外部中断	按键外部中断
+											   TIM3
+											   TIM2
 */
 
 /*___________________________器件IO配置___________________________________________*/
@@ -42,24 +53,35 @@ ______________________________【PIN MAP】_______________________________________
 	EXTI优先级：0~15
 	启否EXTI：TRUE或者FALSE
 */
-GPIO_Init_Struct LCD_IO_Struct[] = 
+GPIO_Init_Struct TestLED_IO_Struct[] = 
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  FALSE},
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE}
+	{{GPIO_PIN_1, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_RESET,		15,		  FALSE}
 };
-
-GPIO_Init_Struct BUCK_IO_Struct[] =
-{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  TRUE}
-};
-
 //用于菜单的外部输入按键
 GPIO_Init_Struct KEY_IO_Struct[] =
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
 	{{GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},
 	{{GPIO_PIN_2, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE}
 };
+
+GPIO_Init_Struct LCD_IO_Struct[] = 
+{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
+	{{GPIO_PIN_3, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_4, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_5, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_6, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_7, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	
+	{{GPIO_PIN_8, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_9, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_10, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_11, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_12, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_13, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_14, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+	{{GPIO_PIN_15, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		2,		  FALSE},
+};
+
 
 /*STEP3.5:填写用于外部中断的IO的中断标志位*/
 //当IO使用外部中断时，用一个标志位记录中断是否发生，把长时间的处理函数放到中断外面！
@@ -72,24 +94,29 @@ u8 key_Down_Interrupted 	= 	FALSE;
 Devices_Init_Struct UserDevices[devicesNum] = 
 {
 	{	
-		.deviceIO_Struct 	= 	LCD_IO_Struct	,		//器件IO配置结构体
-		.deviceIndex 		= 	LCD				,		//器件enum格式索引
-		.deviceName 		= 	"LCD"			,		//器件名称
-		.device_IOnum 		= 	8						//器件有多少个IO口
-	},
-	{
-		.deviceIO_Struct 	= 	BUCK_IO_Struct	,
-		.deviceIndex		= 	BUCK			,
-		.deviceName 		= 	"BUCK"			,
-		.device_IOnum 		= 	2
+		.deviceIO_Struct 	= 	TestLED_IO_Struct	,		//器件IO配置结构体
+		.deviceIndex 		= 	TestLED				,		//器件enum格式索引
+		.deviceName 		= 	"TestLED"			,		//器件名称
+		.device_IOnum 		= 	1							//器件有多少个IO口
 	},
 	{
 		.deviceIO_Struct 	= 	KEY_IO_Struct	,
 		.deviceIndex		= 	KEY				,
 		.deviceName 		= 	"Menu Key"		,
 		.device_IOnum 		= 	2
+	},
+	{	
+		.deviceIO_Struct 	= 	LCD_IO_Struct	,		//器件IO配置结构体
+		.deviceIndex 		= 	LCD				,		//器件enum格式索引
+		.deviceName 		= 	"LCD"			,		//器件名称
+		.device_IOnum 		= 	13						//器件有多少个IO口
 	}
 };
+
+/*STEP5:去.h文件里定义IO控制的宏和改变入出模式的宏*/
+
+
+
 /*初始化SPI1的SS器件选中引脚	默认PA4，用户可改*/
 void sys_SPI1_SS_io_Init(void)
 {
@@ -124,7 +151,7 @@ void sys_SPI2_SS_io_Init(void)
 /*___________________________器件IO配置函数___________________________________________*/
 void Devices_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2Init)
 {
-	u8 dIndex;
+	static u8 dIndex;
 	if(device2Init == ALL)
 	{
 		for(dIndex = 0;dIndex < devicesNum;dIndex++)	//遍历所有器件
@@ -134,10 +161,10 @@ void Devices_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2I
 	}else{
 		switch(device2Init)								//特定器件初始化，按需增添		
 		{
-			case LCD:	deviceIO_Init(Devices,LCD);
+			case TestLED:	deviceIO_Init(Devices,TestLED);
 				break;
-			case BUCK:	deviceIO_Init(Devices,BUCK);
-			case KEY:	deviceIO_Init(Devices,KEY);
+//			case BUCK:	deviceIO_Init(Devices,BUCK);
+//			case KEY:	deviceIO_Init(Devices,KEY);
 			default:break;
 		}
 	}
@@ -250,6 +277,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     switch(GPIO_Pin)
     {
         case GPIO_PIN_0:
+			/*如果使用RTOS则不初始化PA0的中断，使用裸机则使用PA0的外部中断*/
 			#if SYSTEM_StdbyWKUP_ENABLE
 				if(Check_WKUP())
 				{
@@ -273,6 +301,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 /*________________________________________用户定时器2配置_________________________________________________________*/
+TIM_HandleTypeDef TIM2_Handler;
 #if STSTEM_TIM2_ENABLE
 
 TIM_HandleTypeDef TIM2_Handler;
@@ -1064,6 +1093,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
 	{
 		__HAL_RCC_GPIOA_CLK_ENABLE();       //使能GPIOA时钟
 		__HAL_RCC_SPI1_CLK_ENABLE();        //使能SPI1时钟
+		__HAL_RCC_AFIO_CLK_ENABLE();
 		
 		//PB13,14,15
 		GPIO_Initure.Pin=GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
@@ -1075,6 +1105,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
 	{
 		__HAL_RCC_GPIOB_CLK_ENABLE();       //使能GPIOB时钟
 		__HAL_RCC_SPI2_CLK_ENABLE();        //使能SPI2时钟
+		__HAL_RCC_AFIO_CLK_ENABLE();
 		
 		//PB13,14,15
 		GPIO_Initure.Pin=GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
@@ -1114,7 +1145,7 @@ void sys_SPI1_ENABLE(void)
 	
     __HAL_SPI_ENABLE(&SPI1_Handler);                    //使能SPI1
 	
-    SPI1_ReadWriteByte(0Xff);                           //启动传输
+    //SPI1_ReadWriteByte(0Xff);                           //启动传输
 }
 
 //SPI速度设置函数
@@ -1136,12 +1167,44 @@ void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler)
 //SPI1 读写一个字节
 //TxData:要写入的字节
 //返回值:读取到的字节
-u8 SPI1_ReadWriteByte(u8 TxData)
+u8 SPI1_ReadWriteByte_8Byte(u8 TxData)
 {
     u8 Rxdata;
-    HAL_SPI_TransmitReceive(&SPI1_Handler,&TxData,&Rxdata,1, 100); 
+	SPI1_CS = IO_Low;
+    HAL_SPI_TransmitReceive(&SPI1_Handler,&TxData,&Rxdata,1, 100);
+	SPI1_CS = IO_High;	
  	return Rxdata;          		    //返回收到的数据		
 }
+
+//传入一个包含2字节的u8*指针
+u8 SPI1_ReadWriteByte_16Byte(u8* TxData)
+{
+    u8 Rxdata;
+	SPI1_CS = IO_Low;
+    HAL_SPI_TransmitReceive(&SPI1_Handler,TxData,&Rxdata, 2, 100);
+	SPI1_CS = IO_High;	
+ 	return Rxdata;          		    //返回收到的数据		
+}
+
+u8 SPI1_WriteByte_8Byte(u8 TxData)
+{
+	u8 state;
+	SPI1_CS = IO_Low;
+	state = (u8)(HAL_SPI_Transmit(&SPI1_Handler, &TxData, 1, 100));	
+	SPI1_CS = IO_High;
+	return state;
+}
+
+//传入一个包含2字节的u8*指针
+u8 SPI1_WriteByte_16Byte(u8* TxData)
+{
+	u8 state;
+	SPI1_CS = IO_Low;
+	state = (u8)(HAL_SPI_Transmit(&SPI1_Handler, TxData, 2, 100));	
+	SPI1_CS = IO_High;
+	return state;
+}
+
 #endif
 
 #if SYSTEM_SPI2_ENABLE
@@ -1206,6 +1269,7 @@ u8 SPI2_ReadWriteByte(u8 TxData)
 
 void sys_StdbyWKUP_ENABLE(void)
 {
+	#if !SYSTEM_SUPPORT_OS
     GPIO_InitTypeDef GPIO_Initure;
     __HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
 	
@@ -1225,15 +1289,31 @@ void sys_StdbyWKUP_ENABLE(void)
 
     HAL_NVIC_SetPriority(EXTI0_IRQn,2,0);
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+	
+	#else
+	
+    GPIO_InitTypeDef GPIO_Initure;
+    __HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+	
+    GPIO_Initure.Pin=GPIO_PIN_0;            //PA0
+    GPIO_Initure.Mode=GPIO_MODE_INPUT;  //输入检测
+    GPIO_Initure.Pull=GPIO_PULLDOWN;        //下拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//快速
+    HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	#endif
 }
 
 
 //系统进入待机模式
 void Sys_Enter_Standby(void)
 {
+	while(PAin(0) == 1){;}
+	delay_ms(500);
+	while(PAin(0) == 1){;}
+	delay_ms(500);
     __HAL_RCC_APB2_FORCE_RESET();       //复位所有IO口 
-   	__HAL_RCC_PWR_CLK_ENABLE();         //使能PWR时钟
-			  	
+	__HAL_RCC_PWR_CLK_ENABLE();         //使能PWR时钟
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);                  //清除Wake_UP标志
     HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);           //设置WKUP用于唤醒
     HAL_PWR_EnterSTANDBYMode();                         //进入待机模式     
@@ -1260,7 +1340,22 @@ u8 Check_WKUP(void)
 			return 0; //按下不足3秒
 		}
 	}
-} 
+}
+
+void sys_CheckWKUP_4RTOS(void)
+{
+	static u8 t=0;	//记录按下的时间
+	if(WKUP_KD)
+	{
+		t++;			//已经按下了 
+		delay_ms(30);
+		if(t>=100)		//按下超过3秒钟
+		{
+			Sys_Enter_Standby();//按下3s以上了，进入待机模式
+		}
+	}else 
+	{} //按下不足3秒
+}
 
 #endif
 

@@ -425,7 +425,7 @@ void menuProcess(void)
 												}
 												break;
 				
-				case exit:
+				case back:
 											//到上一级菜单，没有上一级时不用动
 											if ((menuPointer+menuid[i])->Parentms !=NULL) 
 											{ 

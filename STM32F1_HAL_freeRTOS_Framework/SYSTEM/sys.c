@@ -7,13 +7,21 @@
 3、写顺序：
 	完成	移植菜单模板，连带按键检测也都搞了
 	完成	FLASH存储开机次数
-	待做	定时器：RTOS发送任务通知
-	待完善	开始完成裸机基本框架，加个菜单框架，再按照我的计划里有的
+	待做	串口2、3完成相关的接收功能，与串口1一样的，用预编译控制是否编译相关代码
+	待完善	完善菜单框架，有硬件基础（至少有多按键，LCD时）再完善好~~
 	完成	开始完成RTOS框架，写上所有API
 	...		歇会儿
-	待做	开始所有HAL库的罗列！可以参考的：原子的HAL手册和历程直接复制；硬石的HAL每天一例（这个很多）；安富莱
-	待做	其他FATFS等更多器件的驱动，参考优秀工程框架
-	待做	LWIP STemWIN
+			开始所有HAL库的罗列！可以参考的：原子的HAL手册和历程直接复制；硬石的HAL每天一例（这个很多）；安富莱
+	待做	参考优秀工程框架，麒麟座、X-Bot等，本地化“等着移植的”里面的所有程序
+	待做	再添加的高级组件：线性回归，
+							各种加密算法，
+							音频编解码，
+							modbus，
+							MQTT（里面可能包含cjson），
+							JPEG GIF BMP解析+BMP编码，
+							这些外加库，
+							放在与上面GUI、LWIP、FATFS库所在的同一个文件（名叫高级组件.c）里统一管理是否启用，
+							这些外添库源程序单独建一个文件夹放
 
 */
 
@@ -23,6 +31,8 @@
 *参数：		1、NULL
 *返回值：	1、NULL
 ********************************/
+
+
 u16	StartUpTimes;	/*用于保存开机次数，储存在最后一个或倒数第二个页*/
 uint32_t UIDw[3]; /*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; /*获取HCLK频率，外设时钟均来自此再分频*/
@@ -56,6 +66,7 @@ void sys_MCU_Init_Seq(void)
 	/*设置RTC*/
 	#if SYSTEM_RTC_ENABLE
 		sys_RTC_Enable();
+		//用户自行更改设置RTC和闹钟的日期和时间，在	sys_RTC_Enable() 里面		
 	#endif
 	/*设置CRC*/
 	#if SYSTEM_CRC_ENABLE
@@ -63,17 +74,13 @@ void sys_MCU_Init_Seq(void)
 		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
 		{}else{FaultASSERT("AT : CRC init");}
 	#endif
-	/*初始化并启动TIM4*/
-	#if STSTEM_TIM4_ENABLE
-		sys_TIM4_ENABLE();
-	#endif
-	/*初始化并启动TIM3PWM通道*/
-	#if STSTEM_TIM3PWM_ENABLE
-		sys_TIM3PWM_ENABLE();
-	#endif
+
 	/*按照设定初始化串口1、2、3*/
 	#if SYSTEM_UART1_ENABLE
 		sys_USART1_ENABLE();
+		
+		/*串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出的环形缓存实现接受区，无协议*/
+		USART1_SetMode(0);
 	#endif
 	#if SYSTEM_UART2_ENABLE
 		sys_USART2_ENABLE();
@@ -81,46 +88,27 @@ void sys_MCU_Init_Seq(void)
 	#if SYSTEM_UART3_ENABLE
 		sys_USART3_ENABLE();
 	#endif
-	/*初始化看门狗*/
-	#if SYSTEM_IWDG_ENABLE
-		sys_IWDG_ENABLE();
-	#endif
 	
-	printf_uart(UART1,"Author : Staok\nEmail : superxhy@qq.com\nRepo : https://github.com/Staok/stm32_framework\nSystem starting...\n");
+	printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\nSystem starting...\r\n");
 	
 	/*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
 	sysCoreClock = HAL_RCC_GetHCLKFreq(); 
-	printf_uart(UART1,"sysCoreClock/HCLK : %d\n",sysCoreClock);
+	printf_uart(UART1,"sysCoreClock/HCLK : %d\r\n",sysCoreClock);
 	/*保存STM32内部UID识别码并打印，全球唯一识别码*/
 	UIDw[0] = HAL_GetUIDw0();UIDw[1] = HAL_GetUIDw1();UIDw[2] = HAL_GetUIDw2(); 
-	printf_uart(UART1,"UID : %d %d %d\n",UIDw[0],UIDw[1],UIDw[2]);
+	printf_uart(UART1,"UID : %d %d %d\r\n",UIDw[0],UIDw[1],UIDw[2]);
 	
 	#if SYSTEM_FLASH_IAP_ENABLE
 		//获取开机次数
 		STMFLASH_Read( 	(0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
 		StartUpTimes += 1;
 		STMFLASH_Write( (0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
-		printf_uart(UART1,"StartUpTimes : %d\n",StartUpTimes);
+		printf_uart(UART1,"StartUpTimes : %d\r\n",StartUpTimes);
 	#endif
 	
-}
-
-/*__________器件外设初始化，并开机自检_____________*/
-/********************************
-*描述：进行MCU外设的开启，进行外设器件的IO、读测试等器件参数设置工作——————！按需要进行修改！
-*参数：		1、NULL
-*返回值：	1、NULL
-********************************/
-void sys_Device_Init_Seq(void)
-{
-	/*以下为用户应用的MCU外设和Device初始化序列*/
-	
-	/*用户IO初始化，可选择初始化某个特定器件或者所有器件*/
-	Devices_Init(UserDevices,ALL);
-	
 	#if STSTEM_TIM2_ENABLE
-		/*说明TIM2的用途*/
-		sys_TIM2_ENABLE();
+	/*说明TIM2的用途*/
+	sys_TIM2_ENABLE();
 	#endif
 	
 	#if SYSTEM_ADC1_ENABLE
@@ -143,23 +131,70 @@ void sys_Device_Init_Seq(void)
 		sys_StdbyWKUP_ENABLE();
 	#endif
 	
-	/**/
 	
+	/*初始化并启动TIM4*/
+	#if STSTEM_TIM4_ENABLE
+		sys_TIM4_ENABLE();
+	#endif
+	/*初始化并启动TIM3PWM通道*/
+	#if STSTEM_TIM3PWM_ENABLE
+		sys_TIM3PWM_ENABLE();
+	#endif
+	/*初始化看门狗*/
+	#if SYSTEM_IWDG_ENABLE
+		sys_IWDG_ENABLE();
+	#endif
+	
+	
+}
+
+/*__________器件外设初始化，并开机自检_____________*/
+/********************************
+*描述：进行MCU外设的开启，进行外设器件的IO、读测试等器件参数设置工作——————！按需要进行修改！
+*参数：		1、NULL
+*返回值：	1、NULL
+********************************/
+void sys_Device_Init_Seq(void)
+{
+	/*以下为用户应用的Device初始化序列*/
+	
+	/*用户IO初始化，可选择初始化某个特定器件或者所有器件*/
+	Devices_Init(UserDevices,ALL);
+	
+	/*LCD初始化*/
+	LCD_Init();
 	
 	
 	buzzer_bibi_once; //响一声表示初始化结束
-	printf_uart(UART1,"System init over\n");
+	printf_uart(UART1,"System init over\r\n");
 }
 
-/*表示初始化有问题，串口提示，灯提示，声提示，并进入死循环*/
-/*传入参数：错误提示信息*/
+/*____________运行错误提示和打印______________________________*/
+/********************************
+*描述：表示某步骤运行有问题，串口提示，灯提示，声提示
+*参数：		FaultMessage:错误提示信息字符串
+*返回值：	1、NULL
+********************************/
 void FaultASSERT(char* FaultMessage)
 {
 	/*往串口1发送数据*/
-	printf_uart(UART1,"Fault Message : %s\n",FaultMessage);
+	printf_uart(UART1,"Fault Message : %s\r\n",FaultMessage);
 	//灯提示，声提示
-	
 	buzzer_bibi_on;
+	while(1){;}
+}
+/*_____________获取系统运行的时间________________________*/
+/********************************
+*描述：获取系统运行的时间
+*参数：		mins、secs、_10ms:系统运行时间的分钟数，在此基础上多出的秒数，和在此基础上多出的10毫秒数
+*返回值：	1、系统运行的总秒数
+********************************/
+u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms)
+{
+	*mins = Timer_IT_flags._1min;
+	*secs = Timer_IT_flags._1sec;
+	*_10ms = Timer_IT_flags._10msec;
+	return ((Timer_IT_flags._1min)*60 + Timer_IT_flags._1sec);
 }
 /*__________时钟系统配置函数_____________*/
 /********************************
@@ -252,7 +287,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if(htim==(&TIM4_Handler))
     {
 		Timer_IT_flags._10msec_flag = TRUE;
-		//发送10ms标志的信号量任务通知
 		
 		/*如果启用定时器2的正交解码功能，这里定时10ms周期计算正交计数值并计算返回速度 单位 转/秒*/
 		#if (STSTEM_TIM2_ENABLE)&&(STSTEM_TIM2_asPWMorCap == 3)
@@ -266,31 +300,29 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			Timer_IT_flags._100msec_flag = TRUE;
 			Timer_IT_flags._100msec++;
 			
-			//发送100ms标志的信号量任务通知
+			#if SYSTEM_IWDG_ENABLE
+				IWDG_Feed();//1s周期的看门狗，来喂狗了
+			#endif
+			
 		}
 		
 		if(Timer_IT_flags._100msec % 3 == 0)
 		{
 			Timer_IT_flags._300msec_flag = TRUE;
 			
-			#if SYSTEM_IWDG_ENABLE
-				IWDG_Feed();//1s周期的看门狗，来喂狗了
-			#endif
-			
 			if(is_buzzer_once)
 			{
 				TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,80.0); //打开蜂鸣器
 				is_buzzer_once = FALSE;
-				is_runOnce4biOnce = FALSE;
+				is_runOnce4biOnce = TRUE;
 			}else{
-				if(!is_runOnce4biOnce)
+				if(is_runOnce4biOnce)
 				{
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,0); //关闭蜂鸣器
-					is_runOnce4biOnce = TRUE;
+					is_runOnce4biOnce = FALSE;
 				}
 			}
 			
-			//发送300ms标志的信号量任务通知
 		}
 		
 		if(Timer_IT_flags._100msec >= 10)
@@ -303,17 +335,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			{
 				if(is_reversal) TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,80.0); //打开蜂鸣器
 				else TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,0); //关闭蜂鸣器
-				is_runOnce4bibi = FALSE;
+				is_runOnce4bibi = TRUE;
 				is_reversal = ~is_reversal;
 			}else{
-				if(!is_runOnce4bibi)
+				if(is_runOnce4bibi)
 				{
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_4,0);//关闭蜂鸣器
-					is_runOnce4bibi = TRUE;
+					is_runOnce4bibi = FALSE;
 				}
 				
 			}
-			//发送1s标志的信号量任务通知
 		}
 		
 		if(Timer_IT_flags._1sec >= 60)
@@ -322,7 +353,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			Timer_IT_flags._1min_flag = TRUE;
 			Timer_IT_flags._1min++;
 			
-			//发送1min标志的信号量任务通知
 			
 			if((Timer_IT_flags._1min > 666)){
 				Timer_IT_flags._1min = 0;
@@ -397,7 +427,6 @@ void _putchar(char character)
 			HAL_UART_Transmit(&UART1_Handler, (uint8_t *)&character, 1, 0x12C);
 			break;
 	}
-	uart2sent = 0; /*恢复*/
 }
 
 #if SYSTEM_UART1_ENABLE
@@ -415,7 +444,71 @@ void sys_USART1_ENABLE(void)
 	HAL_UART_Init(&UART1_Handler);					    		//HAL_UART_Init()会使能UART1
 	
 	HAL_UART_Receive_IT(&UART1_Handler, (u8 *)aRxBuffer1, RXBUFFERSIZE);//该函数会开启接收中断：标志位UART_IT_RXNE，并且设置接收缓冲以及接收缓冲接收最大数据量
+	
+//	if(fifo_create_static(Uart1_fifo, USART1_RX_FIFO_buf, (uint16_t)USART1_RX_FIFO_MaxNum, sizeof(char)) == NULL)
+//	{
+//		FaultASSERT("AT:fifo_create_static");
+//	}
+	Uart1_fifo = fifo_create((uint16_t)USART1_RX_FIFO_MaxNum, sizeof(char));
+	if(Uart1_fifo == NULL)
+	{
+		FaultASSERT("AT:fifo_create");
+	}
 }
+
+char sys_USART1_RX_Fetch(u8 is_print, char* buf)
+{
+	char CharData,is_Data;
+	u16 i;
+	
+	if(!(USART1_RX_CONFIG & USART1_RX_MODE_mask))
+	{
+		/*0为只接受以'\r\n'结尾的数据*/
+		if(USART1_isDone)
+		{
+			if(is_print)
+				printf_uart(UART1,"%s",USART1_RX_BUF);
+			if(USART1_RX_ByteNum >= USART1_RX_BUF_MaxNum) /*防止栈溢出*/
+			{
+				mystrncpy(buf,USART1_RX_BUF,USART1_RX_BUF_MaxNum);
+			}else{
+				mystrncpy(buf,USART1_RX_BUF,USART1_RX_ByteNum);
+			}
+			//buf = USART1_RX_BUF; /*与fifo共用的char*在这里不能直接赋地址，带结束符\0，不带\r\n的字符串*/ 
+			USART1_SetUnDone;
+			return (char)ReturnOK;
+		}else{
+			return (char)ReturnErr;
+			}
+	}else{
+		/*1为以FIFO先进先出的环形缓存实现接受区，无协议*/
+		
+		is_Data = FALSE;i = 0;
+		while(fifo_get(Uart1_fifo, &CharData))
+		{
+			is_Data = TRUE;
+			buf[i++] = CharData;
+		}
+		
+		if(i >= USART1_RX_FIFO_MaxNum) /*防止栈溢出*/
+		{
+			buf[(USART1_RX_FIFO_MaxNum-1)] = '\0';
+		}else{
+			buf[i] = '\0';
+		}
+		
+		if(is_print)
+			printf_uart(UART1,"%c",CharData);
+		
+		if(is_Data == TRUE)
+		{
+			return (char)ReturnOK;
+		}else{
+			return (char)ReturnErr;
+			}
+	}
+}
+
 #endif
 #if SYSTEM_UART2_ENABLE
 void sys_USART2_ENABLE(void)
@@ -561,11 +654,18 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 
 
 
-char USART1_RX_BUF[USART1_RX_BUF_MaxNum] = "0"; /*串口1的模式1数据接受区*/
-#define USART1_RX_DONE_mask 0x8000
-#define USART1_RX_MODE_mask 0x4000
-#define USART1_RX_Rec_r_mask 0x2000
-#define USART1_RX_Num_mask 0x1fff /*0001 1111 1111 1111*/
+char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; 		/*串口1的模式1数据接受区*/
+
+//	fifo_t Test_fifo;
+//	fifo_t Test2_fifo;
+	fifo_t Uart1_fifo;
+//char USART1_RX_FIFO_buf[USART1_RX_FIFO_MaxNum] = "0"; 	/*串口1的模式0的FIFO数据接受区，静态创建时才用*/
+/*以下四行放在了sys.h里面*/
+//#define USART1_RX_DONE_mask 0x8000
+//#define USART1_RX_MODE_mask 0x4000
+//#define USART1_RX_Rec_r_mask 0x2000
+//#define USART1_RX_Num_mask 0x1fff /*0001 1111 1111 1111*/
+
 u16 USART1_RX_CONFIG = 0;	/*    x            x           x        x xxxx xxxx xxxx      */
 							/*(接受完成) (协议模式0/1) (接收到\r)   串口1接受数据字节计数 */
 							/*串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出的环形缓存实现接受区，无协议*/
@@ -576,17 +676,17 @@ FIFO先进先出环形队列示意：	头指针出只读出，尾指针出只写入。
 							列队头的数据处理完了后，‘0’地址空间的数据进行释放掉，列队头指向下一个可以处理数据的地址‘1’，以此类推
 							在一定内存内，尾指针一直移动到最后，这时如果0地址空闲，则把尾指针指向0，从而形成环形
 */
-#define USART1_SetMode(x) 	USART1_RX_CONFIG |= (((u16)x)<<15) /*用户可用，在任务中设置串口1接收协议*/
-#define USART1_isDone 		(USART1_RX_CONFIG & USART1_RX_DONE_mask)/*用户用，用于判断是否接受完成一次*/
-
-#define USART1_SetDone 		USART1_RX_CONFIG |= USART1_RX_DONE_mask /*设置串口1接收完成标志位*/
-#define USART1_SetUnDone 	USART1_RX_CONFIG &= USART1_RX_MODE_mask /*在任务中处理完后对串口1标志位进行复位，除了mode位，其他位都写0*/
-#define USART1_RX_ByteNum 	(USART1_RX_CONFIG & USART1_RX_Num_mask)/*用户可用，返回接收的字符数量*/
+/*以下五行放在了sys.h里面*/
+//#define USART1_SetMode(x) 	USART1_RX_CONFIG |= (((u16)x)<<14) /*用户可用，在任务中设置串口1接收协议*/
+//#define USART1_isDone 		(USART1_RX_CONFIG & USART1_RX_DONE_mask)/*用户用，用于判断是否接受完成一次*/
+//#define USART1_RX_ByteNum 	(USART1_RX_CONFIG & USART1_RX_Num_mask)/*用户可用，返回接收的字符数量*/
+//#define USART1_SetDone 		USART1_RX_CONFIG |= USART1_RX_DONE_mask /*设置串口1接收完成标志位*/
+//#define USART1_SetUnDone 		USART1_RX_CONFIG &= USART1_RX_MODE_mask /*用户可用，在任务中处理完后对串口1标志位进行复位，除了mode位，其他位都写0*/
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance==USART1)//如果是串口1
-	{ 
+	{	
 		if(!(USART1_RX_CONFIG & USART1_RX_MODE_mask)) /*协议0：只接受以'\r\n'结尾的数据：从USART1_RX_BUF[]接受数据*/
 		{ 
 			if(!(USART1_RX_CONFIG & USART1_RX_DONE_mask)) /*如果接收未完成*/
@@ -595,10 +695,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				{
 					if(aRxBuffer1[0] == '\n') /*如果接受到了\r\n*/
 					{
+						USART1_RX_BUF[USART1_RX_ByteNum] = '\0'; /*加个结束符\0*/
 						USART1_SetDone;
 						//USART1_RX_CONFIG++; 
 						/*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
-					}else{USART1_SetUnDone;}
+					}else{USART1_Set_r_UnDone;} /*没有接收到\n，则重新等到\r出现*/
 				}else
 				{
 					if(aRxBuffer1[0] == '\r') {USART1_RX_CONFIG |= USART1_RX_Rec_r_mask;
@@ -607,15 +708,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					else{
 						USART1_RX_BUF[USART1_RX_CONFIG & USART1_RX_Num_mask] = aRxBuffer1[0];
 						USART1_RX_CONFIG++;
-						if((USART1_RX_CONFIG & USART1_RX_Num_mask) >= (USART1_RX_BUF_MaxNum - 1)) USART1_SetDone;
+						if((USART1_RX_CONFIG & USART1_RX_Num_mask) >= (USART1_RX_BUF_MaxNum)) USART1_SetDone; 
 					}
 
 				}
 			}
-		}else 								/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时拿走，如果缓存满了则新入数据丢失*/
-		{									/*从ReadDataFromRingbuff(&RingBuff_forUSART1);RingBuff_forUSART1.data接收数据，注意要检查是否成功读出！*/
-			WriteDataToRingbuff(&RingBuff_forUSART1,aRxBuffer1[0]);
-			//if(!(USART1_RX_CONFIG & USART1_RX_DONE_mask)) {;}/*如果接收未完成*/
+		}else 		/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时拿走，如果缓存满了则新入数据丢失*/
+		{
+			if(!fifo_is_full(Uart1_fifo))
+				fifo_add(Uart1_fifo, &aRxBuffer1[0]);
 		}
 	}else if(huart->Instance==USART2)//如果是串口2
 	{
@@ -631,7 +732,8 @@ void USART1_IRQHandler(void)	//串口1中断服务程序
 { 
 	u32 timeout=0;
 	#if SYSTEM_SUPPORT_OS	 	//使用OS
-		//OSIntEnter();    
+		//OSIntEnter();  
+		taskENTER_CRITICAL();           //进入临界区
 	#endif
 	
 	HAL_UART_IRQHandler(&UART1_Handler);	//调用HAL库中断处理公用函数
@@ -651,7 +753,8 @@ void USART1_IRQHandler(void)	//串口1中断服务程序
 	 if(timeout>HAL_MAX_DELAY) break;	
 	}
 	#if SYSTEM_SUPPORT_OS	 	//使用OS
-		//OSIntExit();  											 
+		//OSIntExit();  	
+		taskEXIT_CRITICAL();            //退出临界区
 	#endif
 }
 #endif
@@ -662,6 +765,7 @@ void USART2_IRQHandler(void)	//串口2中断服务程序
 	u32 timeout=0;
 	#if SYSTEM_SUPPORT_OS	 	//使用OS
 		//OSIntEnter();    
+		taskENTER_CRITICAL();           //进入临界区
 	#endif
 	
 	HAL_UART_IRQHandler(&UART2_Handler);	//调用HAL库中断处理公用函数
@@ -681,7 +785,8 @@ void USART2_IRQHandler(void)	//串口2中断服务程序
 	 if(timeout>HAL_MAX_DELAY) break;	
 	}
 	#if SYSTEM_SUPPORT_OS	 	//使用OS
-		//OSIntExit();  											 
+		//OSIntExit();  			
+		taskEXIT_CRITICAL();            //退出临界区	
 	#endif
 }
 #endif
@@ -692,6 +797,7 @@ void USART3_IRQHandler(void)	//串口3中断服务程序
 	u32 timeout=0;
 	#if SYSTEM_SUPPORT_OS	 	//使用OS
 		//OSIntEnter();    
+		taskENTER_CRITICAL();           //进入临界区
 	#endif
 	
 	HAL_UART_IRQHandler(&UART3_Handler);	//调用HAL库中断处理公用函数
@@ -711,7 +817,8 @@ void USART3_IRQHandler(void)	//串口3中断服务程序
 	 if(timeout>HAL_MAX_DELAY) break;	
 	}
 	#if SYSTEM_SUPPORT_OS	 	//使用OS
-		//OSIntExit();  											 
+		//OSIntExit();  			
+		taskEXIT_CRITICAL();            //退出临界区
 	#endif
 }
 #endif
@@ -982,26 +1089,27 @@ RTC_HandleTypeDef RTC_Handler;		//RTC句柄
 _calendar_obj calendar;				//RTC结构体
 /*初始化RTC时钟,同时检测时钟是否工作正常
 BKP->DR1用于保存是否第一次配置的设置*/
-uint8_t sys_RTC_Enable(void)
+char sys_RTC_Enable(void)
 {
 	RTC_Handler.Instance=RTC; 
 	RTC_Handler.Init.AsynchPrediv=32767; 	//时钟周期设置(有待观察,看是否跑慢了?)理论值：32767	
-	if(HAL_RTC_Init(&RTC_Handler)!=HAL_OK) return ReturnErr;
+	if(HAL_RTC_Init(&RTC_Handler)!=HAL_OK) return (char)ReturnErr;
 	
 	if(HAL_RTCEx_BKUPRead(&RTC_Handler,RTC_BKP_DR1)!=0X5050)//是否第一次配置
 	{
-		RTC_Set(2049,10,1,17,7,0); //设置日期和时间，2049年10月1日，17点07分0秒		 									  
+		RTC_Set(2049,10,1,17,7,0); //设置日期和时间，2049年10月1日，17点07分0秒
+		RTC_Alarm_Set(2149,10,1,17,7,0); //设置RTC闹钟日期和时间，年月日时分秒，2149年10月1日，17点07分0秒
 		HAL_RTCEx_BKUPWrite(&RTC_Handler,RTC_BKP_DR1,0X5050);//标记已经初始化过了
 	 	//printf("FIRST TIME\n");
 	}
 	
 	__HAL_RTC_ALARM_ENABLE_IT(&RTC_Handler,RTC_IT_SEC); 	//允许秒中断
 	__HAL_RTC_ALARM_ENABLE_IT(&RTC_Handler,RTC_IT_ALRA); 	//允许闹钟中断
-    HAL_NVIC_SetPriority(RTC_IRQn,0x01,0x02); 				//抢占优先级1,子优先级2
+    HAL_NVIC_SetPriority(RTC_IRQn,2,0); 				//抢占优先级2
     HAL_NVIC_EnableIRQ(RTC_IRQn);	 
 	
 	RTC_Get();//更新时间
-	return ReturnOK;
+	return (char)ReturnOK;
 }
 
 /*RTC底层驱动，时钟配置
@@ -1293,6 +1401,7 @@ uint32_t uwExpectedCRCValue = 0x379E9F06;
 
 
 #if SYSTEM_SUPPORT_OS
+
 extern void xPortSysTickHandler(void);
 //systick中断服务函数
 void SysTick_Handler(void)

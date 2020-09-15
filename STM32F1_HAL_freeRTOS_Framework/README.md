@@ -1,7 +1,21 @@
 # stm32_framework
+Welcome to the stm32_framework !
+
 一个计划实现STM32F1和F4工程模板的项目，包含高级封装的HAL库外设驱动、Menu、FreeRTOS、STemWin、LWIP、USB、FATFS、DSP等，以及包含加密、BPNN、最小二乘等诸多便利的组件和算法，并具有良好的易用性。
 
 目前只有F1，当F1完成后，F4就快了...吧。
+
+Author : Staok
+
+Email : superxhy@qq.com
+
+Repo : https://github.com/Staok/stm32_framework
+
+System is starting...
+
+...
+
+System init over!
 
 ------
 

@@ -105,10 +105,11 @@ STM32F
 													默认用于任务的RAM堆栈大小为5KB，按需修改！
 												注意：还要在FreeRTOSConfig.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则系统不会调用FreeRTOS的任务切换SVC中断函数，跑不起来！*/
 
-#define SYSTEM_SUPPORT_Menu		0				/*模板固定搭配！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！注意，menu库包含了printf.h库和MyString.h库！*/
+#define SYSTEM_SUPPORT_Menu		1				/*模板固定搭配！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！*/
 /*
-	keyProcess(); 	//获取键值输入函数；对于RTOS，直接放一个任务；对于裸机，放while大循环里（默认没放）
-	menuProcess();	//菜单处理的主函数；对于RTOS，直接放一个任务；对于裸机，放while大循环里（默认没放）
+	以下两个函数推荐100ms周期运行
+	keyProcess(); 	//获取键值输入函数；对于RTOS，直接放一个100ms周期任务；对于裸机，100ms周期运行（仅裸机已经放了） ！输入可以为独立按键、五项按键、AD Key、触摸按键、无线遥控、旋转编码器等
+	menuProcess();	//菜单处理的主函数；同上
 */
 #define SYSTEM_SUPPORT_MyString	1				/*提供一个实现了string.h大部分字符操作函数的库*/
 /*具体作用看MyString.c文件里的注释
@@ -187,7 +188,7 @@ API:
 	}_calendar_obj;					 
 	extern _calendar_obj calendar;				//用户用！RTC结构体，实际用时只需要读这个结构体获取时间即可
 */
-#define SYSTEM_RTC_ENABLE		1				
+#define SYSTEM_RTC_ENABLE		0				
 /*配置使用CRC循环冗余校验
 这个CRC计算模块使用常见的、在以太网中使用的计算多项式：
 X32 + X26 + X23 + X22 + X16 + X12 + X11 + X10 +X8 + X7 + X5 + X4 + X2 + X + 1

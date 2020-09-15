@@ -2,10 +2,8 @@
 #define __SYS_MENU_H
 
 #include "sys.h"
-#include "printf.h"
-#include "MyString.h"
 
-/*______________________按键输入信息，基本不动_________________________________*/
+/*______________________这里基本不动，按键输入信息_________________________________*/
 //输入可以为独立按键、五项按键、AD Key、触摸按键、无线遥控、旋转编码器等
 //枚举，全局，常量，不能取地址
 enum inputValue_enum{
@@ -18,7 +16,8 @@ enum inputValue_enum{
 	enter
 };
 enum inputMode_enum{
-	once = 1,	//单击
+	notRdy = 0,	//没准备好
+	once,		//单击
 	doub,		//双击
 	lon			//长摁
 };
@@ -44,13 +43,13 @@ struct MenuItem
 }; 
 void keyProcess(void);
 void menuProcess(void);
-char *Locate(struct MenuItem *MenuItemNow,char menuid[3]);
-void Run(struct MenuItem *MenuItemNow,	struct input_struct input);
+char *Locate(const struct MenuItem *MenuItemNow,const char *menuid);
+void Run(const struct MenuItem *MenuItemNow,const struct input_struct input);
 void Nop(void);
 
 
-/*______________________定义系统信息，用户修改_________________________________*/
-
+/*______________________STEP3: 定义系统信息，用户修改_________________________________*/
+extern struct MenuItem m1_run[4];
 //声明系统所有外设开关状态变量的控制集总
 struct sysPara_struct
 {
@@ -80,11 +79,11 @@ struct runMode2_struct
 extern struct runMode2_struct RunMode2;
 
 
-//用户函数声明
-void runFunctions(struct MenuItem *MenuItemNow,	struct input_struct input);//run下面的四个功能
-void adjustFunctionsMode1(struct MenuItem *MenuItemNow,	struct input_struct input);//adjust的Mode1下面的2个功能
-void adjustFunctionsMode2(struct MenuItem *MenuItemNow,	struct input_struct input);//adjust的Mode2下面的2个功能
-void adjustFunctionsOption(struct MenuItem *MenuItemNow,struct input_struct input);//adjust的Option下面的2个功能
+//用户函数声明，参数全部添加const 修饰符，不让函数内部对传入参数修改，踩过的坑..
+void runFunctions(const struct MenuItem *MenuItemNow,const struct input_struct input);//run下面的四个功能
+void adjustFunctionsMode1(const struct MenuItem *MenuItemNow,const struct input_struct input);//adjust的Mode1下面的2个功能
+void adjustFunctionsMode2(const struct MenuItem *MenuItemNow,const struct input_struct input);//adjust的Mode2下面的2个功能
+void adjustFunctionsOption(const struct MenuItem *MenuItemNow,const struct input_struct input);//adjust的Option下面的2个功能
 
 #endif
 

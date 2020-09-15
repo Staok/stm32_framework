@@ -19,7 +19,7 @@ lcd.c和lcd.h、GUI.c和GUI.h都需要调用
 
 //使用这两个变量定义画笔颜色和背景色
 POINT_COLOR		//字符颜色
-BACK_COLOR		//字符背景颜色，默认为白色
+BACK_COLOR		//字符背景颜色
 
 //画笔颜色
 #define WHITE       0xFFFF
@@ -123,14 +123,14 @@ void LCD_ShowNum(u16 x,u16 y,u32 num,u8 len,u8 size);
 //******************************************************************
 //函数名：  LCD_ShowString———————————————————————————————————————————————————————————————————————————————————用于写英文和数字
 //作者：    xiao冯@全动电子——————————————————————————————————————————————————————————————————————————————————注：要显示数字变量等信息只需用sprintf，然后用此函数显示
-//——————————————————例子：
+//——————————————————例子：————————————————————————————
 /*					sprintf(RuningTime_SHOW_STR,"%dmin/%dmin",Timer_IT_flags._1min,SetMaxRuningMins);
 					POINT_COLOR=WHITE;
 					LCD_ShowString(10,10,16,(u8*)RuningTime_SHOW_STR,0);
 					例子：
 					sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
 					printf_uart(UART1,"%s",RTC_buf);
-					POINT_COLOR = RED; //————————————————————————————————必要指定颜色，否则可能会和背景同色
+					POINT_COLOR = RED; //————————————————————————————————指定颜色，要避免画笔和背景同色
 					BACK_COLOR = BLACK;
 					LCD_ShowString(10,50,16,(u8*)RTC_buf,0);
 					

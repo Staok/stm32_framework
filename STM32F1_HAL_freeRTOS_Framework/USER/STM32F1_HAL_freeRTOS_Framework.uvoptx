@@ -160,6 +160,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>USART1_RX_FIFO_buf[200]</ItemText>
         </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>menuid[3]</ItemText>
+        </Ww>
       </WatchWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>

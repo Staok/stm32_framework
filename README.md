@@ -1,7 +1,21 @@
 # stm32_framework
+Welcome to the stm32_framework !
+
 一个计划实现STM32F1和F4工程模板的项目，包含高级封装的HAL库外设驱动、Menu、FreeRTOS、STemWin、LWIP、USB、FATFS、DSP等，以及包含加密、BPNN、最小二乘等诸多便利的组件和算法，并具有良好的易用性。
 
-目前只有F1，当F1完成后，F4就快了...吧。你问我为何不用STM32CubeMX或者STM32IDE，不踏实，哼~
+目前只有F1，当F1完成后，F4就快了...吧。
+
+Author : Staok
+
+Email : superxhy@qq.com
+
+Repo : https://github.com/Staok/stm32_framework
+
+System is starting...
+
+...
+
+System init over!
 
 ------
 
@@ -33,13 +47,13 @@
 -   所有头文件均放在sys.h里面，其他库文件想互相调用时只需调sys.h即可，不乱
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h的上面
 
-### 裸跑或FreeRTOS
+### 裸跑或者FreeRTOS
 
 -   SYSTEM_SUPPORT_OS：是否开启FreeRTOS，不开为裸跑；具体应用逻辑编写和任务配置分别在TaskConfig.c和BareConfig.c里面
 
     FreeRTOS说明：所有API均罗列在TaskConfig.h里！关于FreeRTOS的信号量和事件标志组，均用任务通知替代！关于FreeRTOS的任务与任务、任务与中断间的通讯只用消息队列，功能最全！
 
-### 常用组件
+### 框架常用组件
 
 -   Menu框架：SYSTEM_SUPPORT_Menu：提供一个实现菜单功能的模板；推荐作为标准常用，应用逻辑围绕这个菜单框架展开编写；具体文件在sys_menu.c里面；按照里面的注释，void keyProcess(void)函数负责扫描输入，void menuProcess(void)函数负责执行菜单功能，这两个函数必须放到一个循环里一直执行
 -   string、sprintf库：SYSTEM_SUPPORT_MyString：提供一个实现了string.h大部分字符操作函数的库；具体作用看MyString.c文件里的注释
@@ -57,7 +71,7 @@
 -   MQTT：暂时缺省
 -   JPEG、GIF解码和BMP编解码：即将加上
 
-### 基础外设
+### 框架基础外设
 
 （再次说明，具体实用方法看相应宏定义旁的注释，均在sys.h里）
 

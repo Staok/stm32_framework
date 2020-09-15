@@ -86,7 +86,7 @@ extern u16  BACK_COLOR; //背景颜色.默认为白色
 #define DATAOUT(x) GPIOB->ODR=x; //数据输出
 #define DATAIN     GPIOB->IDR;   //数据输入
 
-#define LCD_PBh8dataOut(x)	GPIOB->ODR=(((GPIOB->IDR)&0x00ff)|(x&0xff00));	//PB高八位输出
+#define LCD_PBh8dataOut(x)	GPIOB->ODR=(((GPIOB->IDR)&0x00ff)|(x&0xff00))	//PB高八位输出
 //////////////////////////////////////////////////////////////////////
 
 

@@ -3,6 +3,10 @@
 /*
 需要改的地方：
 
+现存BUG:
+	LCD_ShowString()函数，填入字符串最好先拷贝一下，否则这两个函数会改变源字符串信息，有时间优化一下这个函数
+	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果再另一个项目重新遇到就换一个小巧简单的库
+	
 
 3、写顺序：
 	完成	移植菜单模板，连带按键检测也都搞了
@@ -89,7 +93,7 @@ void sys_MCU_Init_Seq(void)
 		sys_USART3_ENABLE();
 	#endif
 	
-	printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\nSystem starting...\r\n");
+	printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\nSystem is starting...\r\n");
 	
 	/*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
 	sysCoreClock = HAL_RCC_GetHCLKFreq(); 

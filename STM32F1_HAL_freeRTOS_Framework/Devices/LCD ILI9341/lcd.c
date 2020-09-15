@@ -50,7 +50,7 @@
 _lcd_dev lcddev;
 
 //»­±ÊÑÕÉ«,±³¾°ÑÕÉ«
-u16 POINT_COLOR = 0x0000,BACK_COLOR = 0xFFFF;  
+u16 POINT_COLOR = RED,BACK_COLOR = BLACK;  
 u16 DeviceCode;	 
 
 

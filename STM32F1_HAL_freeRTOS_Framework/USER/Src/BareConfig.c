@@ -1,4 +1,5 @@
 #include "BareConfig.h"
+#include "sys_menu.h"
 
 #define RunTimeFaultCheck_ENABLE 0	/*使能故障巡检，300ms周期*/
 
@@ -9,8 +10,9 @@ void Bare_Begin(void)
 		const u8 RunTimeFaultCheck_TtemMaxNum = 3;	/*故障巡检的最大项目数量*/
 	#endif
 	
-//	char* Head_buf = {"For Test!"};
-//	DrawPageHead((u8*)Head_buf);
+	char* Head_buf = {"For Test!"};
+	DrawPageHead((u8*)Head_buf);
+	LCD_ShowString(10,120,16,(u8*)m1_run[0].DisplayString,0);
 	
 	for(;;)
 	{
@@ -39,6 +41,7 @@ void Bare_Begin(void)
 				printf_uart(UART1,"%s-%d",buf4uart1,mystrlen(buf4uart1));
 			}
 			
+			
 		}
 		/*300ms周期执行：通常为运行时错误自检以及处理，刷屏等*/
 		if(Timer_IT_flags._300msec_flag == TRUE)
@@ -63,14 +66,14 @@ void Bare_Begin(void)
 			#endif
 			/*集中故障巡检END*/
 			
-			/*3100ms周期要做的事情*/
+			/*300ms周期要做的事情*/
 			
 			/*读入器件信息*/
 			
 			/*刷新界面信息*/
-			char RTC_buf[50];
-			sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
-			printf_uart(UART1,"%s",RTC_buf);
+			
+			keyProcess();	//菜单框架里的输入接管和获取函数
+			menuProcess();	//菜单框架里的按照输入执行功能函数
 			
 			
 		}
@@ -84,6 +87,14 @@ void Bare_Begin(void)
 			//printf_uart(UART2,"UART222---One Second\r\n");
 			//printf_uart(UART1,"UART111---One Second\r\n");
 			
+			//TestLED_Ctrl = !TestLED_Ctrl;
+			
+			char RTC_buf[50];
+//			sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
+//			printf_uart(UART1,"%s",RTC_buf);
+			POINT_COLOR = RED;
+			sprintf(RTC_buf,"%2d",Timer_IT_flags._1sec);
+			LCD_ShowString(10,20,16,(u8*)RTC_buf,0);
 			
 		}
 		

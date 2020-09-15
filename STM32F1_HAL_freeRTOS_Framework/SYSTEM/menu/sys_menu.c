@@ -9,39 +9,34 @@
 */
 #include "sys_menu.h"
 
-/*系统参数初始化*/
 struct input_struct inputKey = 
 {
 	.keyValue = none,
-	.keyMode = once
-};
-struct sysPara_struct sysPara = 
-{
-	.lightSwt = 0,
-	.isAutoLight = 0,
-	.netSwt = 0,
-	.isAutoNet = 0
-};
-struct runMode1_struct RunMode1 = 
-{
-	.isRun = 0,
-	.Para1 = 5,
-	.Para2 = 3
-};
-struct runMode2_struct RunMode2 = 
-{
-	.isRun = 0,
-	.Para3 = 5,
-	.Para4 = 3
+	.keyMode = notRdy
 };
 
 //基本思想就是，所有的系统功能均用一个变量来控制是否开启，即标志位控制
 //对于裸机，在大循环中用控制变量（标志）决定某些功能是否执行，对于RTOS，每一个功能就是一个任务，同样用标志位判断是否执行，具体就变成了等待信号量
-
-//结构体声明 
-//0级菜单
+/*_______________________STEP0: 画出菜单结构________________________________________*/
+/*
+例子：（有符号*表示有下一级菜单；进入下一级和退回上一级用enter和exit键，同级间切换用上下键，调整参数用左右键）
+最多三级，再多没意义，改多的话下面程序Locate改的也多
+			运行*									调参*
+			  |										  |
+			模式1									模式1*
+			模式2									  |-参数1（-+）
+			灯开关（-+）	   					  	  |-参数2（-+）
+			联网开关（-+）							模式2*
+													  |-参数1（-+）
+													  |-参数2（-+）
+													选项*
+													  |-是否开机开灯（-+）
+													  |-是否开机联网（-+）
+*/
+/*___________________________STEP1: 结构体声明_____________________________________*/
+//0级菜单-数量和结构体定义
 #define m0_mainNum 2
-struct MenuItem m0_main[m0_mainNum]; 
+//struct MenuItem m0_main[m0_mainNum]; 
 //1级菜单
 #define m1_runNum 4
 #define m1_adjustNum 3
@@ -55,7 +50,7 @@ struct MenuItem m2_mode1[m2_mode1Num];
 struct MenuItem m2_mode2[m2_mode2Num]; 
 struct MenuItem m2_option[m2_optionNum];
 
-//菜单结构体实现
+/*___________________________STEP2: 菜单结构体实现_____________________________________*/
 struct MenuItem m0_main[m0_mainNum]= 
 {//  当前层条数     当前条目显示的信息  执行的函数的指针      指向子节点的指针  指向父节点的指针
 	{m0_mainNum,		"run",				Nop,					m1_run,			NULL}, 
@@ -79,7 +74,7 @@ struct MenuItem m1_adjust[m1_adjustNum]=
 struct MenuItem m2_mode1[m2_mode1Num]=
 {
 	{m2_mode1Num,		"para1",			adjustFunctionsMode1,	NULL,			m1_adjust}, 
-	{m2_mode1Num,		"para2",			adjustFunctionsMode2,	NULL,			m1_adjust}	
+	{m2_mode1Num,		"para2",			adjustFunctionsMode1,	NULL,			m1_adjust}	
 };
 struct MenuItem m2_mode2[m2_mode2Num]=
 {
@@ -91,81 +86,64 @@ struct MenuItem m2_option[m2_optionNum]=
 	{m2_optionNum,		"isAutoLight",		adjustFunctionsOption,	NULL,			m1_adjust}, 
 	{m2_optionNum,		"isAutoNet",		adjustFunctionsOption,	NULL,			m1_adjust}
 };
-/*
-例子：（有符号*表示有下一级菜单；进入下一级和退回上一级用enter和exit键，同级间切换用上下键，调整参数用左右键）
-最多三级，再多没意义，改多的话下面程序Locate改的也多
-			运行*									调参*
-			  |										  |
-			模式1									模式1*
-			模式2									  |-参数1（-+）
-			灯开关（-+）	   					  	  |-参数2（-+）
-			联网开关（-+）							模式2*
-													  |-参数1（-+）
-													  |-参数2（-+）
-													选项*
-													  |-是否开机开灯（-+）
-													  |-是否开机联网（-+）
-													
-索引格式例子：
-（下面三个例子，显示的都是整个的索引，要么都显示，要么都隐藏）
-（把当前菜单所在级的所有菜单条目列出来；当前选中菜单条目如果有子级，后面显示一个->，如果没有子级，就是要调东西或者执行东西，就显示-	N	+或者-	go	+）
-（对于-	stop	+的，就是执行东西的，当选择执行后，可以隐藏整个索引，直到退出来，或者通过某个按键，弹出一个对话框显示当前索引）
-例子1：
-索引：/调参/选项->
-		*	是否开机开灯	-	N	+
-			是否开机联网	-	N	+
-
-例子2：		
-索引：/调参->
-			模式1->
-			模式2->
-		*	选项->
-
-例子3：
-索引：/运行->
-			模式1			-	stop	+
-		*	模式2			-	go		+
-			灯开关			-	Y		+
-			联网开关		-	Y		+
-		
-*/
-
-/*______________________用户函数实现_________________________________*/
-//用户功能-标准形式
-//基本思想就是，所有的系统功能均用一个变量来控制是否开启，即标志位控制
-//对于裸机，在大循环中用控制变量（标志）决定某些功能是否执行；对于RTOS，每一个功能就是一个任务，同样用标志位判断是否执行，具体就变成了等待信号量
-void runFunctions(struct MenuItem *MenuItemNow,	struct input_struct input)						//run下面的四个功能
+/*______________________STEP3: 用户功能控制变量和函数实现，参数和函数定义还在sys_menu.h里面_________________________________*/
+/*系统参数初始化*/
+struct sysPara_struct sysPara = 
 {
-	switch(input.keyValue)
-	{
-		case left:		
-									if(mystrcmp(MenuItemNow->DisplayString,"RunMode1") == 0)
-									{
-										RunMode1.isRun = !RunMode1.isRun;
-										RunMode2.isRun = !RunMode1.isRun;//mode1与mode2的运行状态应该互斥
-									}else if(mystrcmp(MenuItemNow->DisplayString,"RunMode2") == 0)
-									{
-										RunMode2.isRun = !RunMode2.isRun;
-										RunMode1.isRun = !RunMode2.isRun;//mode1与mode2的运行状态应该互斥
-									}
-									else if(mystrcmp(MenuItemNow->DisplayString,"lightSwt") == 0)		sysPara.lightSwt = !sysPara.lightSwt;
-									else if(mystrcmp(MenuItemNow->DisplayString,"netSwt") == 0)			sysPara.netSwt = !sysPara.netSwt;
-									break;
-		case right:
-									//同上
-									break;
-		case enter:					
-									//同上
-									break;
-		default:break;
-	}
-}
-
+	.lightSwt = 0,
+	.isAutoLight = 0,
+	.netSwt = 0,
+	.isAutoNet = 0
+};
+struct runMode1_struct RunMode1 = 
+{
+	.isRun = 0,
+	.Para1 = 5,
+	.Para2 = 3
+};
+struct runMode2_struct RunMode2 = 
+{
+	.isRun = 0,
+	.Para3 = 5,
+	.Para4 = 3
+};
+/*定义以上参数的左右极限，和长按步进*/
 #define mode1Para1Min -10
 #define mode1Para1Max 20
 #define mode1Para1longMove 5
+
+//用户功能-标准形式
+//基本思想就是，所有的系统功能均用一个变量来控制是否开启，即标志位控制
+//对于裸机，在大循环中用控制变量（标志）决定某些功能是否执行；对于RTOS，每一个功能就是一个任务，同样用标志位判断是否执行，具体就变成了等待信号量
+void runFunctions(const struct MenuItem *MenuItemNow,const struct input_struct input)						//run下面的四个功能
+{
+	switch(input.keyValue)
+	{
+		case left:
+		case right:	
+		case enter:
+						//LCD_ShowString(10,30,16,(u8*)MenuItemNow->DisplayString,0);
+						if(mystrcmp(MenuItemNow->DisplayString,"RunMode1") == 0)
+						{
+							RunMode1.isRun = !RunMode1.isRun;
+							RunMode2.isRun = !RunMode1.isRun;//mode1与mode2的运行状态应该互斥
+							
+							TestLED_Ctrl = RunMode1.isRun; //点个灯，以示庆祝，不，以示RunMode1成功执行
+							
+						}else if(mystrcmp(MenuItemNow->DisplayString,"RunMode2") == 0)
+						{
+							RunMode2.isRun = !RunMode2.isRun;
+							RunMode1.isRun = !RunMode2.isRun;//mode1与mode2的运行状态应该互斥
+						}
+						else if(mystrcmp(MenuItemNow->DisplayString,"lightSwt") == 0)	sysPara.lightSwt = !sysPara.lightSwt;
+						else if(mystrcmp(MenuItemNow->DisplayString,"netSwt") == 0)		sysPara.netSwt = !sysPara.netSwt;
+						
+						break;
+		default:break;
+	}
+}
 //调节mode1下面的参数
-void adjustFunctionsMode1(struct MenuItem *MenuItemNow,	struct input_struct input)			//adjust的Mode1下面的2个功能
+void adjustFunctionsMode1(const struct MenuItem *MenuItemNow,const struct input_struct input)			//adjust的Mode1下面的2个功能
 {
 	//把调节参数的步长和极值都用预定义#define代替一下
 	switch(input.keyValue)
@@ -231,11 +209,11 @@ void adjustFunctionsMode1(struct MenuItem *MenuItemNow,	struct input_struct inpu
 		default:break;
 	}	
 }
-void adjustFunctionsMode2(struct MenuItem *MenuItemNow,	struct input_struct input)			//adjust的Mode2下面的2个功能
+void adjustFunctionsMode2(const struct MenuItem *MenuItemNow,const struct input_struct input)			//adjust的Mode2下面的2个功能
 {
 	//同理
 }
-void adjustFunctionsOption(struct MenuItem *MenuItemNow,	struct input_struct input)			//adjust的Option下面的2个功能
+void adjustFunctionsOption(const struct MenuItem *MenuItemNow,const struct input_struct input)			//adjust的Option下面的2个功能
 {
 	//同理
 }
@@ -244,95 +222,155 @@ void adjustFunctionsOption(struct MenuItem *MenuItemNow,	struct input_struct inp
 /*_____________________以下皆为标准形式，固定的，不用动___________________________________*/
 
 /*外部输入处理函数
-为了能够识别按键是单击还是长按，应设置外部中断为“低电平触发”，详情看下面的话：
-如果是低电平触发，那么在低电平时间内中断一直有效；
-因此如果在电平没有恢复之前中断程序就已经执行完成从而退出，那么会在退出后又再次进入中断；但只要中断没有退出是不会重复触发的。
+为了能够识别按键是单击还是长按，应设置外部中断为“低电平触发”
 */
-/*此函数必须一直循环执行*/
+/*此函数必须一直循环执行，推荐100ms周期运行*/
 void keyProcess(void)
 {
-	char _10msCountDown = 100; /*1s内的双击有效，这里不要动*/
-	static u16 _10msNum = 0,isKeySetOnce = FALSE; 
+	static int _10msCountDown = 50; /*0.5s内的双击有效，这里不要动*/
+	static int _10msNum = 0,isKeySetOnce = FALSE; 
+	char isOnce = 0;
 	
-	//稍微延时消抖
-	if(Timer_IT_flags._10msec_flag == TRUE)
+	//如果发生了外部中断
+	if(key_Up_Interrupted == TRUE)
 	{
-		Timer_IT_flags._10msec_flag = FALSE;
-		
-		//如果发生了外部中断
-		if(key_Up_Interrupted == TRUE)
+		//再次判断
+		if( key_Up_ReadIn == GPIO_PIN_RESET) //规范：低电平有效，此时按键被按下
 		{
-			//再次判断
-			if( key_Up_ReadIn == GPIO_PIN_RESET) //规范：低电平有效，此时按键被按下
+			inputKey.keyValue	=	enter;
+			
+			_10msNum++;_10msCountDown--;
+			if(_10msNum > 300) _10msNum = 300;
+			if(_10msCountDown < -100) _10msCountDown = -100;
+			
+			if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在0.5秒内第二次被按下，则切换按键模式为长按
 			{
-				inputKey.keyValue	=	up; 
-				
-				_10msNum++;_10msCountDown--;
-				
-				if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在1秒内第二次被按下，则切换按键模式为长按
-				{
-					inputKey.keyMode	=	doub;
-				}else
-				{
-					_10msCountDown = 100;
-				}
-				
-				if(_10msNum > 30) //超过了300ms按键仍然时被按下状态，则把按键模式切换为长按
-				{
-					inputKey.keyMode	=	lon; 
-				}
-			}else//如果按键被抬起，则清中断标志位等下一次中断到来
+				isKeySetOnce = FALSE;
+				isOnce = 0;
+				inputKey.keyMode	=	doub;
+				return ;
+			}else
 			{
-				if(inputKey.keyMode	!=	doub)
-					isKeySetOnce = TRUE;
-				else isKeySetOnce = FALSE;
-				
-				_10msNum = 0;
-				key_Up_Interrupted = FALSE; 
-				inputKey.keyValue	= 	none; 
-				inputKey.keyMode	=	once; 
+				_10msCountDown = 50;
 			}
 			
-		}else if(key_Down_Interrupted == TRUE)
-		{
-			//再次判断
-			if( key_Down_ReadIn == GPIO_PIN_RESET) //规范：低电平有效，此时按键被按下
+			if(_10msNum > 100) //超过了1秒按键仍然时被按下状态，则把按键模式切换为长按，否则识别为单击
 			{
-				inputKey.keyValue	=	down; 
-				
-				_10msNum++;_10msCountDown--;
-				
-				if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在1秒内第二次被按下，则切换按键模式为长按
-				{
-					inputKey.keyMode	=	doub;
-				}else
-				{
-					_10msCountDown = 100;
-				}
-				
-				if(_10msNum > 30) //超过了300ms按键仍然时被按下状态，则把按键模式切换为长按
-				{
-					inputKey.keyMode	=	lon; 
-				}
-			}else//如果按键被抬起，则清中断标志位等下一次中断到来
+				isOnce = 0;
+				inputKey.keyMode	=	lon; 
+				return ;
+			}else
 			{
-				if(inputKey.keyMode	!=	doub)
-					isKeySetOnce = TRUE;
-				else isKeySetOnce = FALSE;
-				
-				_10msNum = 0;
-				key_Down_Interrupted = FALSE; 
-				inputKey.keyValue	= 	none; 
-				inputKey.keyMode	=	once; 
+				isOnce = 1;
+				return ;
 			}
+		}else//如果按键被抬起，则清中断标志位等下一次中断到来
+		{
+			if(inputKey.keyMode	!=	doub)
+				isKeySetOnce = TRUE;
+			else isKeySetOnce = FALSE,_10msCountDown = 50;
+			
+			_10msNum = 0;
+			key_Up_Interrupted = FALSE;  
+			
+			if(isOnce)		//对于单击，只有当按键松开，才释放
+			{
+				inputKey.keyMode	=	once;
+				return ;
+			}
+			
+			inputKey.keyValue	= 	none; 
+			inputKey.keyMode	=	notRdy;
+		}
+		
+	}else if(key_Down_Interrupted == TRUE)
+	{
+		if( key_Down_ReadIn == GPIO_PIN_RESET) //规范：低电平有效，此时按键被按下
+		{
+			inputKey.keyValue	=	down;
+			
+			_10msNum++;_10msCountDown--;
+			if(_10msNum > 300) _10msNum = 300;
+			if(_10msCountDown < -100) _10msCountDown = -100;
+			
+			if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在0.5秒内第二次被按下，则切换按键模式为长按
+			{
+				isKeySetOnce = FALSE;
+				isOnce = 0;
+				inputKey.keyMode	=	doub;
+				return ;
+			}else
+			{
+				_10msCountDown = 50;
+			}
+			
+			if(_10msNum > 100) //超过了1秒按键仍然时被按下状态，则把按键模式切换为长按，否则识别为单击
+			{
+				isOnce = 0;
+				inputKey.keyMode	=	lon; 
+				return ;
+			}else
+			{
+				isOnce = 1;
+				return ;
+			}
+		}else//如果按键被抬起，则清中断标志位等下一次中断到来
+		{
+			if(inputKey.keyMode	!=	doub)
+				isKeySetOnce = TRUE;
+			else isKeySetOnce = FALSE,_10msCountDown = 50;
+			
+			_10msNum = 0;
+			key_Up_Interrupted = FALSE;  
+			
+			if(isOnce)		//对于单击，只有当按键松开，才释放
+			{
+				inputKey.keyMode	=	once;
+				return ;
+			}
+			
+			inputKey.keyValue	= 	none; 
+			inputKey.keyMode	=	notRdy;
 		}
 	}
 }
 
+/*												
+索引格式例子：用于刷屏函数Locate()，写成自动获取菜单结构自适应显示，而不用当菜单结构改变时，索引显示函数也跟着变，不行
+（下面三个例子，显示的都是整个的索引，要么都显示，要么都隐藏）
+（把当前菜单所在级的所有菜单条目列出来；当前选中菜单条目如果有子级，后面显示一个->，如果没有子级，就是要调东西或者执行东西，就显示-	N	+或者-	go	+）
+（对于-	stop	+的，就是执行东西的，当选择执行后，可以隐藏整个索引，直到退出来，或者通过某个按键，弹出一个对话框显示当前索引）
+例子1：
+索引：/调参/选项->
+		*	是否开机开灯	-	N	+
+			是否开机联网	-	N	+
+
+例子2：		
+索引：/调参->
+			模式1->
+			模式2->
+		*	选项->
+
+例子3：
+索引：/运行->
+			模式1			-	stop	+
+		*	模式2			-	go		+
+			灯开关			-	Y		+
+			联网开关		-	Y		+
+		
+*/
 //显示索引函数，刷新屏幕和串口，用以显示当前菜单所在的位置，屏幕显示仿照上面“索引格式例子：”里的样子
-char *Locate(struct MenuItem *MenuItemNow,char menuid[3]) 
+char *Locate(const struct MenuItem *MenuItemNow,const char *menuid) 
 {
-	char *ii;
+	char *ii = {"0-0"};
+	char *buf;
+	
+//	sprintf(buf,"%d %d %d %c",menuid[0],menuid[1],menuid[2],'\0');
+//	LCD_ShowString(10,40,16,(u8*)buf,0);
+	
+//	sprintf(buf,"%s",MenuItemNow->DisplayString);
+//	LCD_ShowString(10,150,16,(u8*)buf,0);
+	
 	//这里需要调用屏幕的写字符串，还需再完善怎么现实菜单结构，现实的格式按照"索引格式例子："里面的形式！
 //	//menuPointer+menuid[i]
 //	char *index_strbuf;		//保存索引的格式显示
@@ -359,7 +397,7 @@ char *Locate(struct MenuItem *MenuItemNow,char menuid[3])
 	return ii;
 }
 //执行用户定义的功能函数，传入当前菜单项的结构体指针和当前的按键值信息，用于判断应该改变哪个具体的值以及怎么变
-void Run(struct MenuItem *MenuItemNow,	struct input_struct input)
+void Run(const struct MenuItem *MenuItemNow,const struct input_struct input)
 { 
 	(*(MenuItemNow->Subs))(MenuItemNow,input); //传入参数应和DoSomething函数的一致
 }
@@ -373,7 +411,7 @@ void Nop(void)
 /*刷屏函数Locate是直接调用，刷屏需要的时间可能比较长，这里按需修改成标志位控制*/
 /*用户功能函数的标准形式都是只改变数值，不加入复杂的具体功能，所以这个菜单处理函数不会占用太多时间，
 只要保证用户功能函数按照标准去写*/
-/*此函数必须一直循环执行*/
+/*此函数必须一直循环执行，推荐100ms周期运行*/
 void menuProcess(void)
 {
 	
@@ -381,86 +419,83 @@ void menuProcess(void)
 	static char i=0; //上面数组的下标
 	static struct MenuItem *menuPointer = &m0_main[0]; //菜单的漫游指针，并指定开始的位置
 	
-	if(Timer_IT_flags._100msec_flag == TRUE)
+	Locate(menuPointer,menuid);
+	
+	if((inputKey.keyValue != none)&&(inputKey.keyMode != notRdy))
 	{
-		Timer_IT_flags._100msec_flag = FALSE;
-		
-		if(inputKey.keyValue != none)
+		switch(inputKey.keyValue)
 		{
-			switch(inputKey.keyValue)
-			{
-				case up:
-											//在当前菜单级别跳到上一个菜单项
-											if (menuid[i]==0) menuid[i] = (menuPointer->MenuCount-1);
-											else menuid[i]--;
-											//Locate(menuPointer+menuid[i]);//刷新显示
-											Locate(menuPointer,menuid);
-											break;
-				
-				case down:
-											//在当前菜单级别跳到下一个菜单项
-											menuid[i]++;
-											if (menuid[i] > (menuPointer->MenuCount-1)) menuid[i]=0;
-											//Locate(menuPointer+menuid[i]);//刷新显示
-											Locate(menuPointer,menuid);
-											break;
-				
-				case left:
-											Run(menuPointer+menuid[i],inputKey);
-											break;
-				
-				case right:
-												//到下一级菜单,无下级时执行某功能
-												if ((menuPointer+menuid[i])->Childrenms !=NULL) 
-												{ 
-													menuPointer = (menuPointer+menuid[i])->Childrenms; 
-													i++; 
-													menuid[i]=0; 
-													//Locate(menuPointer+menuid[i]);//刷新显示
-													Locate(menuPointer,menuid);
-												} 
-												else 
-												{ 
-													Run(menuPointer+menuid[i],inputKey);
-												}
-												break;
-				
-				case back:
-											//到上一级菜单，没有上一级时不用动
-											if ((menuPointer+menuid[i])->Parentms !=NULL) 
-											{ 
-												menuPointer = (menuPointer+menuid[i])->Parentms; 
-												i--; 
-												//Locate(menuPointer+menuid[i]);//刷新显示
-												Locate(menuPointer,menuid);
-											} 
-											else 
-											{ 
-												//printf("You are at the top of menu"); 
-											}
-											break;
-				
-				case enter:
+			case up:
+										//在当前菜单级别跳到上一个菜单项
+										if (menuid[i]==0) menuid[i] = (menuPointer->MenuCount-1);
+										else menuid[i]--;
+										//刷新显示
+										Locate(menuPointer,menuid);
+										break;
+			
+			case down:
+										//在当前菜单级别跳到下一个菜单项
+										menuid[i]++;
+										if (menuid[i] > (menuPointer->MenuCount-1)) menuid[i]=0;
+										//刷新显示
+										Locate(menuPointer,menuid);
+										break;
+			
+			case left:
+										Run(menuPointer+menuid[i],inputKey);
+										break;
+			
+			case right:
 											//到下一级菜单,无下级时执行某功能
 											if ((menuPointer+menuid[i])->Childrenms !=NULL) 
 											{ 
 												menuPointer = (menuPointer+menuid[i])->Childrenms; 
 												i++; 
 												menuid[i]=0; 
-												//Locate(menuPointer+menuid[i]);//刷新显示
+												//刷新显示
 												Locate(menuPointer,menuid);
 											} 
 											else 
 											{ 
 												Run(menuPointer+menuid[i],inputKey);
-											}				
+											}
 											break;
-				
-				default:break;
-			}
-			inputKey.keyValue = none;
-			inputKey.keyMode = once;
+			
+			case back:
+										//到上一级菜单，没有上一级时不用动
+										if ((menuPointer+menuid[i])->Parentms !=NULL) 
+										{ 
+											menuPointer = (menuPointer+menuid[i])->Parentms; 
+											i--; 
+											//刷新显示
+											Locate(menuPointer,menuid);
+										} 
+										else 
+										{ 
+											//printf("You are at the top of menu"); 
+										}
+										break;
+			
+			case enter:
+										//到下一级菜单,无下级时执行某功能
+										if ((menuPointer+menuid[i])->Childrenms !=NULL) 
+										{
+											menuPointer = (menuPointer+menuid[i])->Childrenms; 
+											i++; 
+											menuid[i]=0; 
+											//刷新显示
+											Locate(menuPointer,menuid);
+										} 
+										else 
+										{ 
+											Run(menuPointer+menuid[i],inputKey);
+										}				
+										break;
+			
+			default:break;
 		}
+		inputKey.keyValue = none;
+		inputKey.keyMode = notRdy;
 	}
 }
 

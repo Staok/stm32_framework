@@ -12,7 +12,6 @@ void Bare_Begin(void)
 	
 	char* Head_buf = {"For Test!"};
 	DrawPageHead((u8*)Head_buf);
-	LCD_ShowString(10,120,16,(u8*)m1_run[0].DisplayString,0);
 	
 	for(;;)
 	{
@@ -75,7 +74,6 @@ void Bare_Begin(void)
 			keyProcess();	//菜单框架里的输入接管和获取函数
 			menuProcess();	//菜单框架里的按照输入执行功能函数
 			
-			
 		}
 		
 		if(Timer_IT_flags._1sec_flag == TRUE)
@@ -93,7 +91,7 @@ void Bare_Begin(void)
 //			sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
 //			printf_uart(UART1,"%s",RTC_buf);
 			POINT_COLOR = RED;
-			sprintf(RTC_buf,"%2d",Timer_IT_flags._1sec);
+			sprintf(RTC_buf,"%2ds",Timer_IT_flags._1sec);
 			LCD_ShowString(10,20,16,(u8*)RTC_buf,0);
 			
 		}

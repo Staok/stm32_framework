@@ -36,7 +36,7 @@ struct input_struct inputKey =
 /*___________________________STEP1: 结构体声明_____________________________________*/
 //0级菜单-数量和结构体定义
 #define m0_mainNum 2
-//struct MenuItem m0_main[m0_mainNum]; 
+struct MenuItem m0_main[m0_mainNum]; 
 //1级菜单
 #define m1_runNum 4
 #define m1_adjustNum 3
@@ -51,6 +51,7 @@ struct MenuItem m2_mode2[m2_mode2Num];
 struct MenuItem m2_option[m2_optionNum];
 
 /*___________________________STEP2: 菜单结构体实现_____________________________________*/
+/*当前条目显示的信息的字符串可用中文，但长度尽量控制短*/
 struct MenuItem m0_main[m0_mainNum]= 
 {//  当前层条数     当前条目显示的信息  执行的函数的指针      指向子节点的指针  指向父节点的指针
 	{m0_mainNum,		"run",				Nop,					m1_run,			NULL}, 
@@ -229,7 +230,7 @@ void keyProcess(void)
 {
 	static int _10msCountDown = 50; /*0.5s内的双击有效，这里不要动*/
 	static int _10msNum = 0,isKeySetOnce = FALSE; 
-	char isOnce = 0;
+	char isOnce = 0; /*Magic,Don`t touch!*/
 	
 	//如果发生了外部中断
 	if(key_Up_Interrupted == TRUE)
@@ -359,17 +360,45 @@ void keyProcess(void)
 			联网开关		-	Y		+
 		
 */
-//显示索引函数，刷新屏幕和串口，用以显示当前菜单所在的位置，屏幕显示仿照上面“索引格式例子：”里的样子
-char *Locate(const struct MenuItem *MenuItemNow,const char *menuid) 
+//显示索引函数，刷新屏幕和串口，用以显示当前菜单所在的位置
+/*先这样，不用写像上面那样高级*/
+/*不依赖用户定义的结构，可以简单自适应显示*/
+void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const int deepth) 
 {
-	char *ii = {"0-0"};
-	char *buf;
+	/*MenuItemNow是当前菜单的顶地址，(MenuItemNow + menuid[menu_deepth]) 才是当前菜单条目*/
+	char buf[50];
+	int menu_deepth = deepth; //记录当前在第几层
+	int i; //万年不变的i
 	
-//	sprintf(buf,"%d %d %d %c",menuid[0],menuid[1],menuid[2],'\0');
-//	LCD_ShowString(10,40,16,(u8*)buf,0);
+	sprintf(buf,"Menu View : %d %d %d",menuid[0],menuid[1],menuid[2]);
+	LCD_ShowString(50,20,16,(u8*)buf,0);
 	
-//	sprintf(buf,"%s",MenuItemNow->DisplayString);
-//	LCD_ShowString(10,150,16,(u8*)buf,0);
+	for(i = 0;i < 5;i++)
+	{
+		if(i < MenuItemNow->MenuCount)
+		{
+			//遍历当前菜单页中的菜单项
+			if((MenuItemNow + menuid[menu_deepth])->Childrenms !=NULL)	//如果本菜单条目下没有子菜单
+			{
+				if(menuid[menu_deepth] == i)
+					 sprintf(buf,"%-15s * -->",((MenuItemNow + i)->DisplayString));	
+				else sprintf(buf,"%-15s   -->",((MenuItemNow + i)->DisplayString));	//左对齐
+			}else
+			{
+				if(menuid[menu_deepth] == i)
+					 sprintf(buf,"%-15s * Ctl",((MenuItemNow + i)->DisplayString));	
+				else sprintf(buf,"%-15s   Ctl",((MenuItemNow + i)->DisplayString));
+			}
+			
+			LCD_ShowString(10,40 + i*20,16,(u8*)buf,0);						//显示当前菜单页中每一条菜单项
+		}else
+		{
+			sprintf(buf,"%-15s      ",' ');	
+			LCD_ShowString(10,40 + i*20,16,(u8*)buf,0);	//清空多余区域
+		}
+
+	}
+	
 	
 	//这里需要调用屏幕的写字符串，还需再完善怎么现实菜单结构，现实的格式按照"索引格式例子："里面的形式！
 //	//menuPointer+menuid[i]
@@ -394,8 +423,10 @@ char *Locate(const struct MenuItem *MenuItemNow,const char *menuid)
 //	}
 //	mystrcat(index_strbuf,item_strbuf);
 //	return index_strbuf;
-	return ii;
+	
 }
+
+
 //执行用户定义的功能函数，传入当前菜单项的结构体指针和当前的按键值信息，用于判断应该改变哪个具体的值以及怎么变
 void Run(const struct MenuItem *MenuItemNow,const struct input_struct input)
 { 
@@ -419,8 +450,6 @@ void menuProcess(void)
 	static char i=0; //上面数组的下标
 	static struct MenuItem *menuPointer = &m0_main[0]; //菜单的漫游指针，并指定开始的位置
 	
-	Locate(menuPointer,menuid);
-	
 	if((inputKey.keyValue != none)&&(inputKey.keyMode != notRdy))
 	{
 		switch(inputKey.keyValue)
@@ -429,16 +458,16 @@ void menuProcess(void)
 										//在当前菜单级别跳到上一个菜单项
 										if (menuid[i]==0) menuid[i] = (menuPointer->MenuCount-1);
 										else menuid[i]--;
-										//刷新显示
-										Locate(menuPointer,menuid);
+										
+										//Locate(menuPointer,menuid);
 										break;
 			
 			case down:
 										//在当前菜单级别跳到下一个菜单项
 										menuid[i]++;
 										if (menuid[i] > (menuPointer->MenuCount-1)) menuid[i]=0;
-										//刷新显示
-										Locate(menuPointer,menuid);
+										
+										//Locate(menuPointer,menuid);
 										break;
 			
 			case left:
@@ -452,8 +481,8 @@ void menuProcess(void)
 												menuPointer = (menuPointer+menuid[i])->Childrenms; 
 												i++; 
 												menuid[i]=0; 
-												//刷新显示
-												Locate(menuPointer,menuid);
+												
+												//Locate(menuPointer,menuid);
 											} 
 											else 
 											{ 
@@ -467,8 +496,8 @@ void menuProcess(void)
 										{ 
 											menuPointer = (menuPointer+menuid[i])->Parentms; 
 											i--; 
-											//刷新显示
-											Locate(menuPointer,menuid);
+											
+											//Locate(menuPointer,menuid);
 										} 
 										else 
 										{ 
@@ -483,8 +512,8 @@ void menuProcess(void)
 											menuPointer = (menuPointer+menuid[i])->Childrenms; 
 											i++; 
 											menuid[i]=0; 
-											//刷新显示
-											Locate(menuPointer,menuid);
+											
+											//Locate(menuPointer,menuid);
 										} 
 										else 
 										{ 
@@ -497,6 +526,9 @@ void menuProcess(void)
 		inputKey.keyValue = none;
 		inputKey.keyMode = notRdy;
 	}
+	
+	Locate(menuPointer,menuid,i);	//刷新显示 注意：menuPointer + menuid[i]才是当前菜单条目
+	
 }
 
 

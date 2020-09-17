@@ -4,11 +4,28 @@
 需要改的地方：
 
 现存BUG:
-	LCD_ShowString()函数，填入字符串最好先拷贝一下，否则这两个函数会改变源字符串信息，有时间优化一下这个函数
+	FIFO库的初始化经常不好使，返回值常为NULL，暂时不明原因
 	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果再另一个项目重新遇到就换一个小巧简单的库
 	
+即将加上的东西：
+	FATFS：即将加上
+	DMA：即将加上
+	FSMC用于 LCD\SRAM\FLASH
+		上SARM后加上原子写的内存管理
+	
+	IAP：即将加上
+	线性回归：即将加上
+	常用校验、加密算法：即将加上
+	JPEG、GIF解码和BMP编解码：即将加上
+	
+	文件系统要实现：
+		SD卡文件读存，
+		内部FLASH划分区域当作文件系统读存，
+		USB U盘读存，
+		把内部FLASH划分一块通过USB插入电脑当作U盘，可在电脑操作文件的读存
+	
 
-3、写顺序：
+写顺序：
 	完成	移植菜单模板，连带按键检测也都搞了
 	完成	FLASH存储开机次数
 	待做	串口2、3完成相关的接收功能，与串口1一样的，用预编译控制是否编译相关代码
@@ -35,13 +52,11 @@
 *参数：		1、NULL
 *返回值：	1、NULL
 ********************************/
-
-
-u16	StartUpTimes;	/*用于保存开机次数，储存在最后一个或倒数第二个页*/
-uint32_t UIDw[3]; /*保存STM32内部UID识别码，全球唯一识别码*/
-uint32_t sysCoreClock; /*获取HCLK频率，外设时钟均来自此再分频*/
+u16	StartUpTimes;			/*用于保存开机次数，储存在最后一个或倒数第二个页*/
+uint32_t UIDw[3]; 			/*保存STM32内部UID识别码，全球唯一识别码*/
+uint32_t sysCoreClock; 		/*获取HCLK频率，外设时钟均来自此再分频*/
 u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
-u8 adValueDone = 0;		/*DMA把ADC1的值传送到adValue完成标志*/
+u8 adValueDone = 0;			/*DMA把ADC1的值传送到adValue完成标志*/
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
 uint8_t is_quitFault;
@@ -134,6 +149,12 @@ void sys_MCU_Init_Seq(void)
 		/*使能待机-低功耗模式，默认长按PA0(WKUP)3秒关开机*/
 		sys_StdbyWKUP_ENABLE();
 	#endif
+	
+	#if SYSTEM_DAC_OUT1_ENABLE||SYSTEM_DAC_OUT2_ENABLE
+		void sys_DAC_ENABLE(void);
+	#endif
+
+
 	
 	
 	/*初始化并启动TIM4*/

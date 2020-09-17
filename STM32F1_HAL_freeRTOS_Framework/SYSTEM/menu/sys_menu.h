@@ -2,6 +2,7 @@
 #define __SYS_MENU_H
 
 #include "sys.h"
+#include "FIFO.h"
 
 /*______________________这里基本不动，按键输入信息_________________________________*/
 //输入可以为独立按键、五项按键、AD Key、触摸按键、无线遥控、旋转编码器等
@@ -43,13 +44,12 @@ struct MenuItem
 }; 
 void keyProcess(void);
 void menuProcess(void);
-char *Locate(const struct MenuItem *MenuItemNow,const char *menuid);
+void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const int deepth);
 void Run(const struct MenuItem *MenuItemNow,const struct input_struct input);
 void Nop(void);
 
 
 /*______________________STEP3: 定义系统信息，用户修改_________________________________*/
-extern struct MenuItem m1_run[4];
 //声明系统所有外设开关状态变量的控制集总
 struct sysPara_struct
 {

@@ -17,7 +17,9 @@ ______________________________【PIN MAP】_______________________________________
 		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
 		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
 		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
-		*...
+		* PA4		PA5										DAC_OUT1  DAC_OUT2（hd容量系类外设）
+		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
+		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
 
 用户：	*
 */
@@ -1469,6 +1471,242 @@ void STMFLASH_Read(u32 ReadAddr,u16 *pBuffer,u16 NumToRead)
 u16 STMFLASH_ReadHalfWord(u32 faddr)
 {
 	return *(vu16*)faddr; 
+}
+
+#endif
+
+
+/*__________________________DAC________________________________________*/
+#if SYSTEM_DAC_OUT1_ENABLE||SYSTEM_DAC_OUT2_ENABLE
+
+DAC_HandleTypeDef DAC1_Handler;//DAC句柄
+
+void sys_DAC_ENABLE(void)
+{
+	DAC_ChannelConfTypeDef DACCH1_Config;
+	DAC_ChannelConfTypeDef DACCH2_Config;
+	
+	DAC1_Handler.Instance=DAC;
+	HAL_DAC_Init(&DAC1_Handler);                 			//初始化DAC
+    
+		/*通道1配置*/
+		DACCH1_Config.DAC_Trigger=DAC_TRIGGER_NONE;             		//不使用触发功能
+							/*可选：
+								DAC_TRIGGER_T6_TRGO
+								DAC_TRIGGER_T7_TRGO
+								DAC_TRIGGER_T8_TRGO
+								DAC_TRIGGER_T2_TRGO
+								DAC_TRIGGER_T4_TRGO
+								DAC_TRIGGER_EXT_IT9
+								DAC_TRIGGER_SOFTWARE*/
+		DACCH1_Config.DAC_OutputBuffer=DAC_OUTPUTBUFFER_DISABLE;		//DAC1输出缓冲关闭
+		/*通道2配置*/
+		DACCH2_Config.DAC_Trigger=DAC_TRIGGER_NONE;             		//不使用触发功能
+		DACCH2_Config.DAC_OutputBuffer=DAC_OUTPUTBUFFER_DISABLE;		//DAC1输出缓冲关闭
+		
+		if(SYSTEM_DAC_OUT1_ENABLE)
+			HAL_DAC_ConfigChannel(&DAC1_Handler,&DACCH1_Config,DAC_CHANNEL_1);//DAC通道1配置
+			HAL_DAC_Start(&DAC1_Handler,DAC_CHANNEL_1);  			//开启DAC通道1
+		if(SYSTEM_DAC_OUT2_ENABLE)
+			HAL_DAC_ConfigChannel(&DAC1_Handler,&DACCH2_Config,DAC_CHANNEL_2);//DAC通道2配置
+			HAL_DAC_Start(&DAC1_Handler,DAC_CHANNEL_2);  			//开启DAC通道2
+    
+    
+}
+
+//DAC底层驱动，时钟配置，引脚 配置
+//此函数会被HAL_DAC_Init()调用
+//hdac:DAC句柄
+void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac)
+{      
+	if(SYSTEM_DAC_OUT1_ENABLE)
+	{
+		GPIO_InitTypeDef GPIO_Initure;
+		__HAL_RCC_DAC_CLK_ENABLE();             //使能DAC时钟
+		__HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+		
+		GPIO_Initure.Pin=GPIO_PIN_4;            //PA4
+		GPIO_Initure.Mode=GPIO_MODE_ANALOG;     //模拟
+		GPIO_Initure.Pull=GPIO_NOPULL;          //不带上下拉
+		HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	}
+	
+	if(SYSTEM_DAC_OUT2_ENABLE)
+	{
+		GPIO_InitTypeDef GPIO_Initure;
+		__HAL_RCC_DAC_CLK_ENABLE();             //使能DAC时钟
+		__HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+		
+		GPIO_Initure.Pin=GPIO_PIN_5;            //PA5
+		GPIO_Initure.Mode=GPIO_MODE_ANALOG;     //模拟
+		GPIO_Initure.Pull=GPIO_NOPULL;          //不带上下拉
+		HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	}
+}
+
+//设置通道1输出电压
+//vol:0~3.30V
+void DAC_Set_Ch1_Vol(float vol)
+{
+	float temp = vol;
+	temp = (temp/3.30)*4096.0;
+    HAL_DAC_SetValue(&DAC1_Handler,DAC_CHANNEL_1,DAC_ALIGN_12B_R,(uint32_t)temp);//12位右对齐数据格式设置DAC值
+}
+
+//设置通道2输出电压
+//vol:0~3.30V
+void DAC_Set_Ch2_Vol(float vol)
+{
+	float temp = vol;
+	temp = (temp/3.30)*4096.0;
+    HAL_DAC_SetValue(&DAC1_Handler,DAC_CHANNEL_2,DAC_ALIGN_12B_R,(uint32_t)temp);//12位右对齐数据格式设置DAC值
+}
+
+
+#endif
+
+/*____________________SDIO SD_____________________________________________*/
+#if SYSTEM_SDIO_SD_ENABLE
+
+SD_HandleTypeDef        SDCARD_Handler;     		//SD卡句柄
+HAL_SD_CardInfoTypeDef  SDCardInfo;                 //SD卡信息
+HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
+
+
+//SD卡初始化
+//返回值:0 初始化正确；其他值，初始化错误
+u8 SD_Init(void)
+{
+    u8 SD_Error;
+    
+    //初始化时的时钟不能大于400KHZ 
+    SDCARD_Handler.Instance=SDIO;
+    SDCARD_Handler.Init.ClockEdge=SDIO_CLOCK_EDGE_RISING;          		//上升沿     
+    SDCARD_Handler.Init.ClockBypass=SDIO_CLOCK_BYPASS_DISABLE;     		//不使用bypass模式，直接用HCLK进行分频得到SDIO_CK
+    SDCARD_Handler.Init.ClockPowerSave=SDIO_CLOCK_POWER_SAVE_DISABLE;   //空闲时不关闭时钟电源
+    SDCARD_Handler.Init.BusWide=SDIO_BUS_WIDE_1B;                       //1位数据线
+    SDCARD_Handler.Init.HardwareFlowControl=SDIO_HARDWARE_FLOW_CONTROL_ENABLE;//开启硬件流控
+    SDCARD_Handler.Init.ClockDiv=SDIO_TRANSFER_CLK_DIV;            		//SD传输时钟频率最大25MHZ
+	
+    SD_Error=HAL_SD_Init(&SDCARD_Handler);
+    if(SD_Error!=HAL_OK) return 1;
+	
+    SD_Error=HAL_SD_ConfigWideBusOperation(&SDCARD_Handler,SDIO_BUS_WIDE_4B);//使能宽总线模式
+    if(SD_Error!=HAL_OK) return 2;
+    return 0;
+}
+
+
+//SDMMC底层驱动，时钟使能，引脚配置，DMA配置
+//此函数会被HAL_SD_Init()调用
+//hsd:SD卡句柄
+void HAL_SD_MspInit(SD_HandleTypeDef *hsd)
+{
+    DMA_HandleTypeDef TxDMAHandler,RxDMAHandler;
+    GPIO_InitTypeDef GPIO_Initure;
+    
+    __HAL_RCC_SDIO_CLK_ENABLE();    //使能SDIO时钟
+    //__HAL_RCC_DMA2_CLK_ENABLE();    //使能DMA2时钟 
+    __HAL_RCC_GPIOC_CLK_ENABLE();   //使能GPIOC时钟
+    __HAL_RCC_GPIOD_CLK_ENABLE();   //使能GPIOD时钟
+    
+    //PC8,9,10,11,12
+    GPIO_Initure.Pin=GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_Initure.Mode=GPIO_MODE_AF_PP;      //推挽复用
+    GPIO_Initure.Pull=GPIO_PULLUP;          //上拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
+    HAL_GPIO_Init(GPIOC,&GPIO_Initure);     //初始化
+    
+    //PD2
+    GPIO_Initure.Pin=GPIO_PIN_2;            
+    HAL_GPIO_Init(GPIOD,&GPIO_Initure);     //初始化
+}
+
+/*
+//得到卡信息
+//cardinfo:卡信息存储区
+	HAL_SD_GetCardInfo(&SDCARD_Handler,&SDCardInfo);
+*/
+
+//读SD卡
+//buf:读数据缓存区
+//sector:扇区地址
+//cnt:扇区个数	
+//返回值:错误状态;0,正常;其他,错误代码;
+u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt)
+{
+    u8 sta = HAL_OK;
+	u32 timeout=SD_TIMEOUT;
+	long long lsector=sector;
+    INTX_DISABLE();//关闭总中断(POLLING模式,严禁中断打断SDIO读写操作!!!)
+	sta=HAL_SD_ReadBlocks(&SDCARD_Handler, (uint8_t*)buf,lsector,cnt,SD_TIMEOUT);//多个sector的读操作
+	
+	//等待SD卡读完
+	while(HAL_SD_GetCardState(&SDCARD_Handler) != HAL_SD_CARD_READY)
+    {
+		if(timeout-- == 0)
+		{	
+			sta = HAL_BUSY;
+		}
+    }
+    INTX_ENABLE();//开启总中断
+    return sta;
+}
+
+//写SD卡
+//buf:写数据缓存区
+//sector:扇区地址
+//cnt:扇区个数	
+//返回值:错误状态;0,正常;其他,错误代码;	
+u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt)
+{   
+    u8 sta = HAL_OK;
+	u32 timeout=SD_TIMEOUT;
+	long long lsector=sector;
+    INTX_DISABLE();//关闭总中断(POLLING模式,严禁中断打断SDIO读写操作!!!)
+	sta=HAL_SD_WriteBlocks(&SDCARD_Handler,(uint8_t*)buf,lsector,cnt,SD_TIMEOUT);//多个sector的写操作
+
+	//等待SD卡读完
+	while(HAL_SD_GetCardState(&SDCARD_Handler) != HAL_SD_CARD_READY)
+    {
+		if(timeout-- == 0)
+		{	
+			sta = HAL_BUSY;
+		}
+    }  
+	INTX_ENABLE();//开启总中断
+    return sta;
+}
+
+
+//通过串口打印SD卡相关信息
+void show_sdcard_info(void)
+{
+	uint64_t CardCap;	//SD卡容量
+
+	HAL_SD_GetCardCID(&SDCARD_Handler,&SDCard_CID);		//获取CID
+	HAL_SD_GetCardInfo(&SDCARD_Handler,&SDCardInfo); 	//获取SD卡信息                  
+	switch(SDCardInfo.CardType)
+	{
+		case CARD_SDSC:
+		{
+			if(SDCardInfo.CardVersion == CARD_V1_X)
+				printf_uart(UART1,"Card Type:SDSC V1\r\n");
+			else if(SDCardInfo.CardVersion == CARD_V2_X)
+				printf_uart(UART1,"Card Type:SDSC V2\r\n");
+		}
+		break;
+		case CARD_SDHC_SDXC:
+			printf_uart(UART1,"Card Type:SDHC\r\n");
+		break;
+	}	
+	CardCap=(uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);				//计算SD卡容量
+  	printf_uart(UART1,"Card ManufacturerID:%d\r\n",SDCard_CID.ManufacturerID);					//制造商ID
+ 	printf_uart(UART1,"Card RCA:%d\r\n",SDCardInfo.RelCardAdd);									//卡相对地址
+	printf_uart(UART1,"LogBlockNbr:%d \r\n",(u32)(SDCardInfo.LogBlockNbr));						//显示逻辑块数量
+	printf_uart(UART1,"LogBlockSize:%d \r\n",(u32)(SDCardInfo.LogBlockSize));					//显示逻辑块大小
+	printf_uart(UART1,"Card Capacity:%d MB\r\n",(u32)(CardCap>>20));							//显示容量（右移20位，以MB显示）
+ 	printf_uart(UART1,"Card BlockSize:%d\r\n\r\n",SDCardInfo.BlockSize);						//显示块大小
 }
 
 #endif

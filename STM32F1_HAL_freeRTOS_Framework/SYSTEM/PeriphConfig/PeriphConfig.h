@@ -154,7 +154,7 @@ extern Devices_Init_Struct UserDevices[];
 #define PAmodeOut(x)	{if(x>7){PAmodeOutH(x);}else{PAmodeOutL(x);}}
 
 
-/*____________________定时器2___________________________________*/
+/*_______________________________定时器2___________________________________*/
 extern TIM_HandleTypeDef TIM2_Handler;
 void sys_TIM2_ENABLE(void); //写在预编译外面为了外部文件能够调用
 #if STSTEM_TIM2_ENABLE
@@ -186,7 +186,7 @@ extern int32_t EncoderOverflowCount;//定时器溢出次数
 float peek_TIM2_Encoder_Speed(void);
 int32_t peek_TIM2_Encoder_Value(void);
 
-/*____________________ADC1___________________________________*/
+/*_______________________________ADC1___________________________________*/
 extern ADC_HandleTypeDef ADC1_Handler;
 void sys_ADC1_ENABLE(void);
 void Get_Adc_Average(u32 ch,u8 times,u32* result);
@@ -200,7 +200,7 @@ float Get_Temprate(u32 adcx);
 	#endif
 #endif
 
-/*____________________SPI1、2_________________________*/
+/*_______________________________SPI1、2________________________________*/
 
 extern SPI_HandleTypeDef SPI1_Handler;  //SPI1句柄
 extern SPI_HandleTypeDef SPI2_Handler;  //SPI2句柄
@@ -223,7 +223,7 @@ u8 SPI2_ReadWriteByte(u8 TxData);
 void sys_SPI1_SS_io_Init(void);
 void sys_SPI2_SS_io_Init(void);
 
-/*______________________低功耗StandbyMode________________________________*/
+/*_________________________________低功耗StandbyMode________________________________*/
 
 void sys_StdbyWKUP_ENABLE(void);
 void sys_CheckWKUP_4RTOS(void);
@@ -244,6 +244,36 @@ void STMFLASH_Write(	u32 WriteAddr,	u16 *pBuffer,	u16 NumToWrite);	//可用API
 	#endif
 
 	u16 STMFLASH_ReadHalfWord(u32 faddr);
+#endif
+
+/*_____________________________________DAC________________________________________*/
+
+#if SYSTEM_DAC_OUT1_ENABLE||SYSTEM_DAC_OUT2_ENABLE
+extern DAC_HandleTypeDef DAC1_Handler;//DAC句柄
+void sys_DAC_ENABLE(void);
+void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac);
+void DAC_Set_Ch1_Vol(float vol);
+void DAC_Set_Ch2_Vol(float vol);
+
+#endif
+
+
+
+/*____________________SDIO SD_____________________________________________*/
+#if SYSTEM_SDIO_SD_ENABLE
+
+extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
+extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD卡信息
+extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
+
+#define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
+
+u8 SD_Init(void);
+u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt);
+u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt);
+void show_sdcard_info(void);						//通过串口1打印SD卡相关信息
+
+
 #endif
 
 #endif

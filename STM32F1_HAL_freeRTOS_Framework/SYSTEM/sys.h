@@ -54,7 +54,12 @@
 	5、尽量减少数据传输过程中的拷贝，常用指针、结构体指针当传输数据
 	6、调用函数尽量不用NULL实参，尽量给一个具体的值
 	7、外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
-	8、函数返回值：负数表错误，0表正确，正数表正确并带返回信息
+	8、函数返回值：0表正确，正数表错误并带返回信息，并尽量用HAL类型返回值如：
+		  HAL_OK       = 0x00U,
+		  HAL_ERROR    = 0x01U,
+		  HAL_BUSY     = 0x02U,
+		  HAL_TIMEOUT  = 0x03U
+		
 */
 
 /*
@@ -70,26 +75,28 @@ STM32F
 			  R = 64脚
 			  V = 100脚
 			  Z = 144脚
-			   4 = 16K字节
-			   6 = 32K
-			   8 = 64K
-			   B = 128K
-			   C = 256K
-			   D = 384K
-			   E = 512K
+			  I = 176脚
+			   4 = 16KB(ld)
+			   6 = 32KB(ld)
+			   8 = 64KB(md)
+			   B = 128KB(md)
+			   C = 256KB(hd)
+			   D = 384KB(hd)
+			   E = 512KB(hd)
+			   G = 1024KB(hd)
 			    H = BGA封装
 				T = LQFP封装
 				 6 = -40~85℃
 			FLASH               RAM
 			
-			16K(ld)				6K			ld:2个USART，2个16位定时器，1个SPI，1个I2C，USB，CAN，1个高级定时器，2个ADC
+			16K(ld)				6K			ld:2个USART，3个16位定时器+1个16位电机控制定时器，1个SPI，1个I2C，USB，CAN，1个高级定时器，2个ADC
 			32K(ld)				10K
 			
-			64K(md)				20K			md:3个USART，3个16位定时器，2个SPI，2个I2C，USB，CAN，1个高级定时器，1个ADC
+			64K(md)				20K			md:3个USART，4个16位定时器+1个16位电机控制定时器，2个SPI，2个I2C，USB，CAN，1个高级定时器，2个ADC（通道数不定）
 			128K(md)			20K						(x8/xB系列有1、2、3、4定时器)
 			
-			256K(hd)			48K或64K	hd:5个串口，4个16位定时器，2个基本定时器，3个SPI，2个I2S，2个I2C，USB，CAN，
-			384K(hd)			64K				2个高级定时器，3个ADC，1个DAC，1个SDIO，FSMC(100和144脚封装)
+			256K(hd)			48K或64K	hd:3+2个串口，8个以上16位定时器+2个以上16位电机控制定时器，2个基本定时器，3个SPI，2个I2S，2个I2C，USB，CAN，
+			384K(hd)			64K				2个高级定时器，3个ADC（通道数不定），2个12bit DAC，1个SDIO，FSMC(100和144脚封装)
 			512K(hd)			64K
 */
 
@@ -98,6 +105,20 @@ STM32F
 		  x		  0			FLASH
 		  0		  1			系统储存器(ISP下载)
 		  1		  1			SRAM
+*/
+
+/*
+需要 256K(hd) 及以上IC的外设列表：
+	SDIO
+	DAC
+	FSMC
+	
+	在STM32F103系列之间切换容量或者芯片时，需要配置以下几项：
+	1、在 Device 里改芯片型号
+	2、在 C/C++ 里面改 Symbols 到相应芯片型号，可选：
+		STM32F103x6 —— STM32F103xB —— STM32F103xE ——  STM32F103xG 
+	3、（第一步完成后这里就自动改了，再检查一下）在 Debug 里面的 下载Settings 里面的 Flash Download 里面改相应的小、中大容量下载算法
+	4、在当前工程的CORE文件夹里 只保留 相应的startup.s文件，对于中容量为startup_stm32f103xb.s，以此类推
 */
 
 #define SYSTEM_SUPPORT_OS		0				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
@@ -308,7 +329,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 /*
 	ADC：STN32的是12位逐次逼近型，分ADC1、2和3，其中ADC1和ADC2的引脚一样（除了内部通道）；
 	最大速率1MHz，1us（在AD时钟14MHz（最高），采样时间为1.5个周期得到），总转换时间为 (采样时间 + 12.5个周期)，采样时间长则采样精度高；
-	参考电压 Vref-必须连到VSSA，Vref+可连到 2.4V~VDDA，ADC输入电压必须小于Vref+
+	参考电压 Vref-必须连到VSSA，Vref+可连到 2.4V~VDDA，ADC输入电压必须小于Vref+，默认Vref+为3.3V，否则自行更改转换计算
 	ADC1本质就是一个AD转换器加16路选择器，所以ADC1同一时刻采样值只能是一个，如果用在规则组中扫描模式，无法得知当前结果是哪一路的，一个AD模块一个值
 	ADC1的通道与引脚映射：
 	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
@@ -437,9 +458,21 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 		以及 到PeriphConfig.h里面的
 			#define	SPI1_CS PAout(4)	自行更改
 			#define	SPI2_CS PBout(12)	自行更改
-	写读一体函数：
-		u8 SPI1_ReadWriteByte(u8 TxData);
-		u8 SPI2_ReadWriteByte(u8 TxData);
+	写读函数：(目前只写了SPI1，SPI2如果要用的话同理)
+		u8 SPI1_ReadWriteByte_8Byte(u8 TxData) 		读写一个字节
+		u8 SPI1_ReadWriteByte_16Byte(u8* TxData) 	连写两个字节并读回，传入一个包含2字节的u8*指针
+		u8 SPI1_WriteByte_8Byte(u8 TxData)			写一个字节
+		u8 SPI1_WriteByte_16Byte(u8* TxData)		连写两个字节，传入一个包含2字节的u8*指针
+		例子：
+			u8 Max7219_adr_data[Max7219_regNum][2] = 
+			{
+				{0x09,0xFF},
+				{0x0A,0x08},
+				...
+			}
+			for(i = 0;i < Max7219_regNum;i++)
+				SPI1_WriteByte_16Byte(Max7219_adr_data[i]);
+	
 	设置SPI速度函数： APB2为72MHz，APB1为二分频为36Mhz
 		void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI1由APB2分频得来
 		void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI2由APB1分频得来
@@ -476,6 +509,76 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 		STMFLASH_Write(	FLASH_SAVE_ADDR1,	(u16*)TEXT_Buffer,	sizeof(TEXT_Buffer));
 	读：STMFLASH_Read(	FLASH_SAVE_ADDR1,	(u16*)datatemp,		sizeof(TEXT_Buffer));
 */
+
+/*hd系列外设，DAC两个输出通道 PA4和PA5，默认初始化为12位右对齐，速度最快为250K左右，输出范围 0~Vref+，默认Vref+为3.3V，否则自行更改转换计算*/
+/*可选输出 噪声波形 和 三角波波形 ，默认不适用外部触发，可选触发源在初始化函数中修改（有定时器中断和外部中断线9）*/
+#define SYSTEM_DAC_OUT1_ENABLE	0
+#define SYSTEM_DAC_OUT2_ENABLE	0
+/*可用API:
+	设置通道1输出电压,vol:0~3.30V
+		void DAC_Set_Ch1_Vol(float vol)
+	设置通道2输出电压,vol:0~3.30V
+		void DAC_Set_Ch2_Vol(float vol)
+*/
+
+/*hd系类外设，六根线（四位数据线，时钟线和命令线），SDIO最高传输速度12M字节每秒，目前只支持用于SD卡*/
+/*支持的四种卡：SD2.0 高容量卡（SDHC，最大32G），SD2.0 标准容量卡（SDSC，最大 2G），SD1.x 卡和 MMC 卡）*/
+/*
+初始化后获取到的卡信息存在：
+	HAL_SD_CardInfoTypeDef  SDCardInfo;	//SD卡信息结构体
+	成员：
+		uint32_t CardType;             			卡类型：						Specifies the card Type
+														CARD_SDSC					SD Standard Capacity
+														CARD_SDHC_SDXC				SD High Capacity <32Go, SD Extended Capacity <2To
+														CARD_SECURED
+		uint32_t CardVersion;                 	卡版本：CARD_V1_X、CARD_V2_X	Specifies the card version
+		uint32_t Class;                        	卡级别							Specifies the class of the card class 
+		uint32_t RelCardAdd;                  	卡相对地址						Specifies the Relative Card Address
+		uint32_t BlockNbr;                     	块数量							Specifies the Card Capacity in blocks
+		uint32_t BlockSize;                   	块大小							Specifies one block size in bytes
+		uint32_t LogBlockNbr;                 	逻辑块数量						Specifies the Card logical Capacity in blocks
+		uint32_t LogBlockSize;                	逻辑块大小（一般为512字节一块）	Specifies logical block size in bytes
+	
+	HAL_SD_CardCIDTypeDef SDCard_CID;  //SD卡制造CID
+	成员：
+		__IO uint8_t  ManufacturerID;  制造商ID		Manufacturer ID
+		__IO uint16_t OEM_AppliID;     OEM/Application ID
+		__IO uint32_t ProdName1;       Product Name part1
+		__IO uint8_t  ProdName2;       Product Name part2
+		__IO uint8_t  ProdRev;         Product Revision
+		__IO uint32_t ProdSN;          Product Serial Number
+		__IO uint8_t  Reserved1;       Reserved1
+		__IO uint16_t ManufactDate;    Manufacturing Date
+		__IO uint8_t  CID_CRC;         CID CRC
+		__IO uint8_t  Reserved2;       Always 1
+*/
+/*
+引脚：
+PC8			SDIO_D0
+PC9			SDIO/D1
+PC10		SDIO_D2
+PC11		SDIO_D3
+PC12		SDIO_CK
+PD2			SDIO_CMD
+*/
+/*备注：可用开发用DMA读写SD卡，这样更省时间，读写的时候就不用关中断了*/
+#define SYSTEM_SDIO_SD_ENABLE	1
+/*可用API：
+	一个块的大小：SDCardInfo.LogBlockSize
+	SD卡块的数量：SDCardInfo.LogBlockNbr
+	u8 SD_ReadDisk(buf,secaddr,seccnt);			//读取从第secaddr块开始的seccnt个块的内容，返回地址到buf（大概率一个块为512KB，buf必须先准备好足够空间）
+												//返回 HAL_OK （值为0） 为成功，其他为失败
+														
+	u8 SD_WriteDisk(buf,secaddr,seccnt);		//把buf内的内容从secaddr块开始写入，连续写seccnt个块
+												//返回 HAL_OK （值为0） 为成功，其他为失败
+	
+	void show_sdcard_info(void);				//通过串口1打印SD卡相关信息
+	
+	计算SD卡容（单位为字节）：
+		uint64_t CardCap = (uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);	 //计算SD卡容量（单位为字节）
+		CardCap>>20 //此为转换为MB单位
+*/
+
 
 /*_____________系统函数_______________*/
 //extern static uint8_t Init_OK_Num;

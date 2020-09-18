@@ -25,7 +25,7 @@ void Bare_Begin(void)
 		}
 		
 		
-		/*100ms周期执行：可以为按键检测和处理等*/
+		/*____________________________________100ms周期执行：可以为按键检测和处理等________________________________________*/
 		if(Timer_IT_flags._100msec_flag == TRUE)
         {
             Timer_IT_flags._100msec_flag = FALSE;
@@ -42,7 +42,7 @@ void Bare_Begin(void)
 			
 			
 		}
-		/*300ms周期执行：通常为运行时错误自检以及处理，刷屏等*/
+		/*____________________________________300ms周期执行：通常为运行时错误自检以及处理，刷屏等__________________________________________*/
 		if(Timer_IT_flags._300msec_flag == TRUE)
 		{
 			Timer_IT_flags._300msec_flag = FALSE;
@@ -76,6 +76,7 @@ void Bare_Begin(void)
 			
 		}
 		
+		/*____________________________________1s周期执行：通常为运行状态指示，滴答心跳提醒等等__________________________________________*/
 		if(Timer_IT_flags._1sec_flag == TRUE)
 		{
 			Timer_IT_flags._1sec_flag = FALSE;

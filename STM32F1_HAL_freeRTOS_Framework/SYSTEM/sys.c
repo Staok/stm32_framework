@@ -8,10 +8,17 @@
 	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果再另一个项目重新遇到就换一个小巧简单的库
 	
 即将加上的东西：
-	FATFS：即将加上
-	DMA：即将加上
+	
+	ADC的DMA1存疑，再看看网上，ADC的软件触发和DMA的循环模式是否搭，另外启动方式看sys.h那里，也存疑，最后上板子测试，LCD显示
+	DMA：中断回调函数用法，ADC那里用DMA时的回调函数用法是否正确
+	
+	FATFS：就差移植原子两个.c文件里的各种API 和 mymolloc、myfree
+	
+	把stdlib排除在项目之外（逐个.c文件查看），不编译，自己实现malloc和free函数（借鉴原子的），并替换在FIFO.c和ffsystem.c里面的
+	
 	FSMC用于 LCD\SRAM\FLASH
 		上SARM后加上原子写的内存管理
+		
 	
 	IAP：即将加上
 	线性回归：即将加上

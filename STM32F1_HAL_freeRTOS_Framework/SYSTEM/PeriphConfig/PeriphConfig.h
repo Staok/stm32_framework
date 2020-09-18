@@ -260,19 +260,17 @@ void DAC_Set_Ch2_Vol(float vol);
 
 
 /*____________________SDIO SD_____________________________________________*/
-#if SYSTEM_SDIO_SD_ENABLE
 
-extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
 extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD卡信息
 extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
-
-#define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
-
 u8 SD_Init(void);
 u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt);
 u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt);
 void show_sdcard_info(void);						//通过串口1打印SD卡相关信息
+#if SYSTEM_SDIO_SD_ENABLE
 
+extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
+#define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
 
 #endif
 

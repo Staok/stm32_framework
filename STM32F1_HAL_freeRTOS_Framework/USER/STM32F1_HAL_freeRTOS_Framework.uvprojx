@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\Devices\LCD ILI9341</IncludePath>
+              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\Devices\LCD ILI9341;..\SYSTEM\FATFS</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -918,6 +918,31 @@
               <FileName>lcd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Devices\LCD ILI9341\lcd.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>FATFS</GroupName>
+          <Files>
+            <File>
+              <FileName>diskio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\FATFS\diskio.c</FilePath>
+            </File>
+            <File>
+              <FileName>ff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\FATFS\ff.c</FilePath>
+            </File>
+            <File>
+              <FileName>ffsystem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\FATFS\ffsystem.c</FilePath>
+            </File>
+            <File>
+              <FileName>ffunicode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYSTEM\FATFS\ffunicode.c</FilePath>
             </File>
           </Files>
         </Group>

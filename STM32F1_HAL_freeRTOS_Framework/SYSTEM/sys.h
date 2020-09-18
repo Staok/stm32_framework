@@ -89,14 +89,14 @@ STM32F
 				 6 = -40~85℃
 			FLASH               RAM
 			
-			16K(ld)				6K			ld:2个USART，3个16位定时器+1个16位电机控制定时器，1个SPI，1个I2C，USB，CAN，1个高级定时器，2个ADC
+			16K(ld)				6K			ld:2个USART，3个16位定时器+1个16位电机控制定时器，1个SPI，1个I2C，USB，CAN，1个高级定时器，2个ADC，DMA1（7通道）
 			32K(ld)				10K
 			
 			64K(md)				20K			md:3个USART，4个16位定时器+1个16位电机控制定时器，2个SPI，2个I2C，USB，CAN，1个高级定时器，2个ADC（通道数不定）
-			128K(md)			20K						(x8/xB系列有1、2、3、4定时器)
+			128K(md)			20K						(x8/xB系列有1、2、3、4定时器)，DMA1（7通道）
 			
 			256K(hd)			48K或64K	hd:3+2个串口，8个以上16位定时器+2个以上16位电机控制定时器，2个基本定时器，3个SPI，2个I2S，2个I2C，USB，CAN，
-			384K(hd)			64K				2个高级定时器，3个ADC（通道数不定），2个12bit DAC，1个SDIO，FSMC(100和144脚封装)
+			384K(hd)			64K				2个高级定时器，3个ADC（通道数不定），2个12bit DAC，1个SDIO，FSMC(100和144脚封装)，DMA1（7通道）、2（5通道）
 			512K(hd)			64K
 */
 
@@ -112,6 +112,7 @@ STM32F
 	SDIO
 	DAC
 	FSMC
+	DMA2
 	
 	在STM32F103系列之间切换容量或者芯片时，需要配置以下几项：
 	1、在 Device 里改芯片型号
@@ -350,14 +351,17 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 		#define InrTemp B16in16
 		/*下面的定时器触发不用了，何必那么麻烦，直接调用启动ADC采集一次的函数一样...*/
 //	#define SYSTEM_ADC1_useTIM2trig	1		/*定时器2触发ADC采集转换，由于ADC1触发源没有TIM2TRGO，
-//												所以是在TIM2的定时中断中软件触发实现，必须打开TIM2的定时中断！*/
-	#define SYSTEM_ADC1_useDMA1		1		/*使用DAM1把转换结果放到目标位置*/
+//												所以是在TIM2的定时中断中软件触发实现，必须打开TIM2的定时中断！后注：；不一定要非用TIM2，TIM3或者TIM4中断都行*/
+	#define SYSTEM_ADC1_useDMA1		1		/*使用DAM1的通道1把转换结果放到目标位置*/
 		extern u16 adValue[SYSTEM_ADC1_useChanlNum];						/*DMA1把ADC转换结果传送的目标位置*/
 		extern u8 adValueDone;
 	/*可用的API：
 			凡是启用 SYSTEM_ADC1_useDMA1 即用DMA传输ADC数据，读取顺序：
 				如果启用 SYSTEM_ADC1_useScan 循环一遍采集
-					先调用 HAL_ADC_Start(&ADC1_Handler); 调用SYSTEM_ADC1_useChanlNum次， 转换一遍每一个规则通道
+						这里存疑：————————————————————————再去借鉴网上，还有初始化那里配置DMA为循环模式否？ADC的触发为软件否？
+						不确定：先调用 HAL_ADC_Start(&ADC1_Handler); 调用SYSTEM_ADC1_useChanlNum次， 转换一遍每一个规则通道
+						是不是这个：  HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，最后一个参数为数据长度
+									上面这一句在初始化时候已经开启了，是不是不用再软件触发，直接等adValueDone标志位就行了
 					判断 adValueDone 是否为1，是则从 adValue[x] 读值即可，如果启用 内部温度 通道，其值保存在adValue[SYSTEM_ADC1_useChanlNum-1]
 					adValueDone 清零
 				如果没有启用 SYSTEM_ADC1_useScan 循环一遍采集
@@ -380,6 +384,55 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 		
 #define SYSTEM_IWDG_ENABLE		1			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/
 											/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
+
+/*开启DMA1，*/
+#define SYSTEM_DMA1_ENABLE		1
+/*
+配置前 首先查看 “DMA1各通道一览表”
+DMA配置的一般过程：（以储存器传输到UART1的TX为例子，USART1的TX连接在DMA1的通道4上）
+	定义句柄：
+		DMA_HandleTypeDef  UART1TxDMA_Handler;      //DMA句柄
+	初始化序列：
+		__HAL_RCC_DMA1_CLK_ENABLE();			//DMA1时钟使能 
+		
+		__HAL_LINKDMA(&UART1_Handler,hdmatx,UART1TxDMA_Handler);    		//将DMA与USART1联系起来(发送DMA)
+		//参数说明：外设句柄(无论是发送方还是接收方) ， 外设句柄中的DMA_HandleTypeDef类型变量 ， DMA1句柄
+		
+		UART1TxDMA_Handler.Instance=DMA1_Channel4;                          //通道选择
+		UART1TxDMA_Handler.Init.Direction=DMA_MEMORY_TO_PERIPH;             //存储器到外设
+											//还可选 ： DMA_PERIPH_TO_MEMORY 外设到存储器 或 DMA_MEMORY_TO_MEMORY 储存器到储存器
+		UART1TxDMA_Handler.Init.PeriphInc=DMA_PINC_DISABLE;                 //外设非增量模式 外设一般都是非增量（地址不增）
+		UART1TxDMA_Handler.Init.MemInc=DMA_MINC_ENABLE;                     //存储器增量模式 储存器一般都是增量（地址要增）
+		UART1TxDMA_Handler.Init.PeriphDataAlignment=DMA_PDATAALIGN_BYTE;    //外设数据长度:8位 或者16位 或者32位 外设、存储器要一致，并且能接受
+		UART1TxDMA_Handler.Init.MemDataAlignment=DMA_MDATAALIGN_BYTE;       //存储器数据长度:8位
+		UART1TxDMA_Handler.Init.Mode=DMA_NORMAL;                            //外设普通模式 如果外设是ADC，则开启ADC连续采集后，这里应是循环模式
+		UART1TxDMA_Handler.Init.Priority=DMA_PRIORITY_MEDIUM;               //中等优先级 最高、高、中、低
+		
+		HAL_DMA_DeInit(&UART1TxDMA_Handler);   								//DMA复位
+		HAL_DMA_Init(&UART1TxDMA_Handler);									//DMA初始化
+	中断初始化：（可选）
+		HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                          //DMA中断优先级
+		HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);                                  //使能DMA中断
+	中断回调函数：
+		
+	查询法得到传输是否完成：（通道4为例）
+		if(__HAL_DMA_GET_FLAG(&UART1TxDMA_Handler,DMA_FLAG_TC4))//等待DMA1通道4传输完成
+		{
+			__HAL_DMA_CLEAR_FLAG(&UART1TxDMA_Handler,DMA_FLAG_TC4);//清除DMA1通道4传输完成标志
+			//要干的活
+		}
+	
+可用API：
+	得到当前还剩多少数据待发：	u16 pro = HAL_DMA_GET_COUNTER(&UART1TxDMA_Handler); //比如一次传输count个数据，获取到的是剩下的， 1-pro/count 是进度百分比
+	
+	对于串口：	使用DMA发送		原型： HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
+									例子：HAL_UART_Transmit_DMA(&UART1_Handler,SendBuff,SEND_BUF_SIZE);
+				使用DMA接收		原型： HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
+	
+	对于ADC：	发送			原型： HAL_StatusTypeDef HAL_ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)  //启用一次规则组ADC转换并用DMA传输结果到目标位置
+									例子：HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，最后一个参数为数据长度
+*/
+
 
 /*开启串口，x8/xB系列有三个串口，最好不超过2M位每秒。默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断*/
 /*串口方面可用API，看SYSTEM_SUPPORT_sprintf宏定义的注释*/
@@ -534,10 +587,15 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 		uint32_t CardVersion;                 	卡版本：CARD_V1_X、CARD_V2_X	Specifies the card version
 		uint32_t Class;                        	卡级别							Specifies the class of the card class 
 		uint32_t RelCardAdd;                  	卡相对地址						Specifies the Relative Card Address
-		uint32_t BlockNbr;                     	块数量							Specifies the Card Capacity in blocks
-		uint32_t BlockSize;                   	块大小							Specifies one block size in bytes
+		uint32_t BlockNbr;                     	块数量（存储器内部的事）		Specifies the Card Capacity in blocks
+		uint32_t BlockSize;                   	块大小（存储器内部的事）		Specifies one block size in bytes
 		uint32_t LogBlockNbr;                 	逻辑块数量						Specifies the Card logical Capacity in blocks
-		uint32_t LogBlockSize;                	逻辑块大小（一般为512字节一块）	Specifies logical block size in bytes
+		uint32_t LogBlockSize;                	逻辑块大小（扇区数目）			Specifies logical block size in bytes
+		注：我们只需要关注逻辑块和逻辑块大小即可，其他是SD卡内部的事情，逻辑块和逻辑扇区一回事，一个逻辑块为了保证兼容都是512字节大小
+			BLOCK SIZE ： 8 即每个BLOCK有8个扇区（这个是存储器内部的事，用户不关心）
+			也就是我们只关心：
+				SECTOR SIZE ：一般为512字节
+				SECTOR COUNT：等于总容量字节数/512
 	
 	HAL_SD_CardCIDTypeDef SDCard_CID;  //SD卡制造CID
 	成员：
@@ -563,7 +621,7 @@ PD2			SDIO_CMD
 */
 /*备注：可用开发用DMA读写SD卡，这样更省时间，读写的时候就不用关中断了*/
 #define SYSTEM_SDIO_SD_ENABLE	1
-/*可用API：
+/*可用API：（不推荐直接读写！要用文件系统FATFS按照文件读写）
 	一个块的大小：SDCardInfo.LogBlockSize
 	SD卡块的数量：SDCardInfo.LogBlockNbr
 	u8 SD_ReadDisk(buf,secaddr,seccnt);			//读取从第secaddr块开始的seccnt个块的内容，返回地址到buf（大概率一个块为512KB，buf必须先准备好足够空间）
@@ -578,6 +636,32 @@ PD2			SDIO_CMD
 		uint64_t CardCap = (uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);	 //计算SD卡容量（单位为字节）
 		CardCap>>20 //此为转换为MB单位
 */
+
+/*使用FATFS文件系统管理SD卡，FATSF支持FAT12/FAT16/FAT32/exFAT，官网（含API说明）：http://elm-chan.org/fsw/ff/00index_e.html*/
+/*配置相关：在 ffconf.h 文件里
+	注意：	默认没有支持相对路径，如需可在FATFS配置文件内打开
+			默认配置支持4个文件设备，默认使用UTF-8编码
+	配置：	定义有哪些设备，比如DEV_ExFLASH（外部FLASH，MMC/NAND/SPI FLASH等）、DEV_SD、DEV_InrFlash（内部FLASH）、DEV_USB等等
+			在diskio.c里面定义读写以上这些设备的底层函数：（底层函数，应用层不应调用）
+				DSTATUS disk_initialize (BYTE pdrv);
+				DSTATUS disk_status (BYTE pdrv);	//由于存储设备自己实现的读写函数内部含有忙判断，所以这个获取设备状态函数不用
+				DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);
+				DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);
+				DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+	配置：	在ffsystem.c里面用自己内存分配和释放函数替换 malloc 和 free 两个函数——————————————————————————————当务之急
+	配置：	FATFS的配置文件里有一个没有完全配置好：ffconf.h里在最后的RTOS支持
+*/
+#define SYSTEM_FATFS_ENABLE	1
+/*初始化步骤：
+	先为每个文件设备句柄申请空间
+	挂载
+	
+	更多文件操作可用参考原子FATFS历程里的 fattester.c 和 exfuns.c 里面的获取剩余空间、识别文件类型、得到文件夹大小、文件和文件夹复制等有用的API等等
+	
+  FATFS可用API：参考原子的，罗列下来API，参考官方文档等
+*/
+
+
 
 
 /*_____________系统函数_______________*/

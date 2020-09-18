@@ -1047,7 +1047,7 @@ void ADC_DMA_Cfg(void)
     ADC1rxDMA_Handler.Init.MemInc=DMA_MINC_ENABLE;                             //存储器增量模式
     ADC1rxDMA_Handler.Init.PeriphDataAlignment=DMA_PDATAALIGN_HALFWORD;        //外设数据长度:16位
     ADC1rxDMA_Handler.Init.MemDataAlignment=DMA_MDATAALIGN_HALFWORD;          //存储器数据长度:16位
-    ADC1rxDMA_Handler.Init.Mode=DMA_CIRCULAR;                                 //外设循环模式
+    ADC1rxDMA_Handler.Init.Mode=DMA_CIRCULAR;                                 	//不确定是正常博士还是外设循环模式
     ADC1rxDMA_Handler.Init.Priority=DMA_PRIORITY_HIGH;                       //优先级
 
     ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;
@@ -1055,6 +1055,7 @@ void ADC_DMA_Cfg(void)
 	HAL_DMA_DeInit(&ADC1rxDMA_Handler);                                      //DMA复位
     HAL_DMA_Init(&ADC1rxDMA_Handler);                                        //DMA初始化 
         
+		/*			数据源   数据源句柄中的DMA变量	  使用的DMA句柄*/
 	__HAL_LINKDMA(&ADC1_Handler,DMA_Handle,ADC1rxDMA_Handler);               //将DMA与ADC联系起来(发送DMA)
         
     HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                          //DMA中断优先级
@@ -1079,7 +1080,7 @@ void DMA1_Channel1_IRQHandler(void)
 
 
 
-/*___________________________________________用户SPI1配置_______________________________________________*/
+/*___________________________________________用户SPI1、2配置_______________________________________________*/
 #if ((SYSTEM_SPI1_ENABLE)||(SYSTEM_SPI2_ENABLE))
 
 //SPI底层驱动，时钟使能，引脚配置

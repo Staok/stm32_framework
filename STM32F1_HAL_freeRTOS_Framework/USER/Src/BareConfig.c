@@ -73,7 +73,7 @@ void Bare_Begin(void)
 			
 			keyProcess();	//菜单框架里的输入接管和获取函数
 			menuProcess();	//菜单框架里的按照输入执行功能函数
-			
+						
 		}
 		
 		/*____________________________________1s周期执行：通常为运行状态指示，滴答心跳提醒等等__________________________________________*/
@@ -82,11 +82,6 @@ void Bare_Begin(void)
 			Timer_IT_flags._1sec_flag = FALSE;
 			
 			/*1s周期要做的事情*/
-			//printf_uart(UART3,"UART333---One Second\r\n");
-			//printf_uart(UART2,"UART222---One Second\r\n");
-			//printf_uart(UART1,"UART111---One Second\r\n");
-			
-			//TestLED_Ctrl = !TestLED_Ctrl;
 			
 			char RTC_buf[50];
 //			sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
@@ -94,6 +89,11 @@ void Bare_Begin(void)
 			POINT_COLOR = RED;
 			sprintf(RTC_buf,"%2ds",Timer_IT_flags._1sec);
 			LCD_ShowString(10,20,16,(u8*)RTC_buf,0);
+			
+			#if SYSTEM_FLASH_IAP_ENABLE
+				sprintf(RTC_buf,"%d",StartUpTimes);
+				LCD_ShowString(35,20,16,(u8*)RTC_buf,0);
+			#endif
 			
 		}
 		

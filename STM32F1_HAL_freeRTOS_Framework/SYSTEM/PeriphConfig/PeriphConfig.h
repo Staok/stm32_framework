@@ -189,12 +189,12 @@ int32_t peek_TIM2_Encoder_Value(void);
 /*_______________________________ADC1___________________________________*/
 extern ADC_HandleTypeDef ADC1_Handler;
 void sys_ADC1_ENABLE(void);
-void Get_Adc_Average(u32 ch,u8 times,u32* result);
+u32 Get_Adc_Average(u32 ch,u8 times);
 float Get_Temprate(u32 adcx);
 #if SYSTEM_ADC1_ENABLE
 	void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
 	u16 Get_Adc(u32 ch);
-	#if SYSTEM_ADC1_useDMA1
+	#if SYSTEM_ADC1_useScan
 		extern DMA_HandleTypeDef  ADC1rxDMA_Handler;
 		void ADC_DMA_Cfg(void);
 	#endif
@@ -248,7 +248,7 @@ void STMFLASH_Write(	u32 WriteAddr,	u16 *pBuffer,	u16 NumToWrite);	//可用API
 
 /*_____________________________________DAC________________________________________*/
 
-#if SYSTEM_DAC_OUT1_ENABLE||SYSTEM_DAC_OUT2_ENABLE
+#if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)) && ((STM32F103xG) || (STM32F103xE))
 extern DAC_HandleTypeDef DAC1_Handler;//DAC句柄
 void sys_DAC_ENABLE(void);
 void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac);
@@ -261,14 +261,14 @@ void DAC_Set_Ch2_Vol(float vol);
 
 /*____________________SDIO SD_____________________________________________*/
 
-extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD卡信息
-extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
 u8 SD_Init(void);
 u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt);
 u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt);
 void show_sdcard_info(void);						//通过串口1打印SD卡相关信息
-#if SYSTEM_SDIO_SD_ENABLE
+#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 
+extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD卡信息
+extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
 extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
 #define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
 

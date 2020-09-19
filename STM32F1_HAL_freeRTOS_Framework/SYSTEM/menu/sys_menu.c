@@ -228,8 +228,8 @@ void adjustFunctionsOption(const struct MenuItem *MenuItemNow,const struct input
 /*此函数必须一直循环执行，推荐100ms周期运行*/
 void keyProcess(void)
 {
-	static int _10msCountDown = 50; /*0.5s内的双击有效，这里不要动*/
-	static int _10msNum = 0,isKeySetOnce = FALSE; 
+	static int _100msCountDown = 5; /*0.5s内的双击有效，这里不要动*/
+	static int _100msNum = 0,isKeySetOnce = FALSE; 
 	char isOnce = 0; /*Magic,Don`t touch!*/
 	
 	//如果发生了外部中断
@@ -240,11 +240,11 @@ void keyProcess(void)
 		{
 			inputKey.keyValue	=	enter;
 			
-			_10msNum++;_10msCountDown--;
-			if(_10msNum > 300) _10msNum = 300;
-			if(_10msCountDown < -100) _10msCountDown = -100;
+			_100msNum++;_100msCountDown--;
+			if(_100msNum > 30) _100msNum = 30;
+			if(_100msCountDown < -10) _100msCountDown = -10;
 			
-			if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在0.5秒内第二次被按下，则切换按键模式为长按
+			if((_100msCountDown > 0) && (isKeySetOnce == TRUE))//在0.5秒内第二次被按下，则切换按键模式为长按
 			{
 				isKeySetOnce = FALSE;
 				isOnce = 0;
@@ -252,10 +252,10 @@ void keyProcess(void)
 				return ;
 			}else
 			{
-				_10msCountDown = 50;
+				_100msCountDown = 5;
 			}
 			
-			if(_10msNum > 100) //超过了1秒按键仍然时被按下状态，则把按键模式切换为长按，否则识别为单击
+			if(_100msNum > 10) //超过了1秒按键仍然时被按下状态，则把按键模式切换为长按，否则识别为单击
 			{
 				isOnce = 0;
 				inputKey.keyMode	=	lon; 
@@ -269,9 +269,9 @@ void keyProcess(void)
 		{
 			if(inputKey.keyMode	!=	doub)
 				isKeySetOnce = TRUE;
-			else isKeySetOnce = FALSE,_10msCountDown = 50;
+			else isKeySetOnce = FALSE,_100msCountDown = 5;
 			
-			_10msNum = 0;
+			_100msNum = 0;
 			key_Up_Interrupted = FALSE;  
 			
 			if(isOnce)		//对于单击，只有当按键松开，才释放
@@ -290,11 +290,11 @@ void keyProcess(void)
 		{
 			inputKey.keyValue	=	down;
 			
-			_10msNum++;_10msCountDown--;
-			if(_10msNum > 300) _10msNum = 300;
-			if(_10msCountDown < -100) _10msCountDown = -100;
+			_100msNum++;_100msCountDown--;
+			if(_100msNum > 30) _100msNum = 30;
+			if(_100msCountDown < -10) _100msCountDown = -10;
 			
-			if((_10msCountDown > 0) && (isKeySetOnce == TRUE))//在0.5秒内第二次被按下，则切换按键模式为长按
+			if((_100msCountDown > 0) && (isKeySetOnce == TRUE))//在0.5秒内第二次被按下，则切换按键模式为长按
 			{
 				isKeySetOnce = FALSE;
 				isOnce = 0;
@@ -302,10 +302,10 @@ void keyProcess(void)
 				return ;
 			}else
 			{
-				_10msCountDown = 50;
+				_100msCountDown = 5;
 			}
 			
-			if(_10msNum > 100) //超过了1秒按键仍然时被按下状态，则把按键模式切换为长按，否则识别为单击
+			if(_100msNum > 10) //超过了1秒按键仍然时被按下状态，则把按键模式切换为长按，否则识别为单击
 			{
 				isOnce = 0;
 				inputKey.keyMode	=	lon; 
@@ -319,9 +319,9 @@ void keyProcess(void)
 		{
 			if(inputKey.keyMode	!=	doub)
 				isKeySetOnce = TRUE;
-			else isKeySetOnce = FALSE,_10msCountDown = 50;
+			else isKeySetOnce = FALSE,_100msCountDown = 5;
 			
-			_10msNum = 0;
+			_100msNum = 0;
 			key_Up_Interrupted = FALSE;  
 			
 			if(isOnce)		//对于单击，只有当按键松开，才释放

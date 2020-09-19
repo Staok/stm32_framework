@@ -1,35 +1,28 @@
 #include "sys.h"
 
 /*
-需要改的地方：
-
-现存BUG:
+现存BUG记录:
 	FIFO库的初始化经常不好使，返回值常为NULL，暂时不明原因
 	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果再另一个项目重新遇到就换一个小巧简单的库
 	
 即将加上的东西：
-	
-	ADC的DMA1存疑，再看看网上，ADC的软件触发和DMA的循环模式是否搭，另外启动方式看sys.h那里，也存疑，最后上板子测试，LCD显示
-	DMA：中断回调函数用法，ADC那里用DMA时的回调函数用法是否正确
-	
 	FATFS：就差移植原子两个.c文件里的各种API 和 mymolloc、myfree
+		文件系统要实现：
+		√	SD卡文件读存，
+			内部FLASH划分区域当作文件系统读存，
+			USB U盘读存，
+			把内部FLASH划分一块通过USB插入电脑当作U盘，可在电脑操作文件的读存
 	
 	把stdlib排除在项目之外（逐个.c文件查看），不编译，自己实现malloc和free函数（借鉴原子的），并替换在FIFO.c和ffsystem.c里面的
 	
 	FSMC用于 LCD\SRAM\FLASH
 		上SARM后加上原子写的内存管理
-		
-	
 	IAP：即将加上
+	
+	
 	线性回归：即将加上
 	常用校验、加密算法：即将加上
 	JPEG、GIF解码和BMP编解码：即将加上
-	
-	文件系统要实现：
-		SD卡文件读存，
-		内部FLASH划分区域当作文件系统读存，
-		USB U盘读存，
-		把内部FLASH划分一块通过USB插入电脑当作U盘，可在电脑操作文件的读存
 	
 
 写顺序：
@@ -62,8 +55,6 @@
 u16	StartUpTimes;			/*用于保存开机次数，储存在最后一个或倒数第二个页*/
 uint32_t UIDw[3]; 			/*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; 		/*获取HCLK频率，外设时钟均来自此再分频*/
-u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
-u8 adValueDone = 0;			/*DMA把ADC1的值传送到adValue完成标志*/
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
 uint8_t is_quitFault;
@@ -157,7 +148,7 @@ void sys_MCU_Init_Seq(void)
 		sys_StdbyWKUP_ENABLE();
 	#endif
 	
-	#if SYSTEM_DAC_OUT1_ENABLE||SYSTEM_DAC_OUT2_ENABLE
+	#if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)) && ((STM32F103xG) || (STM32F103xE))
 		void sys_DAC_ENABLE(void);
 	#endif
 
@@ -405,10 +396,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	/*定时器2周期回调*/
 	if(htim==(&TIM2_Handler))
     {
-//		#if (SYSTEM_ADC1_useScan)
-//			HAL_ADC_Start(&ADC1_Handler);               	//开启AD转换 
-//		#endif
-		
 		#if (STSTEM_TIM2_asPWMorCap == 1)					//使用输入捕获功能，定时器溢出一次则溢出次数加一
 			if((TIM2CHx_CAPTURE_STA&0X80)==0)				//还未成功捕获
 			{
@@ -719,11 +706,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance==USART1)//如果是串口1
 	{	
-		if(!(USART1_RX_CONFIG & USART1_RX_MODE_mask)) /*协议0：只接受以'\r\n'结尾的数据：从USART1_RX_BUF[]接受数据*/
+		if(!((USART1_RX_CONFIG) & (USART1_RX_MODE_mask))) /*协议0：只接受以'\r\n'结尾的数据：从USART1_RX_BUF[]接受数据*/
 		{ 
-			if(!(USART1_RX_CONFIG & USART1_RX_DONE_mask)) /*如果接收未完成*/
+			if(!((USART1_RX_CONFIG) & (USART1_RX_DONE_mask))) /*如果接收未完成*/
 			{
-				if(USART1_RX_CONFIG & USART1_RX_Rec_r_mask) /*如果接收到了\r*/
+				if((USART1_RX_CONFIG) & (USART1_RX_Rec_r_mask)) /*如果接收到了\r*/
 				{
 					if(aRxBuffer1[0] == '\n') /*如果接受到了\r\n*/
 					{
@@ -738,9 +725,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 												//USART1_RX_CONFIG++; /*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
 					}
 					else{
-						USART1_RX_BUF[USART1_RX_CONFIG & USART1_RX_Num_mask] = aRxBuffer1[0];
+						USART1_RX_BUF[(USART1_RX_CONFIG) & (USART1_RX_Num_mask)] = aRxBuffer1[0];
 						USART1_RX_CONFIG++;
-						if((USART1_RX_CONFIG & USART1_RX_Num_mask) >= (USART1_RX_BUF_MaxNum)) USART1_SetDone; 
+						if(((USART1_RX_CONFIG) & (USART1_RX_Num_mask)) >= (USART1_RX_BUF_MaxNum)) USART1_SetDone; 
 					}
 
 				}
@@ -917,7 +904,7 @@ void sys_TIM3PWM_ENABLE(void)
 	
 	HAL_TIM_PWM_Init(&TIM3_Handler);       //初始化PWM
     
-	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0010)
+	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)
 	{
 		TIM3_CH2Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
 		TIM3_CH2Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
@@ -927,7 +914,7 @@ void sys_TIM3PWM_ENABLE(void)
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH2Handler,TIM_CHANNEL_2);//配置TIM3通道2
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_2);//开启PWM通道2
 	}
-	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0001)
+	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)
 	{
 		TIM3_CH1Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
 		TIM3_CH1Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
@@ -935,7 +922,7 @@ void sys_TIM3PWM_ENABLE(void)
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH1Handler,TIM_CHANNEL_1);//配置TIM3通道1
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_1);//开启PWM通道1
 	}
-	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0100)
+	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)
 	{
 		TIM3_CH3Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
 		TIM3_CH3Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
@@ -943,7 +930,7 @@ void sys_TIM3PWM_ENABLE(void)
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH3Handler,TIM_CHANNEL_3);//配置TIM3通道3
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_3);//开启PWM通道3
 	}
-	if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_1000)
+	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)
 	{
 		TIM3_CH4Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
 		TIM3_CH4Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
@@ -970,10 +957,10 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 		{
 			__HAL_AFIO_REMAP_TIM3_ENABLE();			//TIM3通道引脚全部重映射使能，具体怎么映射看库函数注释或sys.h里
 			__HAL_RCC_GPIOC_CLK_ENABLE();			//开启GPIOC时钟
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0001)	GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道1，PC6
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0010)	GPIO_Initure.Pin=GPIO_PIN_7;	//如果开启通道2，PC7
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0100)	GPIO_Initure.Pin=GPIO_PIN_8;	//如果开启通道3，PC8
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_1000)	GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道4，PC9
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)	GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道1，PC6
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)	GPIO_Initure.Pin=GPIO_PIN_7;	//如果开启通道2，PC7
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)	GPIO_Initure.Pin=GPIO_PIN_8;	//如果开启通道3，PC8
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)	GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道4，PC9
 			GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
 			GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
 			GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
@@ -982,10 +969,10 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 		{
 			__HAL_AFIO_REMAP_TIM3_PARTIAL();		//TIM3通道引脚部分重映射使能，具体怎么映射看库函数注释或sys.h里
 			__HAL_RCC_GPIOB_CLK_ENABLE();			//开启GPIOB时钟
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0001)	GPIO_Initure.Pin=GPIO_PIN_4;	//如果开启通道1，PB4
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0010)	GPIO_Initure.Pin=GPIO_PIN_5;	//如果开启通道2，PB5
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0100)	GPIO_Initure.Pin=GPIO_PIN_0;	//如果开启通道3，PB0
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_1000)	GPIO_Initure.Pin=GPIO_PIN_1;	//如果开启通道4，PB1
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)	GPIO_Initure.Pin=GPIO_PIN_4;	//如果开启通道1，PB4
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)	GPIO_Initure.Pin=GPIO_PIN_5;	//如果开启通道2，PB5
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)	GPIO_Initure.Pin=GPIO_PIN_0;	//如果开启通道3，PB0
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)	GPIO_Initure.Pin=GPIO_PIN_1;	//如果开启通道4，PB1
 			GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
 			GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
 			GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
@@ -996,22 +983,22 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
 			GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
 			
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0001)	
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)	
 			{
 				__HAL_RCC_GPIOA_CLK_ENABLE();GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道1，PA6
 				HAL_GPIO_Init(GPIOA,&GPIO_Initure); 
 			}
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0010)
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)
 			{
 				__HAL_RCC_GPIOA_CLK_ENABLE();GPIO_Initure.Pin=GPIO_PIN_7;	//如果开启通道2，PA7
 				HAL_GPIO_Init(GPIOA,&GPIO_Initure); 
 			}
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_0100)
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)
 			{
 				__HAL_RCC_GPIOB_CLK_ENABLE();GPIO_Initure.Pin=GPIO_PIN_0;	//如果开启通道3，PB0
 				HAL_GPIO_Init(GPIOB,&GPIO_Initure); 
 			}
-			if(STSTEM_TIM3PWM_CHANNEL_ENABLE & B0000_1000)
+			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)
 			{
 				__HAL_RCC_GPIOB_CLK_ENABLE();GPIO_Initure.Pin=GPIO_PIN_1;	//如果开启通道4，PB1
 				HAL_GPIO_Init(GPIOB,&GPIO_Initure);
@@ -1028,25 +1015,25 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 		GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
 		GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
 		
-		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_0001)	//CH1/ETR/PA15
+		if((STSTEM_TIM2PWM_CHANNEL_ENABLE) & B0000_0001)	//CH1/ETR/PA15
 		{
 			__HAL_RCC_GPIOA_CLK_ENABLE();
 			GPIO_Initure.Pin=GPIO_PIN_15;
 			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
 		}
-		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_0010)	//CH2/PB3
+		if((STSTEM_TIM2PWM_CHANNEL_ENABLE) & B0000_0010)	//CH2/PB3
 		{
 			__HAL_RCC_GPIOB_CLK_ENABLE();
 			GPIO_Initure.Pin=GPIO_PIN_3;
 			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
 		}
-		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_0100)	//CH3/PB10
+		if((STSTEM_TIM2PWM_CHANNEL_ENABLE) & B0000_0100)	//CH3/PB10
 		{
 			__HAL_RCC_GPIOB_CLK_ENABLE();
 			GPIO_Initure.Pin=GPIO_PIN_10;
 			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
 		}
-		if(STSTEM_TIM2PWM_CHANNEL_ENABLE & B0000_1000)	//CH4/PB11
+		if((STSTEM_TIM2PWM_CHANNEL_ENABLE) & B0000_1000)	//CH4/PB11
 		{
 			__HAL_RCC_GPIOB_CLK_ENABLE();
 			GPIO_Initure.Pin=GPIO_PIN_11;

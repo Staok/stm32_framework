@@ -337,47 +337,46 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÉËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 	IO	£º	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	ÄÚ²¿ÎÂ¶È	ÄÚ²¿²Î¿¼µçÑ¹
 */
 #define SYSTEM_ADC1_ENABLE		0			/*Æô·ñADC1*/
-	#define SYSTEM_ADC1_useScan		1		/*Æô·ñ¹æÔò×éµÄÁ¬ÐøÉ¨Ãè£¬Èç¹ûÆôÓÃ£¬Ôò°ÑÏÂÃæ¶¨ÒåµÄËùÓÐÍ¨µÀ¶¼·Åµ½¹æÔò×éÀï£¬
-												È»ºóÔÚ¶¨Ê±Æ÷2ÖÐ¶ÏÖÐÁ¬Ðø²É¼¯
-												Èç¹û²»ÆôÓÃ£¬ÔòÎªÈí¼þ´¥·¢µÄµ¥´Î×ª»»
-												ÊÇÓÃÁ¬ÐøÉ¨Ãè»¹ÊÇµ¥´Î²É¼¯£¬¶¨ÏÂºóÔËÐÐÊ±²»ÄÜ¸Ä±ä
-											*/
+	#define SYSTEM_ADC1_useScan		1		/*Æô·ñ¹æÔò×éµÄÁ¬ÐøÉ¨Ãè£¬Èç¹ûÆôÓÃ£¬Ôò°ÑÏÂÃæ¶¨ÒåµÄËùÓÐÍ¨µÀ¶¼·Åµ½¹æÔò×éÀï£¬²¢Ê¹ÓÃDAM1µÄÍ¨µÀ1°Ñ×ª»»½á¹û·Åµ½Ä¿±êÎ»ÖÃ
+												Èç¹û²»ÆôÓÃ£¬ÔòÎªÈí¼þ´¥·¢µÄµ¥´Î×ª»»*/
+		#define SYSTEM_ADC1_useCircular	1	/*Ö»ÔÚÉ¨ÃèÄ£Ê½ÏÂÓÐÐ§£»¿ªÆôÔò×Ô¶¯Ñ­»·ADC×ª»»£¬Ö»ÐèÒªÅÐ¶Ï±êÖ¾Î»ºÍ¶ÁÊý¼´¿É£¬²»ÐèÒªÈí¼þÊÖ¶¯´¥·¢¿ªÆôÒ»´ÎADC×ª»»*/
 	#define SYSTEM_ADC1_useChanlNum	3		/*¶¨Òå¹²ÓÃ¶àÉÙÂ·Í¨µÀ*/
-											/*¶¨Òå¹²ÓÃÄÄÐ©Í¨µÀ£¬¿ÉÐ´B0in16~B15in16£¬ºÍInrTemp(ÄÚ²¿ÎÂ¶ÈÍ¨µÀ)
-											Èç¹ûÖ»ÓÃ²É¼¯ÄÚ²¿ÎÂ¶È£¬¶ø²»ÓÃÆäËûÍ¨µÀ£¬Ó¦ÉèÖÃ£ºSYSTEM_ADC1_useChanlNumÎª1  SYSTEM_ADC1_useChanlµ¥ÎªInrTemp
-											Èç¹û²»ÓÃ
-											*/
-	#define SYSTEM_ADC1_useChanl	B0in16|B1in16|B3in16
+	#define SYSTEM_ADC1_useChanl	B1in16|B4in16|B5in16 /*¶¨Òå¹²ÓÃÄÄÐ©Í¨µÀ£¬¿ÉÐ´B1in16~B15in16£¨·Ö±ð´ú±íÍ¨µÀ0~14£©£¬ºÍInrTemp(ÄÚ²¿ÎÂ¶ÈÍ¨µÀ)
+														£¨µÚ16¸öADC1Í¨µÀÁô×÷ÄÚ²¿ÎÂ¶È±êÖ¾ËùÒÔ²»¿ÉÓÃ£©*/
+													/*Èç¹ûÖ»ÓÃ²É¼¯ÄÚ²¿ÎÂ¶È£¬¶ø²»ÓÃÆäËûÍ¨µÀ£¬Ó¦ÉèÖÃ£ºSYSTEM_ADC1_useChanlNumÎª1  SYSTEM_ADC1_useChanlµ¥ÎªInrTemp*/
 		#define InrTemp B16in16
-		/*ÏÂÃæµÄ¶¨Ê±Æ÷´¥·¢²»ÓÃÁË£¬ºÎ±ØÄÇÃ´Âé·³£¬Ö±½Óµ÷ÓÃÆô¶¯ADC²É¼¯Ò»´ÎµÄº¯ÊýÒ»Ñù...*/
-//	#define SYSTEM_ADC1_useTIM2trig	1		/*¶¨Ê±Æ÷2´¥·¢ADC²É¼¯×ª»»£¬ÓÉÓÚADC1´¥·¢Ô´Ã»ÓÐTIM2TRGO£¬
-//												ËùÒÔÊÇÔÚTIM2µÄ¶¨Ê±ÖÐ¶ÏÖÐÈí¼þ´¥·¢ÊµÏÖ£¬±ØÐë´ò¿ªTIM2µÄ¶¨Ê±ÖÐ¶Ï£¡ºó×¢£º£»²»Ò»¶¨Òª·ÇÓÃTIM2£¬TIM3»òÕßTIM4ÖÐ¶Ï¶¼ÐÐ*/
-	#define SYSTEM_ADC1_useDMA1		1		/*Ê¹ÓÃDAM1µÄÍ¨µÀ1°Ñ×ª»»½á¹û·Åµ½Ä¿±êÎ»ÖÃ*/
-		extern u16 adValue[SYSTEM_ADC1_useChanlNum];						/*DMA1°ÑADC×ª»»½á¹û´«ËÍµÄÄ¿±êÎ»ÖÃ*/
-		extern u8 adValueDone;
-	/*¿ÉÓÃµÄAPI£º
-			·²ÊÇÆôÓÃ SYSTEM_ADC1_useDMA1 ¼´ÓÃDMA´«ÊäADCÊý¾Ý£¬¶ÁÈ¡Ë³Ðò£º
-				Èç¹ûÆôÓÃ SYSTEM_ADC1_useScan Ñ­»·Ò»±é²É¼¯
-						ÕâÀï´æÒÉ£º¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ªÔÙÈ¥½è¼øÍøÉÏ£¬»¹ÓÐ³õÊ¼»¯ÄÇÀïÅäÖÃDMAÎªÑ­»·Ä£Ê½·ñ£¿ADCµÄ´¥·¢ÎªÈí¼þ·ñ£¿
-						²»È·¶¨£ºÏÈµ÷ÓÃ HAL_ADC_Start(&ADC1_Handler); µ÷ÓÃSYSTEM_ADC1_useChanlNum´Î£¬ ×ª»»Ò»±éÃ¿Ò»¸ö¹æÔòÍ¨µÀ
-						ÊÇ²»ÊÇÕâ¸ö£º  HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//¿ªÊ¼DMA£¬×îºóÒ»¸ö²ÎÊýÎªÊý¾Ý³¤¶È
-									ÉÏÃæÕâÒ»¾äÔÚ³õÊ¼»¯Ê±ºòÒÑ¾­¿ªÆôÁË£¬ÊÇ²»ÊÇ²»ÓÃÔÙÈí¼þ´¥·¢£¬Ö±½ÓµÈadValueDone±êÖ¾Î»¾ÍÐÐÁË
+		extern u16 adValue[SYSTEM_ADC1_useChanlNum];/*É¨ÃèÄ£Ê½ÏÂDMA1°ÑADC×ª»»½á¹û´«ËÍµÄÄ¿±êÎ»ÖÃ*/
+		extern u8 adValueDone; 						/*É¨ÃèÄ£Ê½ÏÂ×ª»»Íê³É±êÖ¾*/
+	/*¿ÉÓÃµÄAPI£º·µ»ØµÄ¶¼ÊÇÔ­Ê¼ADCÖµ
+			·²ÊÇÆôÓÃ SYSTEM_ADC1_useScan É¨ÃèÄ£Ê½£¬¼´´¥·¢Ò»´Î£¬×Ô¶¯É¨ÃèËùÓÐ¹æÔò×éÀïµÄÍ¨µÀ¡ª¡ª¡ª¡ªÊÊºÏ¿ìËÙ
+						×Ô¶¯ÓÃDMA1Í¨µÀ1·¢ËÍµ½adValue[]£¬²¢ÖÃÎ»adValueDone
+				¶ÁÈ¡Ë³Ðò£º
+					µ÷ÓÃ HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum); Ò»´ÎÔò¿ªÆôÒ»´Î¹æÔò×éÈ«²¿Í¨µÀµÄ×ª»»
+						µ÷ÓÃ1´ÎÔò°Ñ¹æÔò×éËùÓÐÍ¨µÀ×ª»»Ò»±é£¬È»ºóÅÐ¶Ï±êÖ¾Î»adValueDoneµÈ×ÅÔÚadValue[]È¡Êý¾ÍÐÐÁË
+					Èç¹û SYSTEM_ADC1_useCircular ´ò¿ª£ºÖ»ÐèÒªÖ´ÐÐÒ»´Î£¡Ò»´Î£¡ HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum); ¼´¿É
+					
 					ÅÐ¶Ï adValueDone ÊÇ·ñÎª1£¬ÊÇÔò´Ó adValue[x] ¶ÁÖµ¼´¿É£¬Èç¹ûÆôÓÃ ÄÚ²¿ÎÂ¶È Í¨µÀ£¬ÆäÖµ±£´æÔÚadValue[SYSTEM_ADC1_useChanlNum-1]
-					adValueDone ÇåÁã
-				Èç¹ûÃ»ÓÐÆôÓÃ SYSTEM_ADC1_useScan Ñ­»·Ò»±é²É¼¯
-					ÏÈ×¢Èë±¾´Îµ¥´ÎÍ¨µÀµÄ¹æÔò£¬ÒÔÏÂº¯ÊýÆä²ÎÊýÖ»¿ÉÒÔ¸ÄÍ¨µÀ£¬Í¨µÀ¿ÉÒÔÎªADC_CHANNEL_0~ADC_CHANNEL_15 ºÍ ADC_CHANNEL_TEMPSENSOR
-						ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_TEMPSENSOR,1, ADC_SAMPLETIME_55CYCLES_5);
-					ÔÙµ÷ÓÃµ÷ÓÃ HAL_ADC_Start(&ADC1_Handler); Æô¶¯Ò»´Î
-					ÅÐ¶Ï adValueDone ÊÇ·ñÎª1£¬ÊÇÔò´Ó adValue[x] ¶ÁÖµ¼´¿É
-					adValueDone ÇåÁã
-			·²ÊÇÃ»ÓÐÆô¶¯ SYSTEM_ADC1_useDMA1 ¼´Ã»ÓÃÓÃDMA´«ÊäADCÊý¾Ý£¬¶ÁÈ¡Ë³Ðò£º
-				Èç¹ûÆôÓÃ SYSTEM_ADC1_useScan Ñ­»·Ò»±é²É¼¯
-					µ÷ÓÃ Get_Adc_Average(u32 ch,u8 times,u32* result); 
-					ÆäÖÐresultÎª·µ»ØÖµ£¬ÓÃresult[0]~result[SYSTEM_ADC1_useChanlNum-1]·Ö±ð±£´æÃ¿Ò»Í¨µÀADÖµ£¬Èç¹ûÆôÓÃ ÄÚ²¿ÎÂ¶È Í¨µÀ£¬ÆäÖµ±£´æÔÚresult[SYSTEM_ADC1_useChanlNum-1]
-					ÆäÖÐ ch Í¨µÀ ÐÎ²ÎÎÞÐ§
-				Èç¹ûÃ»ÓÐÆôÓÃ SYSTEM_ADC1_useScan Ñ­»·Ò»±é²É¼¯
-					µ÷ÓÃ Get_Adc_Average(u32 ch,u8 times,u32* result); 
-					ÆäÖÐ ch Í¨µÀ ÐÎ²ÎÑ¡ÔñÏë×ª»»µÄÍ¨µÀ£¬¿ÉÒÔÎªADC_CHANNEL_TEMPSENSOR£¬ÆäÖÐresult[0]±£´æ±¾´Î±¾Í¨µÀµÄ×ª»»½á¹û
+					¶ÁÈ¡Íêºó¶Ô adValueDone ÇåÁã
+					Í£Ö¹×ª»»Îª HAL_ADC_Stop_DMA(&ADC1_Handler);
+					Àý×Ó£º
+						char ADC_buf[20];
+						if(adValueDone)
+						{
+							adValueDone = 0;
+							//HAL_ADC_Stop_DMA(&ADC1_Handler);
+							sprintf(ADC_buf,"adValue:%d %d %d",adValue[0],adValue[1],adValue[2]);
+							LCD_ShowString(10,180,16,(u8*)ADC_buf,0);
+						}
+			·²ÊÇÃ»ÓÐÆô¶¯ SYSTEM_ADC1_useScan Ò»´Î´¥·¢Ò»¸öÍ¨µÀ²¢ÊÖ¶¯È¡Êý¡ª¡ª¡ª¡ªÊÊºÏÂýËÙ
+				¶ÁÈ¡Ë³Ðò£º
+					µ÷ÓÃ u32 Get_Adc_Average(u32 ch,u8 times); ·µ»ØÖµÎª±¾´ÎADCÖµ
+					ÆäÖÐ ch Í¨µÀ ÐÎ²ÎÑ¡ÔñÏë×ª»»µÄÍ¨µÀ£¬¿ÉÑ¡ADC_CHANNEL_0~15£¬¿ÉÒÔÎªADC_CHANNEL_TEMPSENSOR£¬ÆäÖÐresult[0]±£´æ±¾´Î±¾Í¨µÀµÄ×ª»»½á¹û
+					Àý×Ó£º
+						adValue[0] = (u16)Get_Adc_Average(ADC_CHANNEL_0,10);
+						adValue[1] = (u16)Get_Adc_Average(ADC_CHANNEL_3,10);
+						adValue[2] = (u16)Get_Adc_Average(ADC_CHANNEL_4,10);
+						sprintf(ADC_buf,"adValue:%d %d %d",adValue[0],adValue[1],adValue[2]);
+						LCD_ShowString(10,180,16,(u8*)ADC_buf,0);
 					
 			×¢Òâ£º²É¼¯ÎÂ¶ÈÍ¨µÀ·µ»ØµÄÊÇADCµÄÔ­Ê¼Öµ£¬ÓÃ float Get_Temprate(u32 adcx) °ÑÔ­Ê¼Öµ×ª»»ÎªÊµ¼ÊÎÂ¶ÈÖµ(floatÀàÐÍ)
 	*/
@@ -385,8 +384,7 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÉËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 #define SYSTEM_IWDG_ENABLE		1			/*¿ªÆô¶ÀÁ¢¿´ÃÅ¹·£¬Ä¬ÈÏ1SµÄÎ¹¹·ÖÜÆÚ£¬Ä¬ÈÏÔÚTIM4¶¨Ê±ÖÐ¶ÏÀïÎ¹¹·£¬ÓÃIWDG±Ø¿ªTIM4*/
 											/*×¢£º¿´ÃÅ¹·ºÍµÍ¹¦ºÄ´ý»úÄ£Ê½²»ÄÜÍ¬Ê±¿ªÆô£¬ÒòÎª¿´ÃÅ¹·²»ÄÜ¹Ø±Õ£¬¿´ÃÅ¹·¸´Î»»á»½ÐÑµÍ¹¦ºÄ×´Ì¬*/
 
-/*¿ªÆôDMA1£¬*/
-#define SYSTEM_DMA1_ENABLE		1
+/*DMAÓÃ·¨¼òµ¥ÁÐ¾Ù*/
 /*
 ÅäÖÃÇ° Ê×ÏÈ²é¿´ ¡°DMA1¸÷Í¨µÀÒ»ÀÀ±í¡±
 DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4ÉÏ£©
@@ -405,17 +403,28 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 		UART1TxDMA_Handler.Init.MemInc=DMA_MINC_ENABLE;                     //´æ´¢Æ÷ÔöÁ¿Ä£Ê½ ´¢´æÆ÷Ò»°ã¶¼ÊÇÔöÁ¿£¨µØÖ·ÒªÔö£©
 		UART1TxDMA_Handler.Init.PeriphDataAlignment=DMA_PDATAALIGN_BYTE;    //ÍâÉèÊý¾Ý³¤¶È:8Î» »òÕß16Î» »òÕß32Î» ÍâÉè¡¢´æ´¢Æ÷ÒªÒ»ÖÂ£¬²¢ÇÒÄÜ½ÓÊÜ
 		UART1TxDMA_Handler.Init.MemDataAlignment=DMA_MDATAALIGN_BYTE;       //´æ´¢Æ÷Êý¾Ý³¤¶È:8Î»
-		UART1TxDMA_Handler.Init.Mode=DMA_NORMAL;                            //ÍâÉèÆÕÍ¨Ä£Ê½ Èç¹ûÍâÉèÊÇADC£¬Ôò¿ªÆôADCÁ¬Ðø²É¼¯ºó£¬ÕâÀïÓ¦ÊÇÑ­»·Ä£Ê½
+		UART1TxDMA_Handler.Init.Mode=DMA_NORMAL;                            //ÒÔADCÎªÀý£ºÈç¹ûADCÑ¡ÔñÁ¬ÐøÄ£Ê½£¬ÕâÀïÊÇÑ­»·£¬Èç¹û²»¿ªÆôÁ¬ÐøÄ£Ê½£¬ÕâÀïÊÇÕý³£Ä£Ê½
 		UART1TxDMA_Handler.Init.Priority=DMA_PRIORITY_MEDIUM;               //ÖÐµÈÓÅÏÈ¼¶ ×î¸ß¡¢¸ß¡¢ÖÐ¡¢µÍ
 		
 		HAL_DMA_DeInit(&UART1TxDMA_Handler);   								//DMA¸´Î»
 		HAL_DMA_Init(&UART1TxDMA_Handler);									//DMA³õÊ¼»¯
 	ÖÐ¶Ï³õÊ¼»¯£º£¨¿ÉÑ¡£©
-		HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                          //DMAÖÐ¶ÏÓÅÏÈ¼¶
-		HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);                                  //Ê¹ÄÜDMAÖÐ¶Ï
+		HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                     //DMAÖÐ¶ÏÓÅÏÈ¼¶
+		HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);                             //Ê¹ÄÜDMAÖÐ¶Ï
 	ÖÐ¶Ï»Øµ÷º¯Êý£º
+		//DMAÍ¨µÀ1ÖÐ¶Ï·þÎñº¯Êý£¬Íê³É´«ËÍÒ»´ÎÊ±µÄÖÐ¶Ï
+		void DMA1_Channel1_IRQHandler(void)
+		{
+			HAL_DMA_IRQHandler(&ADC1rxDMA_Handler); //Çå³ýÖÐ¶Ï±êÖ¾ºÍÆäËû£¬Îð¶¯£¡
+		}
+
+		//HAL_DMA_IRQHandlerµÄ»Øµ÷º¯Êý£¬ADC×ª»»Íê³ÉËùÓÐ¹æÔò×éÍ¨µÀºóµÄÖÐ¶Ïº¯Êý
+		void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+		{
+			//Òª¸ÉµÄ»î
+		}
 		
-	²éÑ¯·¨µÃµ½´«ÊäÊÇ·ñÍê³É£º£¨Í¨µÀ4ÎªÀý£©
+	²éÑ¯·¨µÃµ½´«ÊäÊÇ·ñÍê³É£º£¨Í¨µÀ4ÎªÀý£©£¨Ã»ÊµÑé¹ý£©
 		if(__HAL_DMA_GET_FLAG(&UART1TxDMA_Handler,DMA_FLAG_TC4))//µÈ´ýDMA1Í¨µÀ4´«ÊäÍê³É
 		{
 			__HAL_DMA_CLEAR_FLAG(&UART1TxDMA_Handler,DMA_FLAG_TC4);//Çå³ýDMA1Í¨µÀ4´«ÊäÍê³É±êÖ¾
@@ -429,8 +438,7 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 									Àý×Ó£ºHAL_UART_Transmit_DMA(&UART1_Handler,SendBuff,SEND_BUF_SIZE);
 				Ê¹ÓÃDMA½ÓÊÕ		Ô­ÐÍ£º HAL_StatusTypeDef HAL_UART_Receive_DMA(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size)
 	
-	¶ÔÓÚADC£º	·¢ËÍ			Ô­ÐÍ£º HAL_StatusTypeDef HAL_ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)  //ÆôÓÃÒ»´Î¹æÔò×éADC×ª»»²¢ÓÃDMA´«Êä½á¹ûµ½Ä¿±êÎ»ÖÃ
-									Àý×Ó£ºHAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//¿ªÊ¼DMA£¬×îºóÒ»¸ö²ÎÊýÎªÊý¾Ý³¤¶È
+	¶ÔÓÚ¸ü¶àÍâÉè£º	²Î¿¼ÉÏÃæADCÍâÉèµÄDMAÓÃ·¨×¢½â£¬ºÍperiphconfig.cÀïÃæµÄADC DMAµÄÖÐ¶Ï·þÎñº¯Êý£¬ÒÔ¼°ÍøÉÏ
 */
 
 
@@ -552,9 +560,9 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 #define SYSTEM_FLASH_IAP_ENABLE	0		/*ÆôÓÃ¶ÔÄÚ²¿FLASH´¢´æ¿Õ¼ä±à³Ì*/
 	#define STM32_FLASH_WREN	1		/*ÆôÓÃÐ´¹¦ÄÜ£¬·ñÔòÖ»¶Á²»Ð´*/
 	#define STM32_FLASH_SIZE 	64 		/*ËùÑ¡STM32µÄFLASHÈÝÁ¿´óÐ¡(µ¥Î»ÎªKB)*/
-	#define FLASH_SAVE_ADDR  0X0800F000					//ÉèÖÃFLASH ±£´æµØÖ·(±ØÐëÎªÒ³µÄÊ×µØÖ·£¡ÇÒÆäÖµÒª´óÓÚ±¾´úÂëËùÕ¼ÓÃFLASHµÄ´óÐ¡+0X08000000)
+	#define FLASH_SAVE_ADDR  0X0800F000					//ÉèÖÃFLASH ±£´æµØÖ·(±ØÐëÎªÒ³µÄÊ×µØÖ·£¬ÇÒ±ØÐëÎª2µÄ±¶Êý£¡ÇÒÆäÖµÒª´óÓÚ´úÂëËùÕ¼ÓÃFLASHµÄ´óÐ¡+0X08000000)
 	#define FLASH_SAVE_ADDR1 (0X08000000 + (u32)(60*1024))
-/*¿ÉÓÃAPI£º
+/*¿ÉÓÃAPI£º£¨ÏÂÔØ³ÌÐòÊ±²»Òª²Á³ý Õû¸öÐ¾Æ¬FLASH£¬Ö»²Á³ýÓÐ³ÌÐòµÄÉÈÇø£©
 	×¢£ºµ±ÆôÓÃ±¾¹¦ÄÜºó£¬ÔÚÏµÍ³³õÊ¼»¯ÐòÁÐÖÐ½«¼ÓÈë¶Á´æ¿ª»ú´ÎÊýµÄÒ»¸öÓÃÀý£¬Ò»¸öu16µÄ±äÁ¿»á´¢´æÔÚ×îºóÒ»¸ö»òµ¹ÊýµÚ¶þ¸öÒ³
 	Àý£º	const u8 TEXT_Buffer[]={"STM32F103 FLASH TEST"};	//ÓÃÓÚ´æÈëµÄÊý¾Ý
 			u8 datatemp[sizeof(TEXT_Buffer)];					//ÓÃÓÚ½Ó¶Á³öµÄÊý¾Ý
@@ -620,8 +628,8 @@ PC12		SDIO_CK
 PD2			SDIO_CMD
 */
 /*±¸×¢£º¿ÉÓÃ¿ª·¢ÓÃDMA¶ÁÐ´SD¿¨£¬ÕâÑù¸üÊ¡Ê±¼ä£¬¶ÁÐ´µÄÊ±ºò¾Í²»ÓÃ¹ØÖÐ¶ÏÁË*/
-#define SYSTEM_SDIO_SD_ENABLE	1
-/*¿ÉÓÃAPI£º£¨²»ÍÆ¼öÖ±½Ó¶ÁÐ´£¡ÒªÓÃÎÄ¼þÏµÍ³FATFS°´ÕÕÎÄ¼þ¶ÁÐ´£©
+#define SYSTEM_SDIO_SD_ENABLE	0
+/*¿ÉÓÃAPI£º£¨²»ÍÆ¼öÖ±½Ó¶ÁÐ´£¡ÒªÓÃÎÄ¼þÏµÍ³FATFS°´ÕÕÎÄ¼þ¶ÁÐ´£¬²¢ÇÒSDIOµÄSD³õÊ¼»¯¾ÍÔÚFATFS³õÊ¼»¯Àï£©
 	Ò»¸ö¿éµÄ´óÐ¡£ºSDCardInfo.LogBlockSize
 	SD¿¨¿éµÄÊýÁ¿£ºSDCardInfo.LogBlockNbr
 	u8 SD_ReadDisk(buf,secaddr,seccnt);			//¶ÁÈ¡´ÓµÚsecaddr¿é¿ªÊ¼µÄseccnt¸ö¿éµÄÄÚÈÝ£¬·µ»ØµØÖ·µ½buf£¨´ó¸ÅÂÊÒ»¸ö¿éÎª512KB£¬buf±ØÐëÏÈ×¼±¸ºÃ×ã¹»¿Õ¼ä£©
@@ -651,7 +659,7 @@ PD2			SDIO_CMD
 	ÅäÖÃ£º	ÔÚffsystem.cÀïÃæÓÃ×Ô¼ºÄÚ´æ·ÖÅäºÍÊÍ·Åº¯ÊýÌæ»» malloc ºÍ free Á½¸öº¯Êý¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ªµ±ÎñÖ®¼±
 	ÅäÖÃ£º	FATFSµÄÅäÖÃÎÄ¼þÀïÓÐÒ»¸öÃ»ÓÐÍêÈ«ÅäÖÃºÃ£ºffconf.hÀïÔÚ×îºóµÄRTOSÖ§³Ö
 */
-#define SYSTEM_FATFS_ENABLE	1
+#define SYSTEM_FATFS_ENABLE	0
 /*³õÊ¼»¯²½Öè£º
 	ÏÈÎªÃ¿¸öÎÄ¼þÉè±¸¾ä±úÉêÇë¿Õ¼ä
 	¹ÒÔØ
@@ -665,8 +673,7 @@ PD2			SDIO_CMD
 
 
 /*_____________ÏµÍ³º¯Êý_______________*/
-//extern static uint8_t Init_OK_Num;
-
+extern u16	StartUpTimes;			/*ÓÃÓÚ±£´æ¿ª»ú´ÎÊý£¬´¢´æÔÚ×îºóÒ»¸ö»òµ¹ÊýµÚ¶þ¸öÒ³*/
 extern uint32_t UIDw[3]; /*±£´æSTM32ÄÚ²¿UIDÊ¶±ðÂë£¬È«ÇòÎ¨Ò»Ê¶±ðÂë*/
 extern uint32_t sysCoreClock; /*»ñÈ¡HCLKÆµÂÊ£¬ÍâÉèÊ±ÖÓ¾ùÀ´×Ô´ËÔÙ·ÖÆµ*/
 

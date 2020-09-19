@@ -75,8 +75,9 @@ DSTATUS disk_initialize (
 			return stat;
 
 		case DEV_SD : 	/*SDIO SDø®≥ı ºªØ*/
+			#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 			stat = (DSTATUS)SD_Init();
-
+			#endif
 			return stat;
 
 		case DEV_USB :
@@ -116,8 +117,9 @@ DRESULT disk_read (
 				return res;
 
 			case DEV_SD : 	/*SDIO SDø®∂¡*/
+				#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 				res = (DRESULT)SD_ReadDisk(buff,sector,count);
-
+				#endif
 				return res;
 
 			case DEV_USB :
@@ -158,8 +160,9 @@ DRESULT disk_write (
 				return res;
 
 			case DEV_SD : 	/*SDIO SDø®–¥*/
+				#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 				res = (DRESULT)SD_WriteDisk((u8*)buff,sector,count);
-
+				#endif
 				return res;
 
 			case DEV_USB :
@@ -206,11 +209,15 @@ DRESULT disk_ioctl (
 						res = RES_OK;
 						break;	 
 					case GET_BLOCK_SIZE:
+						#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 						*(WORD*)buff = SDCardInfo.LogBlockSize;
+						#endif
 						res = RES_OK;
 						break;	 
 					case GET_SECTOR_COUNT:
+						#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 						*(DWORD*)buff = SDCardInfo.LogBlockNbr;
+						#endif
 						res = RES_OK;
 						break;
 					default:

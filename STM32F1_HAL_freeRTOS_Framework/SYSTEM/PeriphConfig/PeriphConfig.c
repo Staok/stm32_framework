@@ -874,6 +874,12 @@ void sys_ADC1_ENABLE(void)
 	i = 1;
 	RCC_PeriphCLKInitTypeDef ADC_CLKInit;
 	
+	#if SYSTEM_ADC1_useScan
+		/*先初始化DMA，再初始化ADC*/
+		ADC_DMA_Cfg();
+		//HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，指定接收数组，最后一个参数为数据长度
+	#endif
+	
 	ADC_CLKInit.PeriphClockSelection=RCC_PERIPHCLK_ADC;			//ADC外设时钟
 	ADC_CLKInit.AdcClockSelection=RCC_ADCPCLK2_DIV6;			//分频因子6时钟为72M/6=12MHz
 	HAL_RCCEx_PeriphCLKConfig(&ADC_CLKInit);					//设置ADC时钟
@@ -885,8 +891,10 @@ void sys_ADC1_ENABLE(void)
 		ADC1_Handler.Init.ScanConvMode=DISABLE;                  //非扫描模式
 	else ADC1_Handler.Init.ScanConvMode=ENABLE;					 //扫描模式
 	
-    ADC1_Handler.Init.ContinuousConvMode=DISABLE;                //连续转换，开启则是，触发一次转换本组所有通道，否则触发一次只转换一次
-    
+	if(SYSTEM_ADC1_useCircular)
+		ADC1_Handler.Init.ContinuousConvMode=ENABLE;                //连续转换 开启：本次转换玩规则通道内全部通道后又自动启动下一次转换；不开启：触发一次转换一次；
+    else ADC1_Handler.Init.ContinuousConvMode=DISABLE;
+	
 	if(SYSTEM_ADC1_useScan)
 		ADC1_Handler.Init.NbrOfConversion=SYSTEM_ADC1_useChanlNum;   	//n个转换在规则序列中
 	else ADC1_Handler.Init.NbrOfConversion=1;							//只转换规则序列1
@@ -899,32 +907,27 @@ void sys_ADC1_ENABLE(void)
 	HAL_ADCEx_Calibration_Start(&ADC1_Handler);					 //校准ADC
 	
 	if(SYSTEM_ADC1_useScan)		//如果启用扫描，则把所有通道都加入到规则组里
-	{
-		if(SYSTEM_ADC1_useChanl & B0in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_0, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B1in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_1, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B2in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_2, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B3in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_3, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B4in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_4, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B5in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_5, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B6in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_6, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B7in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_7, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B8in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_8, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B9in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_9, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B10in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_10, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B11in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_11, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B12in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_12, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B13in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_13, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B14in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_14, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
-		if(SYSTEM_ADC1_useChanl & B15in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_15, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+	{               
+		if((SYSTEM_ADC1_useChanl) & B1in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_0, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B2in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_1, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B3in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_2, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B4in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_3, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B5in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_4, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B6in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_5, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B7in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_6, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B8in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_7, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B9in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_8, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B10in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_9, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B11in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_10, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B12in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_11, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B13in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_12, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B14in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_13, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B15in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_14, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
+		//if((SYSTEM_ADC1_useChanl) & 0x10) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_15, (uint32_t)(i++), ADC_SAMPLETIME_55CYCLES_5);
 		
-		if(SYSTEM_ADC1_useChanl & InrTemp) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_TEMPSENSOR, (uint32_t)(i++), ADC_SAMPLETIME_239CYCLES_5);
+		if((SYSTEM_ADC1_useChanl) & B16in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_TEMPSENSOR, (uint32_t)(i++), ADC_SAMPLETIME_239CYCLES_5);
 	}
 	
-	if(SYSTEM_ADC1_useDMA1)
-	{
-		ADC_DMA_Cfg();
-		HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，最后一个参数为数据长度
-	}
 }
 
 void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime)
@@ -953,25 +956,41 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 		
 		GPIO_Initure.Mode=GPIO_MODE_ANALOG;     //模拟
 		GPIO_Initure.Pull=GPIO_NOPULL;          //不带上下拉
-		
-		if(SYSTEM_ADC1_useChanl & B0in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B1in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B2in16) {GPIO_Initure.Pin=GPIO_PIN_2; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B3in16) {GPIO_Initure.Pin=GPIO_PIN_3; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B4in16) {GPIO_Initure.Pin=GPIO_PIN_4; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B5in16) {GPIO_Initure.Pin=GPIO_PIN_5; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B6in16) {GPIO_Initure.Pin=GPIO_PIN_6; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B7in16) {GPIO_Initure.Pin=GPIO_PIN_7; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B8in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOB,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B9in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOB,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B10in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B11in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B12in16) {GPIO_Initure.Pin=GPIO_PIN_2; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B13in16) {GPIO_Initure.Pin=GPIO_PIN_3; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B14in16) {GPIO_Initure.Pin=GPIO_PIN_4; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
-		if(SYSTEM_ADC1_useChanl & B15in16) {GPIO_Initure.Pin=GPIO_PIN_5; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		               
+		if((SYSTEM_ADC1_useChanl) & B1in16) {
+			GPIO_Initure.Pin=GPIO_PIN_0; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B2in16) {
+			GPIO_Initure.Pin=GPIO_PIN_1; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B3in16) {
+			GPIO_Initure.Pin=GPIO_PIN_2; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B4in16) {
+			GPIO_Initure.Pin=GPIO_PIN_3; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B5in16) {GPIO_Initure.Pin=GPIO_PIN_4; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B6in16) {GPIO_Initure.Pin=GPIO_PIN_5; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B7in16) {GPIO_Initure.Pin=GPIO_PIN_6; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B8in16) {GPIO_Initure.Pin=GPIO_PIN_7; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B9in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOB,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B10in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOB,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B11in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B12in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B13in16) {GPIO_Initure.Pin=GPIO_PIN_2; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B14in16) {GPIO_Initure.Pin=GPIO_PIN_3; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B15in16) {GPIO_Initure.Pin=GPIO_PIN_4; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		//if((SYSTEM_ADC1_useChanl) & B166in16) {GPIO_Initure.Pin=GPIO_PIN_5; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}  留作内部温度通道，第16个ADC1通道不可用
 	}
 }
+
+
+u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
+u8 adValueDone = 0;			/*DMA把ADC1的值传送到adValue完成标志*/
 
 //获得ADC值
 //ch: 通道值 0~16，取值范围为：ADC_CHANNEL_0~ADC_CHANNEL_16
@@ -985,41 +1004,27 @@ u16 Get_Adc(u32 ch)
 		ADC1_ChanConf.Rank=1;                                       //第1个序列，序列1
 		ADC1_ChanConf.SamplingTime=ADC_SAMPLETIME_239CYCLES_5;      //采样时间               
 		HAL_ADC_ConfigChannel(&ADC1_Handler,&ADC1_ChanConf);        //通道配置
+		
+		HAL_ADC_Start(&ADC1_Handler);                               //开启ADC
+		HAL_ADC_PollForConversion(&ADC1_Handler,2);                 //轮询转换
+		return (u16)HAL_ADC_GetValue(&ADC1_Handler);	        	//返回最近一次ADC1规则组的转换结果
+	}else
+	{
+		return 1357;
 	}
-	
-    HAL_ADC_Start(&ADC1_Handler);                               //开启ADC
-    HAL_ADC_PollForConversion(&ADC1_Handler,2);                 //轮询转换
-	return (u16)HAL_ADC_GetValue(&ADC1_Handler);	        	//返回最近一次ADC1规则组的转换结果
 }
 
-void Get_Adc_Average(u32 ch,u8 times,u32* result)
+u32 Get_Adc_Average(u32 ch,u8 times)
 {
-	u32 temp_val[SYSTEM_ADC1_useChanlNum]= {0};
-	u8 t,i;
+	u32 temp_val = 0;
+	u8 t;
 	
-	if (SYSTEM_ADC1_useScan)
+	for(t=0;t < times;t++)
 	{
-		for(t=0;t < times;t++)
-		{
-			for(i = 0;i < SYSTEM_ADC1_useChanlNum; i++)
-			{
-				temp_val[i] += Get_Adc(ch);
-				delay_ms(1);
-			}
-		}
-		
-		for(i = 0;i < SYSTEM_ADC1_useChanlNum; i++)
-		{
-			result[i] = temp_val[i]/times;
-		}
-	}else{
-		for(t=0;t < times;t++)
-		{
-			temp_val[0] += Get_Adc(ch);
-			delay_ms(1);
-		}
-		result[0] = temp_val[0]/times;
+		temp_val += Get_Adc(ch);
+		delay_ms(1);
 	}
+	return (temp_val/times);
 }
 
 /*把AD采集温度通道的原始值，转化为温度值*/
@@ -1031,7 +1036,7 @@ float Get_Temprate(u32 adcx)
 	return temperate;
 }
 
-#if SYSTEM_ADC1_useDMA1
+#if SYSTEM_ADC1_useScan
 DMA_HandleTypeDef  ADC1rxDMA_Handler; //DMA句柄
 
 //DMA1的各通道配置
@@ -1047,8 +1052,12 @@ void ADC_DMA_Cfg(void)
     ADC1rxDMA_Handler.Init.MemInc=DMA_MINC_ENABLE;                             //存储器增量模式
     ADC1rxDMA_Handler.Init.PeriphDataAlignment=DMA_PDATAALIGN_HALFWORD;        //外设数据长度:16位
     ADC1rxDMA_Handler.Init.MemDataAlignment=DMA_MDATAALIGN_HALFWORD;          //存储器数据长度:16位
-    ADC1rxDMA_Handler.Init.Mode=DMA_CIRCULAR;                                 	//不确定是正常博士还是外设循环模式
-    ADC1rxDMA_Handler.Init.Priority=DMA_PRIORITY_HIGH;                       //优先级
+	
+	if(SYSTEM_ADC1_useCircular)
+		ADC1rxDMA_Handler.Init.Mode=DMA_CIRCULAR;                                 	//如果ADC选择连续模式，这里是循环，如果不开启连续模式，这里是正常模式
+	else ADC1rxDMA_Handler.Init.Mode=DMA_NORMAL;
+   
+	ADC1rxDMA_Handler.Init.Priority=DMA_PRIORITY_MEDIUM;                       //优先级
 
     ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;
     
@@ -1058,17 +1067,21 @@ void ADC_DMA_Cfg(void)
 		/*			数据源   数据源句柄中的DMA变量	  使用的DMA句柄*/
 	__HAL_LINKDMA(&ADC1_Handler,DMA_Handle,ADC1rxDMA_Handler);               //将DMA与ADC联系起来(发送DMA)
         
-    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                          //DMA中断优先级
+    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                          //DMA中断优先级 必须开，勿动！
     HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);                                  //使能DMA中断
         
 }
 
-// DMA通道1中断服务函数 （完成传送时的中断）
+//DMA通道1中断服务函数，完成传送一次时的中断，不用，因为要等AD全部规则通道转换完后再产生一次中断
 void DMA1_Channel1_IRQHandler(void)
 {
-	HAL_DMA_IRQHandler(&ADC1rxDMA_Handler);
-	//printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\r\n",advalue[0],advalue[1],advalue[2],advalue[3],advalue[4],advalue[5],advalue[6],advalue[7],advalue[8],advalue[9],advalue[10],advalue[11]);        
-	adValueDone = 1;
+	HAL_DMA_IRQHandler(&ADC1rxDMA_Handler); /*清除中断标志，并判断是否完成全部转换，勿动！*/
+}
+
+//HAL_DMA_IRQHandler的回调函数，ADC转换完成所有规则组通道后的中断函数
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	adValueDone = 1; /*标志本次规则组通道全部转换完成，勿动！*/
 }
 
 #endif
@@ -1478,7 +1491,7 @@ u16 STMFLASH_ReadHalfWord(u32 faddr)
 
 
 /*__________________________DAC________________________________________*/
-#if SYSTEM_DAC_OUT1_ENABLE||SYSTEM_DAC_OUT2_ENABLE
+#if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)) && ((STM32F103xG) || (STM32F103xE))
 
 DAC_HandleTypeDef DAC1_Handler;//DAC句柄
 
@@ -1567,7 +1580,7 @@ void DAC_Set_Ch2_Vol(float vol)
 #endif
 
 /*____________________SDIO SD_____________________________________________*/
-#if SYSTEM_SDIO_SD_ENABLE
+#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 
 SD_HandleTypeDef        SDCARD_Handler;     		//SD卡句柄
 HAL_SD_CardInfoTypeDef  SDCardInfo;                 //SD卡信息

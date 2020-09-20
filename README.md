@@ -5,17 +5,16 @@ Welcome to the stm32_framework !
 
 目前只有F1，当F1完成后，F4就快了...吧。
 
+```
 Author : Staok
-
 Email : superxhy@qq.com
-
 Repo : https://github.com/Staok/stm32_framework
-
 System is starting...
-
 ...
-
 System init over!
+```
+
+
 
 ------
 
@@ -28,6 +27,7 @@ System init over!
 -   FATFS
 -   PID算法
 -   ringbuf环形缓冲（类FIFO）
+-   内存管理（malloc和free）
 -   Menu框架
 -   无依赖的string库和sprintf库
 -   软件模拟I2C\SPI
@@ -42,7 +42,7 @@ System init over!
 
 （标为“缺省”的为暂未实现的，以后会加上- -，工作量好大的！ ）
 
--   所有基础外设均在sys.h里面通过宏定义配置，每一个宏定义旁边均有使用说明的注释；所有用户配置外设均在PeriphConfig.c里面，有详细注释，不看不会用
+-   **所有基础外设均在sys.h里面通过宏定义配置，每一个宏定义旁边均有使用说明的注释**；所有用户配置外设均在PeriphConfig.c里面，有详细注释，不看不会用
 -   MCU外设配置的统一函数为void sys_MCU_Init_Seq(void)，一般无需改动；外接器件初始化统一函数为void sys_Device_Init_Seq(void)，需要自行按需修改
 -   所有头文件均放在sys.h里面，其他库文件想互相调用时只需调sys.h即可，不乱
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h的上面
@@ -60,9 +60,10 @@ System init over!
 -   string、sprintf库：SYSTEM_SUPPORT_sprintf：提供一个无依赖的独立实现的sprint库，github开源库from：mpaland/printf；经过修改，可以实现对指定串口发送printf格式化的字符串
 -   PID算法：SYSTEM_SUPPORT_pid：提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面
 -   ringbuf：提供一个软件实现的唤醒缓冲区，依据FIFO规则；默认已经用在串口接收的地方，具体看串口宏定义处旁边的注释
+-   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL或者STemWin：暂时缺省（优先LittlevGL）
 -   LWIP：暂时缺省
--   FATFS：即将加上
+-   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释**（TODO：添加SPI FLASH驱动并写入FATFS底层，添加内部FLASH驱动并写入FATFS底层）**
 -   DSP\FPU：暂时缺省
 -   线性回归：即将加上
 -   常用校验、加密算法：即将加上
@@ -88,12 +89,12 @@ System init over!
 -   WFI：SYSTEM_StdbyWKUP_ENABLE：使用待机-低功耗模式
 -   FLASH：SYSTEM_FLASH_IAP_ENABLE：启用对内部FLASH储存空间编程
 -   IO：GPIO相关的初始化、输入出和位带操作以及改变入出模式的调用口均在PeriphCconfig.c和PeriphCconfig.h里，有详细注释
--   DAC：即将加上
--   SDIO：即将加上
+-   DAC：SYSTEM_DAC_OUTx_ENABLE：大容量芯片系列外设，x=1~2
+-   SDIO：SYSTEM_SDIO_SD_ENABLE：大容量芯片系列外设，底层API已经写入FATFS的底层，请用FATFS的API以文件方式操作
 -   IAP：即将加上
--   DMA：即将加上
+-   DMA：默认用于ADC1的多通道扫描模式DMA传送（如果开启SYSTEM_ADC1_useScan的话），另提供驱动代码的模板以供参考
 -   Ethernet：暂时缺省
--   FSMC：暂时缺省
+-   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改（TODO：LCD的API暂时很乱，暂时不要用，会在近几天更新好~）
 -   LTDC LCD：暂时缺省
 -   DCMI：暂时缺省
 -   USB：暂时缺省

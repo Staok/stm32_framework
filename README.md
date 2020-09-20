@@ -82,19 +82,21 @@ System init over!
 -   TIM4：STSTEM_TIM4_ENABLE：模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断
 -   TIM3：STSTEM_TIM3PWM_ENABLE：模板基本功能，必须开启！使用通用定时器3，默认不开启中断，提供四路PWM输出；引脚重映射、中断、频率、占空比均提供修改
 -   TIM2：STSTEM_TIM2_ENABLE：通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义；提供定时器中断、PWM、输入捕获和正交解码功能，用户按需自定
+-   **TIM1\8：TODO：即将加上，（看一些哪些STM32有这个）提供多路带四区的互补PWM功能**
+-   **TIM5\6：TODO：即将加上，（看一些哪些STM32有这个）仅用于定时器中断提供一些同步和时基的工作，减轻TIM4的压力**
 -   ADC1：SYSTEM_ADC1_ENABLE：启否ADC1；提供添加规则组通道、是否连续扫描、是否使用DMA等可选功能；有详细注释
 -   IWDG：SYSTEM_IWDG_ENABLE：开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4
--   USART：SYSTEM_UARTx_ENABLE：开启串口，x = 1、2和3；引脚重映射和波特率可选
+-   USART：SYSTEM_UARTx_ENABLE：开启串口，x = 1、2和3；引脚重映射和波特率可选（HAL库目前对串口2无效，不知道是不是HAL库的BUG..）
 -   SPI：SYSTEM_SPIx_ENABLE：开启SPI，x = 1和2；尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射
 -   WFI：SYSTEM_StdbyWKUP_ENABLE：使用待机-低功耗模式
 -   FLASH：SYSTEM_FLASH_IAP_ENABLE：启用对内部FLASH储存空间编程
 -   IO：GPIO相关的初始化、输入出和位带操作以及改变入出模式的调用口均在PeriphCconfig.c和PeriphCconfig.h里，有详细注释
 -   DAC：SYSTEM_DAC_OUTx_ENABLE：大容量芯片系列外设，x=1~2
 -   SDIO：SYSTEM_SDIO_SD_ENABLE：大容量芯片系列外设，底层API已经写入FATFS的底层，请用FATFS的API以文件方式操作
--   IAP：即将加上
+-   IAP：**TODO：即将加上**，提供用SD卡（SDIO（大容量芯片）或者SPI驱动）、串口（可选串口1、2、3）、USB（暂时缺省，以U盘形式或者USB传输）和SPI更新固件bin文件。在每次上电前会让用户选择固件索引（可以存在多个固件），再选择是更新还是运行此区域固件，如果是更新，则下载前会进行协议握手（专有协议+非对称加密握手，防止陌生固件下载），如果是下载，则在启动运行固件前会用硬件CRC进行一次固件校验（防止以存固件篡改）
 -   DMA：默认用于ADC1的多通道扫描模式DMA传送（如果开启SYSTEM_ADC1_useScan的话），另提供驱动代码的模板以供参考
 -   Ethernet：暂时缺省
--   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改（TODO：LCD的API暂时很乱，暂时不要用，会在近几天更新好~）
+-   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改**（TODO：LCD的API暂时很乱，暂时不要用，会在近几天更新好~）**
 -   LTDC LCD：暂时缺省
 -   DCMI：暂时缺省
 -   USB：暂时缺省

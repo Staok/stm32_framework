@@ -63,28 +63,33 @@ u16 DeviceCode;
 //返回值：  无
 //修改记录：无
 //******************************************************************
-void LCD_WR_REG(u8 data)
+void LCD_WR_REG(vu16 data)
 { 
-#if LCD_USE8BIT_MODEL==1//使用8位并行数据总线模式
-	LCD_RS_CLR;
-	LCD_CS_CLR;
-	
-	LCD_PBh8dataOut(data<<8);
-	//DATAOUT(((GPIOB->IDR)&0x00ff)|((data<<8)&0xff00));
-	LCD_WR_CLR;
-	LCD_WR_SET;
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+	data=data;		//使用-O2优化的时候,必须插入的延时
+	LCD->LCD_REG=data;//写入要写的寄存器序号
+#else
+	#if LCD_USE8BIT_MODEL==1//使用8位并行数据总线模式
+		LCD_RS_CLR;
+		LCD_CS_CLR;
+		
+		LCD_PBh8dataOut(((u8)(data & 0x00ff))<<8);
+		//DATAOUT(((GPIOB->IDR)&0x00ff)|((data<<8)&0xff00));
+		LCD_WR_CLR;
+		LCD_WR_SET;
 
-	LCD_CS_SET;
-	
-#else//使用16位并行数据总线模式
-	LCD_RS_CLR;
-	LCD_CS_CLR;
-	DATAOUT(data);
-	LCD_WR_CLR;
-	LCD_WR_SET;
-	LCD_CS_SET;
-			
-#endif	
+		LCD_CS_SET;
+		
+	#else//使用16位并行数据总线模式
+		LCD_RS_CLR;
+		LCD_CS_CLR;
+		DATAOUT(data);
+		LCD_WR_CLR;
+		LCD_WR_SET;
+		LCD_CS_SET;
+				
+	#endif	
+#endif
 }
 
 //******************************************************************
@@ -96,32 +101,60 @@ void LCD_WR_REG(u8 data)
 //返回值：  无
 //修改记录：无
 //******************************************************************
-void LCD_WR_DATA(u16 data)
+void LCD_WR_DATA(vu16 data)
 {
-	
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+	data=data;			//使用-O2优化的时候,必须插入的延时
+	LCD->LCD_RAM=data;
+#else
+	#if LCD_USE8BIT_MODEL==1//使用8位并行数据总线模式
+		LCD_RS_SET;
+		LCD_CS_CLR;
+		
+		LCD_PBh8dataOut(data<<8);
+		//DATAOUT(((GPIOB->IDR)&0x00ff)|((data<<8)&0xff00));
+		LCD_WR_CLR;
+		LCD_WR_SET;
 
-#if LCD_USE8BIT_MODEL==1//使用8位并行数据总线模式
-	LCD_RS_SET;
-	LCD_CS_CLR;
-	
-	LCD_PBh8dataOut(data<<8);
-	//DATAOUT(((GPIOB->IDR)&0x00ff)|((data<<8)&0xff00));
-	LCD_WR_CLR;
-	LCD_WR_SET;
-
-	LCD_CS_SET;
-	
-#else//使用16位并行数据总线模式
-	LCD_RS_SET;
-	LCD_CS_CLR;
-	DATAOUT(data);
-	LCD_WR_CLR;
-	LCD_WR_SET;
-	LCD_CS_SET;
-			
+		LCD_CS_SET;
+		
+	#else//使用16位并行数据总线模式
+		LCD_RS_SET;
+		LCD_CS_CLR;
+		DATAOUT(data);
+		LCD_WR_CLR;
+		LCD_WR_SET;
+		LCD_CS_SET;
+				
+	#endif
 #endif
-
 }
+
+
+//读LCD数据
+//返回值:读到的值
+u16 LCD_RD_DATA(void)
+{
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+	vu16 ram;			//防止被优化
+	ram=LCD->LCD_RAM;	
+	return ram;	
+#else
+	//暂时缺省
+
+#endif	
+}	
+
+//读寄存器
+//LCD_Reg:寄存器地址
+//返回值:读到的数据
+u16 LCD_ReadReg(u16 LCD_Reg)
+{										   
+	LCD_WR_REG(LCD_Reg);		//写入要读的寄存器序号
+	delay_us(5);		  
+	return LCD_RD_DATA();		//返回读到的值
+}
+
 //******************************************************************
 //函数名：  LCD_DrawPoint_16Bit
 //作者：    xiao冯@全动电子
@@ -133,27 +166,32 @@ void LCD_WR_DATA(u16 data)
 //******************************************************************
 void LCD_DrawPoint_16Bit(u16 color)
 {
-#if LCD_USE8BIT_MODEL==1
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
 	
-	LCD_RD_SET;
-	LCD_RS_SET;//写地址
-	LCD_CS_CLR;
+	LCD->LCD_RAM = color;//写十六位GRAM
 	
-	LCD_PBh8dataOut(color);
-	//DATAOUT(((GPIOB->IDR)&0x00ff)|(color&0xff00));                                        //这里改了	
-	LCD_WR_CLR;
-	LCD_WR_SET;	
-	LCD_PBh8dataOut(color<<8);
-	//DATAOUT(((GPIOB->IDR)&0x00ff)|((color<<8)&0xff00));	
-	LCD_WR_CLR;
-	LCD_WR_SET;
-	
-	LCD_CS_SET;
 #else
-	LCD_WR_DATA(color); 
+	#if LCD_USE8BIT_MODEL==1
+		
+		LCD_RD_SET;
+		LCD_RS_SET;//写地址
+		LCD_CS_CLR;
+		
+		LCD_PBh8dataOut(color);
+		//DATAOUT(((GPIOB->IDR)&0x00ff)|(color&0xff00));                                        //这里改了	
+		LCD_WR_CLR;
+		LCD_WR_SET;	
+		LCD_PBh8dataOut(color<<8);
+		//DATAOUT(((GPIOB->IDR)&0x00ff)|((color<<8)&0xff00));	
+		LCD_WR_CLR;
+		LCD_WR_SET;
+		
+		LCD_CS_SET;
+	#else
+		LCD_WR_DATA(color); 
+	#endif
+
 #endif
-
-
 }
 
 //******************************************************************
@@ -168,8 +206,13 @@ void LCD_DrawPoint_16Bit(u16 color)
 //******************************************************************
 void LCD_WriteReg(u8 LCD_Reg, u16 LCD_RegValue)
 {	
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+	LCD->LCD_REG = LCD_Reg;		//写入要写的寄存器序号	 
+	LCD->LCD_RAM = LCD_RegValue;//写入数据
+#else
 	LCD_WR_REG(LCD_Reg);  
-	LCD_WR_DATA(LCD_RegValue);	    		 
+	LCD_WR_DATA(LCD_RegValue);	
+#endif	
 }	   
 	 
 //******************************************************************
@@ -198,29 +241,96 @@ void LCD_WriteRAM_Prepare(void)
 //******************************************************************
 void LCD_DrawPoint(u16 x,u16 y)
 {
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
 	LCD_SetCursor(x,y);//设置光标位置 
-#if LCD_USE8BIT_MODEL==1
-	
-	LCD_RD_SET;
-	LCD_RS_SET;//写地址  
-	LCD_CS_CLR;
-	
-	LCD_PBh8dataOut(POINT_COLOR);
-	//DATAOUT(((GPIOB->IDR)&0x00ff)|(POINT_COLOR&0xff00));                                        //这里改了	
-	LCD_WR_CLR;
-	LCD_WR_SET;	
-	
-	LCD_PBh8dataOut(POINT_COLOR<<8);
-	//DATAOUT(((GPIOB->IDR)&0x00ff)|((POINT_COLOR<<8)&0xff00));
-	LCD_WR_CLR;
-	LCD_WR_SET;
-	
-	LCD_CS_SET;
+	LCD->LCD_RAM = POINT_COLOR;//写十六位GRAM
 #else
-	LCD_WR_DATA(POINT_COLOR); 
+		LCD_SetCursor(x,y);//设置光标位置 
+	#if LCD_USE8BIT_MODEL==1
+	
+		LCD_RD_SET;
+		LCD_RS_SET;//写地址  
+		LCD_CS_CLR;
+		
+		LCD_PBh8dataOut(POINT_COLOR);
+		//DATAOUT(((GPIOB->IDR)&0x00ff)|(POINT_COLOR&0xff00));                                        //这里改了	
+		LCD_WR_CLR;
+		LCD_WR_SET;	
+		
+		LCD_PBh8dataOut(POINT_COLOR<<8);
+		//DATAOUT(((GPIOB->IDR)&0x00ff)|((POINT_COLOR<<8)&0xff00));
+		LCD_WR_CLR;
+		LCD_WR_SET;
+		
+		LCD_CS_SET;
+	#else
+		LCD_WR_DATA(POINT_COLOR); 
+	#endif
+
 #endif
 
+}
 
+//当mdk -O1时间优化时需要设置
+//延时i
+void opt_delay(u8 i)
+{
+	while(i--);
+}
+
+//读取个某点的颜色值	 
+//x,y:坐标
+//返回值:此点的颜色
+u32 LCD_ReadPoint(u16 x,u16 y)
+{
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+ 	u16 r=0,g=0,b=0;
+	if(x>=lcddev.width||y>=lcddev.height)return 0;	//超过了范围,直接返回 
+	LCD_SetCursor(x,y);	    
+	if(lcddev.id==0X9341||lcddev.id==0X5310||lcddev.id==0X1963)LCD_WR_REG(0X2E);//9341/3510/1963 发送读GRAM指令
+	else if(lcddev.id==0X5510)LCD_WR_REG(0X2E00);	//5510 发送读GRAM指令
+ 	r=LCD_RD_DATA();								//dummy Read	   
+	if(lcddev.id==0X1963)return r;					//1963直接读就可以 
+	opt_delay(2);	  
+ 	r=LCD_RD_DATA();  		  						//实际坐标颜色
+	//9341/NT35310/NT35510要分2次读出 
+	opt_delay(2);	                                    
+	b=LCD_RD_DATA(); 
+	g=r&0XFF;		//对于9341/5310/5510,第一次读取的是RG的值,R在前,G在后,各占8位
+	g<<=8; 
+	return (((r>>11)<<11)|((g>>10)<<5)|(b>>11));	//ILI9341/NT35310/NT35510需要公式转换一下
+#else
+	//暂时缺省
+
+#endif
+}
+
+//LCD开启显示
+void LCD_DisplayOn(void)
+{					   
+	if(lcddev.id==0X9341||lcddev.id==0X5310||lcddev.id==0X1963)LCD_WR_REG(0X29);	//开启显示
+	else if(lcddev.id==0X5510)LCD_WR_REG(0X2900);	//开启显示
+}	 
+//LCD关闭显示
+void LCD_DisplayOff(void)
+{	   
+	if(lcddev.id==0X9341||lcddev.id==0X5310||lcddev.id==0X1963)LCD_WR_REG(0X28);	//关闭显示
+	else if(lcddev.id==0X5510)LCD_WR_REG(0X2800);	//关闭显示
+}  
+
+
+//从ILI93xx读出的数据为GBR格式，而我们写入的时候为RGB格式。
+//通过该函数转换
+//c:GBR格式的颜色值
+//返回值：RGB格式的颜色值
+u16 LCD_BGR2RGB(u16 c)
+{
+	u16  r,g,b,rgb;   
+	b=(c>>0)&0x1f;
+	g=(c>>5)&0x3f; 
+	r=(c>>11)&0x1f;	 
+	rgb=(b<<11)+(g<<5)+(r<<0);		 
+	return(rgb);
 }
 
 //******************************************************************
@@ -234,32 +344,35 @@ void LCD_DrawPoint(u16 x,u16 y)
 //******************************************************************
 void LCD_Clear(u16 Color)
 {
-	u32 index=0;      
-	LCD_SetWindows(0,0,lcddev.width-1,lcddev.height-1);	
-#if LCD_USE8BIT_MODEL==1
-	LCD_RS_SET;//写数据 
-	LCD_CS_CLR;
-	for(index=0;index<lcddev.width*lcddev.height;index++)
-	{
-		LCD_PBh8dataOut(Color);
-		//DATAOUT(((GPIOB->IDR)&0x00ff)|(Color&0xff00));                                        //这里改了
-		LCD_WR_CLR;
-		LCD_WR_SET;
-		
-		LCD_PBh8dataOut(Color<<8);
-		//DATAOUT(((GPIOB->IDR)&0x00ff)|((Color<<8)&0xff00));
-		LCD_WR_CLR;
-		LCD_WR_SET;
-		
-	}
-	LCD_CS_SET;
-#else //16位模式
-	for(index=0;index<lcddev.width*lcddev.height;index++)
-	{
-		LCD_WR_DATA(Color);		  
-	}
-#endif
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
 	
+#else
+		u32 index=0;      
+		LCD_SetWindows(0,0,lcddev.width-1,lcddev.height-1);	
+	#if LCD_USE8BIT_MODEL==1
+		LCD_RS_SET;//写数据 
+		LCD_CS_CLR;
+		for(index=0;index<lcddev.width*lcddev.height;index++)
+		{
+			LCD_PBh8dataOut(Color);
+			//DATAOUT(((GPIOB->IDR)&0x00ff)|(Color&0xff00));                                        //这里改了
+			LCD_WR_CLR;
+			LCD_WR_SET;
+			
+			LCD_PBh8dataOut(Color<<8);
+			//DATAOUT(((GPIOB->IDR)&0x00ff)|((Color<<8)&0xff00));
+			LCD_WR_CLR;
+			LCD_WR_SET;
+			
+		}
+		LCD_CS_SET;
+	#else //16位模式
+		for(index=0;index<lcddev.width*lcddev.height;index++)
+		{
+			LCD_WR_DATA(Color);		  
+		}
+	#endif
+#endif
 } 
 
 //******************************************************************
@@ -273,7 +386,7 @@ void LCD_Clear(u16 Color)
 //******************************************************************
 void LCD_GPIOInit(void)
 {
-	Devices_Init(UserDevices,LCD);
+	Devices_Init(UserDevices,LCD_Index);
 	LCD_CS_SET;LCD_RS_SET;LCD_WR_SET;LCD_RD_SET;LCD_RST_SET;
 }
 
@@ -305,7 +418,7 @@ void LCD_RESET(void)
 //返回值：  无
 //修改记录：无
 //******************************************************************
-void LCD_Init(void)
+void LCD_Init_no_FSMC(void)
 {  
      										 
 	LCD_GPIOInit();
@@ -456,7 +569,41 @@ void LCD_SetWindows(u16 xStar, u16 yStar,u16 xEnd,u16 yEnd)
 返回值：无
 *************************************************/
 void LCD_SetCursor(u16 Xpos, u16 Ypos)
-{	  	    			
+{
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+
+ 	if(lcddev.id==0X9341||lcddev.id==0X5310)
+	{		    
+		LCD_WR_REG(lcddev.setxcmd); 
+		LCD_WR_DATA(Xpos>>8);LCD_WR_DATA(Xpos&0XFF); 			 
+		LCD_WR_REG(lcddev.setycmd); 
+		LCD_WR_DATA(Ypos>>8);LCD_WR_DATA(Ypos&0XFF); 		
+	}else if(lcddev.id==0X1963)
+	{  			 		
+		if(lcddev.dir==0)//x坐标需要变换
+		{
+			Xpos=lcddev.width-1-Xpos;
+			LCD_WR_REG(lcddev.setxcmd); 
+			LCD_WR_DATA(0);LCD_WR_DATA(0); 		
+			LCD_WR_DATA(Xpos>>8);LCD_WR_DATA(Xpos&0XFF);		 	 
+		}else
+		{
+			LCD_WR_REG(lcddev.setxcmd); 
+			LCD_WR_DATA(Xpos>>8);LCD_WR_DATA(Xpos&0XFF); 		
+			LCD_WR_DATA((lcddev.width-1)>>8);LCD_WR_DATA((lcddev.width-1)&0XFF);		 	 			
+		}	
+		LCD_WR_REG(lcddev.setycmd); 
+		LCD_WR_DATA(Ypos>>8);LCD_WR_DATA(Ypos&0XFF); 		
+		LCD_WR_DATA((lcddev.height-1)>>8);LCD_WR_DATA((lcddev.height-1)&0XFF); 			 		
+		
+	}else if(lcddev.id==0X5510)
+	{
+		LCD_WR_REG(lcddev.setxcmd);LCD_WR_DATA(Xpos>>8); 		
+		LCD_WR_REG(lcddev.setxcmd+1);LCD_WR_DATA(Xpos&0XFF);			 
+		LCD_WR_REG(lcddev.setycmd);LCD_WR_DATA(Ypos>>8);  		
+		LCD_WR_REG(lcddev.setycmd+1);LCD_WR_DATA(Ypos&0XFF);			
+	} 
+#else	
 	LCD_WR_REG(lcddev.setxcmd);	
 	LCD_WR_DATA(Xpos>>8);
 	LCD_WR_DATA(0x00FF&Xpos);		
@@ -467,6 +614,7 @@ void LCD_SetCursor(u16 Xpos, u16 Ypos)
 	LCD_WR_DATA(0x00FF&Ypos);		
 
 	LCD_WriteRAM_Prepare();	//开始写入GRAM	
+#endif
 } 
 
 //设置LCD参数

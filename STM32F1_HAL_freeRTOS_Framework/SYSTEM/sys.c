@@ -14,10 +14,13 @@
 			把内部FLASH划分一块通过USB插入电脑当作U盘，可在电脑操作文件的读存
 	
 	把stdlib排除在项目之外（逐个.c文件查看），不编译，自己实现malloc和free函数（借鉴原子的），并替换在FIFO.c和ffsystem.c里面的
-	
-	FSMC用于 LCD\SRAM\FLASH
-		上SARM后加上原子写的内存管理
+	确保工程内不含string、stdio和stdlib等不适合用于mcu平台的头文件，已经都用开源的线程安全软件或者自实现替换
+	FSMC用于 LCD\SRAM
 	IAP：即将加上
+	
+	之后要做的：
+		原子的FATFS的API再包装的移植
+		FSMC驱动LCD的代码，和现有LCD代码的写寄存器、数据的底层函数融合，用预编译控制编译哪个
 	
 	
 	线性回归：即将加上
@@ -149,10 +152,15 @@ void sys_MCU_Init_Seq(void)
 	#endif
 	
 	#if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)) && ((STM32F103xG) || (STM32F103xE))
-		void sys_DAC_ENABLE(void);
+		sys_DAC_ENABLE();
 	#endif
-
-
+	
+	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
+		sys_FSMC_SRAM_ENABLE();
+	#endif
+	
+	
+	
 	
 	
 	/*初始化并启动TIM4*/
@@ -182,10 +190,14 @@ void sys_Device_Init_Seq(void)
 	/*以下为用户应用的Device初始化序列*/
 	
 	/*用户IO初始化，可选择初始化某个特定器件或者所有器件*/
-	Devices_Init(UserDevices,ALL);
+	Devices_Init(UserDevices,ALL_Index);
 	
 	/*LCD初始化*/
-	LCD_Init();
+	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+		LCD_Init_with_FSMC();
+	#else
+		LCD_Init_no_FSMC();
+	#endif
 	
 	
 	buzzer_bibi_once; //响一声表示初始化结束

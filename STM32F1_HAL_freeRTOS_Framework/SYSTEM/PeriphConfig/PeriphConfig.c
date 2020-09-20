@@ -2,7 +2,7 @@
 
 /*
 ______________________________【PIN MAP】__________________________________________
-注：外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
+注：以下这些外设的IO在其初始化函数内已经初始化好，不用再单独初始化
 						[IO]										[描述]
 外设：	* PA8												MCO输出，默认时钟源为HSE
 		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
@@ -20,6 +20,21 @@ ______________________________【PIN MAP】_______________________________________
 		* PA4		PA5										DAC_OUT1  DAC_OUT2（hd容量系类外设）
 		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
 		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
+		  * 												FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
+		  D2	D3	NOE	NWE	NE1/NCE2	D13	D14 D15 	A16 	A17 	A18 	D0 		D1
+		  PD0	PD1	PD4	PD5	PD7			PD8	PD9	PD10	PD11	PD12	PD13	PD14	PD15
+		  
+		  NBL0	NBL1	A23	A19	A20	A21	A22	D4	D5	D6	D7		D8		D9		D10		D11		D12
+		  PE0	PE1		PE2	PE3	PE4	PE5	PE6	PE7	PE8	PE9	PE10	PE11	PE12	PE13	PE14	PE15
+		  
+		  A0	A1	A2	A3	A4	A5	A6		A7		A8		A9		A10	A11	A12	A13	A14	A15
+		  PF0	PF1	PF2	PF3	PF4	PF5	PF12	PF13	PF14	PF15	PG0	PG1	PG2	PG3	PG4	PG5
+		  
+		  NE2/NCE3	NCE4_1/NE3	NCE4_2	NE4		A24		A25
+		  PG9		PG10		PG11	PG12	PG13	PG14
+		  
+		* ...
+
 
 用户：	*
 */
@@ -97,19 +112,19 @@ Devices_Init_Struct UserDevices[devicesNum] =
 {
 	{	
 		.deviceIO_Struct 	= 	TestLED_IO_Struct	,		//器件IO配置结构体
-		.deviceIndex 		= 	TestLED				,		//器件enum格式索引
+		.deviceIndex 		= 	TestLED_Index		,		//器件enum格式索引
 		.deviceName 		= 	"TestLED"			,		//器件名称
 		.device_IOnum 		= 	1							//器件有多少个IO口
 	},
 	{
 		.deviceIO_Struct 	= 	KEY_IO_Struct	,
-		.deviceIndex		= 	KEY				,
+		.deviceIndex		= 	KEY_Index		,
 		.deviceName 		= 	"Menu Key"		,
 		.device_IOnum 		= 	2
 	},
 	{	
 		.deviceIO_Struct 	= 	LCD_IO_Struct	,		//器件IO配置结构体
-		.deviceIndex 		= 	LCD				,		//器件enum格式索引
+		.deviceIndex 		= 	LCD_Index		,		//器件enum格式索引
 		.deviceName 		= 	"LCD"			,		//器件名称
 		.device_IOnum 		= 	13						//器件有多少个IO口
 	}
@@ -155,21 +170,14 @@ void sys_SPI2_SS_io_Init(void)
 void Devices_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2Init)
 {
 	static u8 dIndex;
-	if(device2Init == ALL)
+	if(device2Init == ALL_Index)
 	{
 		for(dIndex = 0;dIndex < devicesNum;dIndex++)	//遍历所有器件
 		{
 			deviceIO_Init(Devices,(enum devicesIndex_enum)dIndex);
 		}
 	}else{
-		switch(device2Init)								//特定器件初始化，按需增添		
-		{
-			case TestLED:	deviceIO_Init(Devices,TestLED);
-				break;
-//			case BUCK:	deviceIO_Init(Devices,BUCK);
-//			case KEY:	deviceIO_Init(Devices,KEY);
-			default:break;
-		}
+		deviceIO_Init(Devices,device2Init);				////特定器件初始化
 	}
 }
 
@@ -1724,3 +1732,142 @@ void show_sdcard_info(void)
 }
 
 #endif
+
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
+
+SRAM_HandleTypeDef SRAM_Handler;    //SRAM句柄
+
+//SRAM初始化
+void sys_FSMC_SRAM_ENABLE(void)
+{	
+	GPIO_InitTypeDef GPIO_Initure;
+	FSMC_NORSRAM_TimingTypeDef FSMC_ReadWriteTim;
+    
+    __HAL_RCC_FSMC_CLK_ENABLE();                //使能FSMC时钟
+    __HAL_RCC_GPIOD_CLK_ENABLE();               //使能GPIOD时钟
+    __HAL_RCC_GPIOE_CLK_ENABLE();               //使能GPIOE时钟
+    __HAL_RCC_GPIOF_CLK_ENABLE();               //使能GPIOF时钟
+    __HAL_RCC_GPIOG_CLK_ENABLE();               //使能GPIOG时钟
+    
+	//PD0,1,4,5,8~15
+    GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_8|\
+					 GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|\
+					 GPIO_PIN_14|GPIO_PIN_15;  
+	GPIO_Initure.Mode=GPIO_MODE_AF_PP;          //推挽复用
+    GPIO_Initure.Pull=GPIO_PULLUP;              //上拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;    //高速   
+	HAL_GPIO_Init(GPIOD,&GPIO_Initure);     	
+    
+	//PE0,1,7~15
+    GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|\
+					 GPIO_PIN_10| GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|\
+					 GPIO_PIN_15;    
+    HAL_GPIO_Init(GPIOE,&GPIO_Initure);    
+    
+	//PF0~5,12~15
+    GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|\
+					 GPIO_PIN_5|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;              
+	HAL_GPIO_Init(GPIOF,&GPIO_Initure);     
+    
+	//PG0~5,10
+    GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_10;              
+	HAL_GPIO_Init(GPIOG,&GPIO_Initure);      
+	
+	SRAM_Handler.Instance=FSMC_NORSRAM_DEVICE;                
+	SRAM_Handler.Extended=FSMC_NORSRAM_EXTENDED_DEVICE;    
+    
+	SRAM_Handler.Init.NSBank=FSMC_NORSRAM_BANK3;     					//使用NE3
+	SRAM_Handler.Init.DataAddressMux=FSMC_DATA_ADDRESS_MUX_DISABLE; 	//地址/数据线不复用
+	SRAM_Handler.Init.MemoryType=FSMC_MEMORY_TYPE_SRAM;   				//SRAM
+	SRAM_Handler.Init.MemoryDataWidth=FSMC_NORSRAM_MEM_BUS_WIDTH_16; 	//16位数据宽度
+	SRAM_Handler.Init.BurstAccessMode=FSMC_BURST_ACCESS_MODE_DISABLE; 	//是否使能突发访问,仅对同步突发存储器有效,此处未用到
+	SRAM_Handler.Init.WaitSignalPolarity=FSMC_WAIT_SIGNAL_POLARITY_LOW;	//等待信号的极性,仅在突发模式访问下有用
+	SRAM_Handler.Init.WaitSignalActive=FSMC_WAIT_TIMING_BEFORE_WS;   	//存储器是在等待周期之前的一个时钟周期还是等待周期期间使能NWAIT
+	SRAM_Handler.Init.WriteOperation=FSMC_WRITE_OPERATION_ENABLE;    	//存储器写使能
+	SRAM_Handler.Init.WaitSignal=FSMC_WAIT_SIGNAL_DISABLE;           	//等待使能位,此处未用到
+	SRAM_Handler.Init.ExtendedMode=FSMC_EXTENDED_MODE_DISABLE;        	//读写使用相同的时序
+	SRAM_Handler.Init.AsynchronousWait=FSMC_ASYNCHRONOUS_WAIT_DISABLE;	//是否使能同步传输模式下的等待信号,此处未用到
+	SRAM_Handler.Init.WriteBurst=FSMC_WRITE_BURST_DISABLE;           	//禁止突发写
+  
+	//FMC读时序控制寄存器
+	FSMC_ReadWriteTim.AddressSetupTime=0x00;       	//地址建立时间（ADDSET）为1个HCLK 1/72M=13.8ns
+	FSMC_ReadWriteTim.AddressHoldTime=0x00;			//地址保持时间（ADDHLD）模式A未用到
+	FSMC_ReadWriteTim.DataSetupTime=0x01;			//数据保存时间为3个HCLK	=4*13.8=55ns
+	FSMC_ReadWriteTim.BusTurnAroundDuration=0X00;
+	FSMC_ReadWriteTim.AccessMode=FSMC_ACCESS_MODE_A;//模式A
+	HAL_SRAM_Init(&SRAM_Handler,&FSMC_ReadWriteTim,&FSMC_ReadWriteTim);	
+}
+
+//在指定地址(WriteAddr+Bank1_SRAM3_ADDR)开始,连续写入n个字节.
+//pBuffer:字节指针
+//WriteAddr:要写入的地址
+//n:要写入的字节数
+void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n)
+{
+	for(;n!=0;n--)
+	{
+		*(vu8*)(SRAM1_BANK3_ADDR + WriteAddr) = *pBuffer;
+		WriteAddr++;
+		pBuffer++;
+	}
+}
+
+//在指定地址((WriteAddr+Bank1_SRAM3_ADDR))开始,连续读出n个字节.
+//pBuffer:字节指针
+//ReadAddr:要读出的起始地址
+//n:要写入的字节数
+void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n)
+{
+	for(;n!=0;n--)
+	{
+		*pBuffer++ = *(vu8*)(SRAM1_BANK3_ADDR + ReadAddr);
+		ReadAddr++;
+	}
+}
+
+#endif
+
+
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+
+SRAM_HandleTypeDef TFTSRAM_Handler;    //SRAM句柄(用于控制LCD)
+
+void LCD_Init_with_FSMC(void)
+{
+	FSMC_NORSRAM_TimingTypeDef FSMC_ReadWriteTim;
+	FSMC_NORSRAM_TimingTypeDef FSMC_WriteTim;
+	
+	TFTSRAM_Handler.Instance=FSMC_NORSRAM_DEVICE;                
+	TFTSRAM_Handler.Extended=FSMC_NORSRAM_EXTENDED_DEVICE;    
+    
+	TFTSRAM_Handler.Init.NSBank=FSMC_NORSRAM_BANK4;     				//使用NE4
+	TFTSRAM_Handler.Init.DataAddressMux=FSMC_DATA_ADDRESS_MUX_DISABLE; 	//地址/数据线不复用
+	TFTSRAM_Handler.Init.MemoryType=FSMC_MEMORY_TYPE_SRAM;   			//SRAM
+	TFTSRAM_Handler.Init.MemoryDataWidth=FSMC_NORSRAM_MEM_BUS_WIDTH_16; //16位数据宽度
+	TFTSRAM_Handler.Init.BurstAccessMode=FSMC_BURST_ACCESS_MODE_DISABLE; //是否使能突发访问,仅对同步突发存储器有效,此处未用到
+	TFTSRAM_Handler.Init.WaitSignalPolarity=FSMC_WAIT_SIGNAL_POLARITY_LOW;//等待信号的极性,仅在突发模式访问下有用
+	TFTSRAM_Handler.Init.WaitSignalActive=FSMC_WAIT_TIMING_BEFORE_WS;   //存储器是在等待周期之前的一个时钟周期还是等待周期期间使能NWAIT
+	TFTSRAM_Handler.Init.WriteOperation=FSMC_WRITE_OPERATION_ENABLE;    //存储器写使能
+	TFTSRAM_Handler.Init.WaitSignal=FSMC_WAIT_SIGNAL_DISABLE;           //等待使能位,此处未用到
+	TFTSRAM_Handler.Init.ExtendedMode=FSMC_EXTENDED_MODE_ENABLE;        //读写使用不同的时序
+	TFTSRAM_Handler.Init.AsynchronousWait=FSMC_ASYNCHRONOUS_WAIT_DISABLE;//是否使能同步传输模式下的等待信号,此处未用到
+	TFTSRAM_Handler.Init.WriteBurst=FSMC_WRITE_BURST_DISABLE;           //禁止突发写
+    
+	//FMC读时序控制寄存器
+	FSMC_ReadWriteTim.AddressSetupTime=0x06;       	//地址建立时间（ADDSET）为7个HCLK 13.8ns*7=96.6ns
+	FSMC_ReadWriteTim.AddressHoldTime=0;
+	FSMC_ReadWriteTim.DataSetupTime=26;				//数据保存时间为27个HCLK	=13.8*27=372.6ns
+	FSMC_ReadWriteTim.AccessMode=FSMC_ACCESS_MODE_A;//模式A
+	//FMC写时序控制寄存器
+	FSMC_WriteTim.BusTurnAroundDuration=0;			//总线周转阶段持续时间为0，此变量不赋值的话会莫名其妙的自动修改为4。导致程序运行正常
+	FSMC_WriteTim.AddressSetupTime=3;          		//地址建立时间（ADDSET）为4个HCLK =55.2ns 
+	FSMC_WriteTim.AddressHoldTime=0;
+	FSMC_WriteTim.DataSetupTime=0x06;              	//数据保存时间为13.8ns*7个HCLK=96.6ns
+	FSMC_WriteTim.AccessMode=FSMC_ACCESS_MODE_A;    //模式A
+	HAL_SRAM_Init(&TFTSRAM_Handler,&FSMC_ReadWriteTim,&FSMC_WriteTim);	
+	
+	delay_ms(50); // delay 50 ms 
+}
+
+#endif
+

@@ -8,11 +8,11 @@
 /*STEP1:定义都有什么器件*/
 enum devicesIndex_enum
 {
-	TestLED = 0,
-	KEY,
-	LCD,
+	TestLED_Index = 0,
+	KEY_Index,
+	LCD_Index,
 	
-	ALL		//最后这个固定的不要删
+	ALL_Index		//最后这个固定的不要删
 };
 
 /*STEP3.5:填写用于外部中断的IO的中断标志位*/
@@ -273,6 +273,40 @@ extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
 #define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
 
 #endif
+
+/*____________________________FSMC for SARM_____________________________________________*/
+void sys_FSMC_SRAM_ENABLE(void);
+void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n);
+void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
+
+extern SRAM_HandleTypeDef SRAM_Handler;    //SRAM句柄
+//使用NOR/SRAM的 Bank1.sector3,地址位HADDR[27,26]=10 
+//对IS61LV25616/IS62WV25616,地址线范围为A0~A17 
+//对IS61LV51216/IS62WV51216,地址线范围为A0~A18
+#define SRAM1_BANK3_ADDR    ((u32)(0x68000000))	//计算： (0x6000 0000 | ((u32)64*1024*1024*(3 - 1)))
+
+#endif
+
+
+/*____________________________FSMC for LCD_____________________________________________*/
+void LCD_Init_with_FSMC(void);
+//LCD地址结构体
+typedef struct
+{
+	vu16 LCD_REG;
+	vu16 LCD_RAM;
+} LCD_TypeDef;
+//使用NOR/SRAM的 Bank1.sector4,地址位HADDR[27,26]=11 A10作为数据命令区分线 
+//注意设置时STM32内部会右移一位对其! 			    
+#define LCD_BASE        ((u32)(0x6C000000 | 0x000007FE))
+#define LCD             ((LCD_TypeDef *) LCD_BASE)
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+
+extern SRAM_HandleTypeDef TFTSRAM_Handler;    //SRAM句柄(用于控制LCD)
+
+#endif
+
 
 #endif
 

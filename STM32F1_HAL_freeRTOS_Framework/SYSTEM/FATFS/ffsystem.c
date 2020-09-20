@@ -5,6 +5,7 @@
 
 
 #include "ff.h"
+#include "malloc.h"
 
 
 #if FF_USE_LFN == 3	/* Dynamic memory allocation */
@@ -17,8 +18,9 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null if no
 	UINT msize		/* Number of bytes to allocate */
 )
 {
+	return mymalloc(InrRAM,msize);
 	//return malloc(msize);	/* Allocate a new memory block with POSIX API */
-	return 0;
+	//return 0;
 }
 
 
@@ -30,6 +32,7 @@ void ff_memfree (
 	void* mblock	/* Pointer to the memory block to free (nothing to do if null) */
 )
 {
+	myfree(InrRAM,mblock);
 	//free(mblock);	/* Free the memory block with POSIX API */
 }
 

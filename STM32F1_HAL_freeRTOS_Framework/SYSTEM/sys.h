@@ -8,6 +8,7 @@
 #include "FIFO.h"								/*ÓÃGithubÉÏÃæµÄÒ»¸ö¿ªÔ´²Ö¿â£¬
 												Ò»¸öÊµÏÖ¶ÔÈÎºÎÐÎÊ½Êý¾ÝµÄ»·ÐÎ»º´æ£¬Ä¬ÈÏÒÑ¾­ÓÃÓÚ´®¿Ú½ÓÊÕ£¬²Î¿¼³ÌÐò¿´.hÎÄ¼þÄÚ
 												¿ªÔ´²Ö¿âµØÖ·£ºhttps://github.com/geekfactory/FIFO.git*/
+#include "malloc.h"								/*½è¼øÕýµãÔ­×ÓµÄ ÄÚ´æ¹ÜÀí ÕÂ½ÚµÄÔ´´úÂë×ÔÊµÏÖµÄmallocºÍfree*/				
 												
 												
 												
@@ -46,6 +47,7 @@
 	*/
 	
 /*Ó¦ÓÃ¹æ·¶£º£¨ÁÙÊ±£¬´ýÕûÀí£©
+	00¡¢¹¤³ÌÄÚÏÖÒÑ¾­²»º¬string¡¢stdioºÍstdlibµÈ²»ÊÊºÏÓÃÓÚmcuÆ½Ì¨µÄÍ·ÎÄ¼þ£¬ÒÑ¾­¶¼ÓÃ¿ªÔ´µÄÏß³Ì°²È«Èí¼þ»òÕß×ÔÊµÏÖÌæ»»
 	0¡¢ÖÐ¶ÏÓÅÏÈ¼¶·Ö×éÑ¡ÓÃ·Ö×é4£¬¼´16¼¶ÇÀÕ¼ÓÅÏÈ¼¶£¬0¼¶ÏìÓ¦ÓÅÏÈ¼¶£¨¼´²»ÓÃ£©
 	1¡¢IO¾¡Á¿Éè¼ÆÎªµÍµçÆ½ÓÐÐ§£¬¸ßµçÆ½½ØÖ¹£»°´¼üIO¾¡Á¿Ê¹ÓÃÍâ²¿ÖÐ¶Ï¡£
 	2¡¢Ê¹ÓÃC99Ä£Ê½±àÒë£¡
@@ -59,6 +61,8 @@
 		  HAL_ERROR    = 0x01U,
 		  HAL_BUSY     = 0x02U,
 		  HAL_TIMEOUT  = 0x03U
+	9¡¢FSMCµÄ¿é1µÄÇø3ºÍÇø4·Ö±ðÁô¸øÍâ²¿RAMºÍLCD£¬±¾Ä£°åÄ¬ÈÏµÄ£¬É÷¸Ä
+	10¡¢°Ñ±¾Ä£°å¸÷ÖÖÍâÉèÖÐÄ¬ÈÏµÄ¶«Î÷¶¼ÂÞÁÐÔÚÕâÀï
 		
 */
 
@@ -143,6 +147,8 @@ char * mystrncpy (char *dest, const char *src, int n);
 int mystrcmp (const char *s1, const char *s2);
 int mystrncmp (const char *s1, const char *s2, int n);
 void * mymemset (void *s, int c, unsigned n);
+void *mymemcpy(void *des,const void *src,size_t len);
+char *mystrtok(char *s, const char *delim);
 */
 int myatoi(const char *str);					/*Ìá¹©Ò»¸ö×Ö·û´®×ªÕûÐÎµÄÊµÏÖ*/
 u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*Ìá¹©»ñÈ¡ÏµÍ³ÔËÐÐÊ±¼äµÄº¯Êý£¬¾ßÌå¿´Ô´º¯Êý´¦×¢ÊÍ*/
@@ -566,7 +572,7 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 	×¢£ºµ±ÆôÓÃ±¾¹¦ÄÜºó£¬ÔÚÏµÍ³³õÊ¼»¯ÐòÁÐÖÐ½«¼ÓÈë¶Á´æ¿ª»ú´ÎÊýµÄÒ»¸öÓÃÀý£¬Ò»¸öu16µÄ±äÁ¿»á´¢´æÔÚ×îºóÒ»¸ö»òµ¹ÊýµÚ¶þ¸öÒ³
 	Àý£º	const u8 TEXT_Buffer[]={"STM32F103 FLASH TEST"};	//ÓÃÓÚ´æÈëµÄÊý¾Ý
 			u8 datatemp[sizeof(TEXT_Buffer)];					//ÓÃÓÚ½Ó¶Á³öµÄÊý¾Ý
-	Ð´£º(Ò»´ÎÐ´Èë³¤¶È×î¶àÎªÒ»¸öÒ³µÄ×Ö½ÚÊý£¬¶ÔÓÚÖÐÐ¡ÈÝÁ¿µÄÎª1KB£¬¶ÔÓÚ´óÈÝÁ¿µÄÎª2KB£¡)
+	Ð´£º£¨Ò»´ÎÐ´Èë³¤¶È×î¶àÎªÒ»¸öÒ³µÄ×Ö½ÚÊý£¬¶ÔÓÚÖÐÐ¡ÈÝÁ¿µÄÎª1KB£¬¶ÔÓÚ´óÈÝÁ¿µÄÎª2KB£¡£©£¬×îºóÒ»¸ö²ÎÊýÊÇÒÔ×Ö½ÚÎªµ¥Î»£¡
 		STMFLASH_Write(	FLASH_SAVE_ADDR1,	(u16*)TEXT_Buffer,	sizeof(TEXT_Buffer));
 	¶Á£ºSTMFLASH_Read(	FLASH_SAVE_ADDR1,	(u16*)datatemp,		sizeof(TEXT_Buffer));
 */
@@ -582,7 +588,7 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 		void DAC_Set_Ch2_Vol(float vol)
 */
 
-/*hdÏµÀàÍâÉè£¬Áù¸ùÏß£¨ËÄÎ»Êý¾ÝÏß£¬Ê±ÖÓÏßºÍÃüÁîÏß£©£¬SDIO×î¸ß´«ÊäËÙ¶È12M×Ö½ÚÃ¿Ãë£¬Ä¿Ç°Ö»Ö§³ÖÓÃÓÚSD¿¨*/
+/*hdÏµÁÐÍâÉè£¬Áù¸ùÏß£¨ËÄÎ»Êý¾ÝÏß£¬Ê±ÖÓÏßºÍÃüÁîÏß£©£¬SDIO×î¸ß´«ÊäËÙ¶È12M×Ö½ÚÃ¿Ãë£¬Ä¿Ç°Ö»Ö§³ÖÓÃÓÚSD¿¨*/
 /*Ö§³ÖµÄËÄÖÖ¿¨£ºSD2.0 ¸ßÈÝÁ¿¿¨£¨SDHC£¬×î´ó32G£©£¬SD2.0 ±ê×¼ÈÝÁ¿¿¨£¨SDSC£¬×î´ó 2G£©£¬SD1.x ¿¨ºÍ MMC ¿¨£©*/
 /*
 ³õÊ¼»¯ºó»ñÈ¡µ½µÄ¿¨ÐÅÏ¢´æÔÚ£º
@@ -629,7 +635,7 @@ PD2			SDIO_CMD
 */
 /*±¸×¢£º¿ÉÓÃ¿ª·¢ÓÃDMA¶ÁÐ´SD¿¨£¬ÕâÑù¸üÊ¡Ê±¼ä£¬¶ÁÐ´µÄÊ±ºò¾Í²»ÓÃ¹ØÖÐ¶ÏÁË*/
 #define SYSTEM_SDIO_SD_ENABLE	0
-/*¿ÉÓÃAPI£º£¨²»ÍÆ¼öÖ±½Ó¶ÁÐ´£¡ÒªÓÃÎÄ¼þÏµÍ³FATFS°´ÕÕÎÄ¼þ¶ÁÐ´£¬²¢ÇÒSDIOµÄSD³õÊ¼»¯¾ÍÔÚFATFS³õÊ¼»¯Àï£©
+/*µ×²ãAPI£º£¨²»ÍÆ¼öÖ±½Ó¶ÁÐ´£¡ÒªÓÃÎÄ¼þÏµÍ³FATFS°´ÕÕÎÄ¼þ¶ÁÐ´£¬²¢ÇÒSDIOµÄSD³õÊ¼»¯¾ÍÔÚFATFS³õÊ¼»¯Àï£©
 	Ò»¸ö¿éµÄ´óÐ¡£ºSDCardInfo.LogBlockSize
 	SD¿¨¿éµÄÊýÁ¿£ºSDCardInfo.LogBlockNbr
 	u8 SD_ReadDisk(buf,secaddr,seccnt);			//¶ÁÈ¡´ÓµÚsecaddr¿é¿ªÊ¼µÄseccnt¸ö¿éµÄÄÚÈÝ£¬·µ»ØµØÖ·µ½buf£¨´ó¸ÅÂÊÒ»¸ö¿éÎª512KB£¬buf±ØÐëÏÈ×¼±¸ºÃ×ã¹»¿Õ¼ä£©
@@ -656,19 +662,89 @@ PD2			SDIO_CMD
 				DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);
 				DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);
 				DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
-	ÅäÖÃ£º	ÔÚffsystem.cÀïÃæÓÃ×Ô¼ºÄÚ´æ·ÖÅäºÍÊÍ·Åº¯ÊýÌæ»» malloc ºÍ free Á½¸öº¯Êý¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ªµ±ÎñÖ®¼±
+	ÅäÖÃ£º	ÔÚffsystem.cÀïÃæÒÑ¾­ÓÃ×ÔÊµÏÖµÄÄÚ´æ·ÖÅäºÍÊÍ·Åº¯Êý£¬Ä¬ÈÏÓÃSTM32ÄÚ²¿µÄRAM£¬ÈçÒªÊ¹ÓÃÍâ²¿RAM¿ÉÈ¥ÊÖ¶¯¸ÄÎª ExRAM1
 	ÅäÖÃ£º	FATFSµÄÅäÖÃÎÄ¼þÀïÓÐÒ»¸öÃ»ÓÐÍêÈ«ÅäÖÃºÃ£ºffconf.hÀïÔÚ×îºóµÄRTOSÖ§³Ö
 */
 #define SYSTEM_FATFS_ENABLE	0
 /*³õÊ¼»¯²½Öè£º
-	ÏÈÎªÃ¿¸öÎÄ¼þÉè±¸¾ä±úÉêÇë¿Õ¼ä
-	¹ÒÔØ
-	
-	¸ü¶àÎÄ¼þ²Ù×÷¿ÉÓÃ²Î¿¼Ô­×ÓFATFSÀú³ÌÀïµÄ fattester.c ºÍ exfuns.c ÀïÃæµÄ»ñÈ¡Ê£Óà¿Õ¼ä¡¢Ê¶±ðÎÄ¼þÀàÐÍ¡¢µÃµ½ÎÄ¼þ¼Ð´óÐ¡¡¢ÎÄ¼þºÍÎÄ¼þ¼Ð¸´ÖÆµÈÓÐÓÃµÄAPIµÈµÈ
-	
-  FATFS¿ÉÓÃAPI£º²Î¿¼Ô­×ÓµÄ£¬ÂÞÁÐÏÂÀ´API£¬²Î¿¼¹Ù·½ÎÄµµµÈ
+	Òª×öµÄ£ºÔÚ³õÊ¼»¯ÏµÁÐÀï¼ÓÉÏFATFS³õÊ¼»¯SD¿¨
+			ÏÈÎªÃ¿¸öÎÄ¼þÉè±¸¾ä±úÉêÇë¿Õ¼ä
+			¹ÒÔØ
+			
+			¸ü¶àÎÄ¼þ²Ù×÷¿ÉÓÃ²Î¿¼Ô­×ÓFATFSÀú³ÌÀïµÄ fattester.c ºÍ exfuns.c ÀïÃæµÄ»ñÈ¡Ê£Óà¿Õ¼ä¡¢Ê¶±ðÎÄ¼þÀàÐÍ¡¢µÃµ½ÎÄ¼þ¼Ð´óÐ¡¡¢ÎÄ¼þºÍÎÄ¼þ¼Ð¸´ÖÆµÈÓÐÓÃµÄAPIµÈµÈ
+			
+			FATFS¿ÉÓÃAPI£º²Î¿¼Ô­×ÓµÄ£¬ÂÞÁÐÏÂÀ´API£¬²Î¿¼¹Ù·½ÎÄµµµÈ
 */
 
+
+/*hdÏµÁÐÍâÉè£¬FSMC*/
+/*FSMCÎª16Î»Êý¾ÝÏß£¬·ÖÎªËÄ¸ö256MBµÄ¿é£¨28¸úµØÖ·Ïß£©£¨µØÖ·´Ó0x6000 0000¿ªÊ¼£¬µÚ¶þ¸ö¿é¿ªÊ¼ÔÚ0x7000 0000£¬ÒÔ´ËÀàÍÆ£©£¬Ã¿Ò»¿é·ÖÎªËÄ¸ö64MBµÄÇø£¨BANK1~4£©*/
+/*µÚÒ»¸ö¿éÓÃÓÚNOR/SRAM£¬µÚ¶þ¡¢Èý¸ö¿éÓÃÓÚNAND£¬µÚËÄ¸ö¿éÓÃÓÚPC¿¨£¬¿éÒ»ÊôÓÚNOR FLASH¿ØÖÆÆ÷£¬¿é¶þ¡¢ÈýºÍËÄÊôÓÚNAND FLASH¿ØÖÆÆ÷*/
+/*
+Ò»°ã½Ó·¨£º£¨CEÇ°Ãæ¼ÓÒ»¸öN£¬±íÊ¾CEµÍÓÐÐ§£¬ÆäËûÍ¬Àí£©
+	FSMC			SRAM					LCD
+	NEx				NCE£¨µÍÑ¡ÖÐ£©			CS£¨µÍÑ¡ÖÐ£©
+	NOE				NOE£¨µÍÊ¹ÄÜÊä³ö£©		RD£¨µÍ¶Á£©
+	NWE				NWE£¨¸ß¶ÁµÍÐ´£©			WR£¨µÍÐ´£©
+											RS£¨¸ßÊý¾ÝµÍÃüÁî£©¡ª¡ª¿É½ÓÖÁFSMCµÄÒ»¸öµØÖ·½ÅÈçA10
+	NUB				NUB£¨µÍÑ¡¸ß°ËÎ»£©
+	NLB				NLB£¨µÍÑ¡µÍ°ËÎ»£©
+	A[x:0]			A[x:0]£¨µØÖ·£¬¿ÉÂÒÐò£©
+	D[15:0]									D[15:0]£¨Êý¾Ý£©
+*/
+/*Ô­×ÓµÄFSMCÇý¶¯LCDÀú³ÌµÄ½âÊÍ£ºÊ±ÐòÑ¡ÔñÄ£Ê½A£¬RSÁ¬½Óµ½ÁËA10
+	typedef struct
+	{
+		vu16 LCD_REG;	//0111 1111 1110 0X7FE
+		vu16 LCD_RAM;	//1000 0000 0000 0X7FE+0x02
+	}LCD_TypeDef;
+	#define LCD_BASE        ((u32)(0x6C000000 | 0x000007FE))
+	#define LCD             ((LCD_TypeDef *) LCD_BASE)
+	
+	0x7FEÎª£º	0111 1111 1110£¨ÒòÎªFSMCÑ¡ÔñÁË16Î»Ä£Ê½£¬Êµ¼ÊµØÖ·½ÅÎª0x7FEÔÙÓÒÒÆ1£©
+	ÓÒÒÆÖ®ºó  0011 1111 1111 ´ËÎªLCD->LCD_REGµÄ Êµ¼ÊµØÖ·½Å Çé¿ö£¬´ËÊ±A10Îª0£¬LCD->LCD_RAMµÄµØÖ·ÎªLCD->LCD_REGµØÖ·+2
+	LCD->LCD_REG µÄµØÖ·½Å 0011 1111 1111		A10Îª0 	RSµÍµØÖ·
+	LCD->LCD_RAM µÄµØÖ·½Å 0100 0000 0001		A10Îª1	RS¸ßÊý¾Ý
+	ÕâÑùÃüÁîºÍÊý¾Ý¾ÍÇø·Ö¿ªÁË
+	
+	È»ºó¶ÁÐ´£º£¨¶ÁÐ´Ïà¹ØµÄCS¡¢WRºÍRD½ÅµÈµÄµçÆ½ÓÉFSMC×Ô¶¯ÉèÖÃ£©
+		Ð´£º	LCD->LCD_REG = LCD_Reg;				//ÒªÐ´µÄ¼Ä´æÆ÷µØÖ· 
+				LCD->LCD_RAM = LCD_RegValue;		//Ð´ÈëÒ»¸ö16Î»Êý¾Ý
+		¶Á£º	LCD_WR_REG(LCD_Reg);				//ÏÈÐ´¼Ä´æÆ÷µØÖ·
+				vu16 LCD_RegValue = LCD->LCD_RAM;	//ÔÙ¶Á³öÒ»¸ö16Î»Êý¾Ý
+*/
+/*¿ÉÒÔÓÃFSMCÍ¬Ê±¹ÜÀíLCDºÍSRAM£¨¶ÔÓÚMCUÀ´Ëµ£¬Íâ²¿FLASH¿ÉÒÔÓÃSPIµÄFLASHµ±×÷ÎÄ¼þÏµÍ³Ê¹ÓÃ£¨Èç´æÍ¼¡¢µ±USB UÅÌ»òÕßIAPµÈµÈ£©£¬²»ÓÃÉÏNOR/NANDÖ®Á÷£¬ÄÇÊÇ¶ÔMPUµÄ£©
+	ÕâÊÇ¶ÔÓÚ²»´øLTDC LCDÍâÉèµÄÈçSTM32F429ÒÔÏÂµÄÈçSTM32F1ºÍSTM32F40xÏµÁÐ¶øÑÔ
+  ¶ÔÓÚSTM32F429£¬¿ÉÒÔÓÃLTDC LCDµ¥¶ÀÇý¶¯LCD
+*/
+/*
+  Èç¹ûÊµ¼ÊÊ¹ÓÃÁË´óÈÝÁ¿ÏµÁÐºÍ100½ÅÒÔÉÏÏµÁÐµÄÆ¬×Óµ«ÊÇÃ»ÓÐLTDC£¬ÍÆ¼öÓÃFSMCÍ¬Ê±¹ÜÀíLCDºÍSRAM*/
+#define SYSTEM_FSMC_ENABLE	1				//ÊÇ·ñÆôÓÃFSMC
+	#define SYSTEM_FSMC_use4LCD		1		//ÆôÓÃFSMCÓÃÓÚÇý¶¯LCD£¬ÔòÏà¹Ø´úÂë±»±àÒë£¬Ïà¹ØAPI¿ÉÓÃ
+	#define SYSTEM_FSMC_use4SRAM	1		//ÆôÓÃFSMCÓÃÓÚÇý¶¯SRAM£¬ÔòÏà¹Ø´úÂë±»±àÒë£¬Ïà¹ØAPI¿ÉÓÃ
+/*
+ÓÃÓÚLCDµÄ²¿·Ö£º
+	  Òª×öµÄ£º	LCDµÄÏà¹Ø´úÂë»¹Ã»ÓÐÒÆÖ²£¬LCDµÄÇý¶¯¿ÉÒÔÍêÈ«ÒÆÓÃÔ­×ÓµÄLCDÀú³Ì
+				µ«ÊÇ»¹±£ÁôÏÖÔÚµÄLCDÇý¶¯£¬ÓÃÔ¤±àÒëÃüÁî¿ØÖÆ£¬ÎÒËµµÄÃ÷°×ÁËÂð£¬µ½ÓÃµÄÊ±ºòºÃºÃ¸Ä
+
+ÓÃÓÚSRAMµÄ²¿·Ö£º
+	ÕâÀïÄ¬ÈÏÓÃµÄ ¿é1£¨NORSRAM¿é£©µÄÇøÓò3£¨ÇøÓò4Áô¸øLCDà¶~£©£¨¿é1µÄÇø3ºÍÇø4·Ö±ðÁô¸øÍâ²¿RAMºÍLCD£¬±¾Ä£°åÄ¬ÈÏ£¬·ñÔò»¹µÃ¸ÄµØÖ·£©
+	Ä¬ÈÏÓÃÓÚÇý¶¯IS62WV51216£¬µØÖ·Ïß·¶Î§ÎªA0~A18£¬Êý¾ÝÏß·¶Î§D0~D15£¬£¨NUB¡¢NLB¡¢NWE¡¢NOE¡¢NCEÎå¸ù¿ØÖÆÏß¶¼¶ÔÓ¦½ÓºÃ£©
+	µ×²ãAPI£º£¨²»ÍÆ¼öÖ±½Óµ÷ÓÃ£¬Ê¹ÓÃ×ÔÊµÏÖµÄmallocºÍfree£©£¨ÒÔ×Ö½ÚÎªµ¥Î»£©
+		u32 testsram[250000] __attribute__((at(SRAM1_BANK3_ADDR))); 	//µØÖ·¶¨ÒåÔÚÍâ²¿SRAMÖÐ
+		void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n); 	//Ð´ ²ÎÊý£ºÊý¾ÝÖ¸Õë£¬Íâ²¿SRAMÄÚµÄµØÖ·(´Ó0¿ªÊ¼)£¬Ð´ÈëµÄ×Ö½ÚÊý
+		void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);   	//¶Á ÀàËÆÉÏ
+*/
+/*
+ÄÚ´æ¹ÜÀí£ºÏÈµ½malloc.hÀïÃæ¶¨ÒåÓÐ¼¸¿éRAM£¬RAMµÄ±êÖ¾Î»£¬ºÍ¸÷¸öRAM¸øÄÚ´æ¹ÜÀí·ÖÅäµÄ¿Õ¼ä
+	Ó¦ÓÃ²ãAPI£º£¨·ÖÅäÄÚ´æµÄÊýÁ¿ÒÔ×Ö½ÚÎªµ¥Î»£©
+		my_mem_init(InrRAM);				//³õÊ¼»¯ÄÚ²¿ÄÚ´æ³Ø£¨ÏµÍ³×Ô´ø£©
+		my_mem_init(ExRAM1);				//³õÊ¼»¯Íâ²¿ÄÚ´æ³Ø£¨Èç¹û²»¿ªÆôSYSTEM_FSMC_use4SRAMÔòÃ»ÓÐÕâ¾ä»°£©
+		
+		void myfree(u8 memx,void *ptr);  			//ÄÚ´æÊÍ·Å
+		void *mymalloc(u8 memx,u32 size);			//ÄÚ´æ·ÖÅä
+		void *myrealloc(u8 memx,void *ptr,u32 size);//ÖØÐÂ·ÖÅäÄÚ´æ
+*/
 
 
 

@@ -371,7 +371,7 @@ void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const i
 	int i; //万年不变的i
 	
 	sprintf(buf,"Menu View : %d %d %d",menuid[0],menuid[1],menuid[2]);
-	LCD_ShowString(50,20,16,(u8*)buf,0);
+	LCD_ShowString(50,20,16,(u8*)buf);
 	
 	for(i = 0;i < 5;i++)
 	{
@@ -390,11 +390,11 @@ void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const i
 				else sprintf(buf,"%-15s   Ctl",((MenuItemNow + i)->DisplayString));
 			}
 			
-			LCD_ShowString(10,40 + i*20,16,(u8*)buf,0);						//显示当前菜单页中每一条菜单项
+			LCD_ShowString(10,40 + i*20,16,(u8*)buf);						//显示当前菜单页中每一条菜单项
 		}else
 		{
 			sprintf(buf,"%-15s      ",' ');	
-			LCD_ShowString(10,40 + i*20,16,(u8*)buf,0);	//清空多余区域
+			LCD_ShowString(10,40 + i*20,16,(u8*)buf);	//清空多余区域
 		}
 
 	}

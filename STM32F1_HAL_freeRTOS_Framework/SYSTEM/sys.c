@@ -15,7 +15,6 @@
 	
 	把stdlib排除在项目之外（逐个.c文件查看），不编译，自己实现malloc和free函数（借鉴原子的），并替换在FIFO.c和ffsystem.c里面的
 	确保工程内不含string、stdio和stdlib等不适合用于mcu平台的头文件，已经都用开源的线程安全软件或者自实现替换
-	FSMC用于 LCD\SRAM
 	IAP：即将加上
 	
 	之后要做的：
@@ -189,12 +188,15 @@ void sys_Device_Init_Seq(void)
 {
 	/*以下为用户应用的Device初始化序列*/
 	
-	/*用户IO初始化，可选择初始化某个特定器件或者所有器件*/
-	Devices_Init(UserDevices,ALL_Index);
+	/*用户IO初始化，可选择初始化某个特定器件或者所有器件（ALL_Index）*/
+	Devices_Init(UserDevices,TestLED_Index);
+	Devices_Init(UserDevices,KEY_Index);
+	//Devices_Init(UserDevices,LCD_Index); //使用LCD设备的初始化函数初始化IO
 	
 	/*LCD初始化*/
 	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
-		LCD_Init_with_FSMC();
+		LCD_with_FSMC_init_FSMC();
+		LCD_with_FSMC_init_LCD();
 	#else
 		LCD_Init_no_FSMC();
 	#endif

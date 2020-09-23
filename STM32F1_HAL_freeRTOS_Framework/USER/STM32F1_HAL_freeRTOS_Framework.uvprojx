@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\Devices\LCD ILI9341;..\SYSTEM\FATFS;..\SYSTEM\malloc</IncludePath>
+              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\SYSTEM\FATFS;..\SYSTEM\malloc;..\Devices\TFTLCD</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -915,14 +915,9 @@
           <GroupName>Devices</GroupName>
           <Files>
             <File>
-              <FileName>GUI.c</FileName>
+              <FileName>TFTLCD.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Devices\LCD ILI9341\GUI.c</FilePath>
-            </File>
-            <File>
-              <FileName>lcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Devices\LCD ILI9341\lcd.c</FilePath>
+              <FilePath>..\Devices\TFTLCD\TFTLCD.c</FilePath>
             </File>
           </Files>
         </Group>

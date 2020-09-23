@@ -63,7 +63,7 @@ System init over!
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL或者STemWin：暂时缺省（优先LittlevGL）
 -   LWIP：暂时缺省
--   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释**（TODO：添加SPI FLASH驱动并写入FATFS底层，添加内部FLASH驱动并写入FATFS底层）**
+-   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释**（TODO：添加SPI FLASH驱动并写入FATFS底层，添加MCU内部FLASH驱动并写入FATFS底层）**
 -   DSP\FPU：暂时缺省
 -   线性回归：即将加上
 -   常用校验、加密算法：即将加上
@@ -96,7 +96,7 @@ System init over!
 -   IAP：**TODO：即将加上**，提供用SD卡（SDIO（大容量芯片）或者SPI驱动）、串口（可选串口1、2、3）、USB（暂时缺省，以U盘形式或者USB传输）和SPI更新固件bin文件。在每次上电前会让用户选择固件索引（可以存在多个固件），再选择是更新还是运行此区域固件，如果是更新，则下载前会进行协议握手（专有协议+非对称加密握手，防止陌生固件下载），如果是下载，则在启动运行固件前会用硬件CRC进行一次固件校验（防止以存固件篡改）
 -   DMA：默认用于ADC1的多通道扫描模式DMA传送（如果开启SYSTEM_ADC1_useScan的话），另提供驱动代码的模板以供参考
 -   Ethernet：暂时缺省
--   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改**（TODO：LCD的API暂时很乱，暂时不要用，会在近几天更新好~）**
+-   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改动；就不支持各种FLASH了，MCU毕竟程序写不大，就算大了就用SPI的FLASH，也节约IO口。**（TODO：LCD的API还没有测试，暂时不要用，会在近几天更新好~）**
 -   LTDC LCD：暂时缺省
 -   DCMI：暂时缺省
 -   USB：暂时缺省

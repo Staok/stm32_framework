@@ -10,8 +10,8 @@ void Bare_Begin(void)
 		const u8 RunTimeFaultCheck_TtemMaxNum = 3;	/*故障巡检的最大项目数量*/
 	#endif
 	
-	char* Head_buf = {"For Test!"};
-	DrawPageHead((u8*)Head_buf);
+	//char* Head_buf = {"For Test!"};
+	//DrawPageHead((u8*)Head_buf);
 	
 	for(;;)
 	{
@@ -88,11 +88,11 @@ void Bare_Begin(void)
 //			printf_uart(UART1,"%s",RTC_buf);
 			POINT_COLOR = RED;
 			sprintf(RTC_buf,"%2ds",Timer_IT_flags._1sec);
-			LCD_ShowString(10,20,16,(u8*)RTC_buf,0);
+			LCD_ShowString(10,20,16,(u8*)RTC_buf);
 			
 			#if SYSTEM_FLASH_IAP_ENABLE
 				sprintf(RTC_buf,"%d",StartUpTimes);
-				LCD_ShowString(35,20,16,(u8*)RTC_buf,0);
+				LCD_ShowString(35,20,16,(u8*)RTC_buf);
 			#endif
 			
 		}

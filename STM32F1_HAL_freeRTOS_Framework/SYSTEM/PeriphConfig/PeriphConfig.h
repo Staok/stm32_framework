@@ -290,7 +290,7 @@ extern SRAM_HandleTypeDef SRAM_Handler;    //SRAM句柄
 
 
 /*____________________________FSMC for LCD_____________________________________________*/
-void LCD_Init_with_FSMC(void);
+void LCD_with_FSMC_init_FSMC(void);
 //LCD地址结构体
 typedef struct
 {

@@ -1,0 +1,94 @@
+  说明和API：
+
+默认：
+1、统一把LCD的RESET脚连到MCU的RESET脚
+2、FSMC目前只支持16位数据（既然已经上FSMC，那么IO口肯定不紧张，没必要用8位数据线了）
+3、IO口驱动默认8位数据（为了IO口少的MCU考虑）
+4、IO口驱动目前没有ReadReg()和ReadPoint()函数，也没有读出型号，目前只支持ILI9341
+5、FSMC驱动独有的API函数：
+void LCD_with_FSMC_init_LCD(void);							//初始化
+void LCD_SSD_BackLightSet(u8 pwm);						//SSD1963 背光控制
+u32  LCD_ReadPoint(u16 x,u16 y); 						//读点 
+void LCD_DisplayOn(void);								//开显示
+void LCD_DisplayOff(void);								//关显示
+void LCD_Scan_Dir(u8 dir);								//设置屏扫描方向
+void LCD_Display_Dir(u8 dir);							//设置屏幕显示方向
+u16 LCD_ReadReg(u16 LCD_Reg);
+u16 LCD_RD_DATA(void);
+
+6、IO驱动独有的API：
+void LCD_Init_no_FSMC(void);							//初始化
+void LCD_SetParam_4ILI9341(void);						//写入只支持ILI9341的参数
+void Gui_StrCenter(u16 x, u16 y, u16 fc, u16 bc, u8 *str,u8 size,u8 mode);	//居中显示一个字符串，包含中英文显示
+void DrawPageHead(u8 *str);										//在屏幕顶部画此页面的标题
+void Gui_Drawbmp16(u16 x,u16 y,const unsigned char *p);			//显示显示一副16位BMP图像
+void GUI_DrawFont16(u16 x, u16 y, u16 fc, u16 bc, u8 *s,u8 mode);
+void GUI_DrawFont24(u16 x, u16 y, u16 fc, u16 bc, u8 *s,u8 mode);
+void GUI_DrawFont32(u16 x, u16 y, u16 fc, u16 bc, u8 *s,u8 mode);
+
+void Show_Str(u16 x, u16 y, u16 fc, u16 bc, u8 *str,u8 size,u8 mode);
+//用于写中英文和中文混合字符串，推荐单独写中文用；中文跟支持16、24和32，需要提前取模加入到FONT.H里面
+
+7、两种驱动共有的API：
+void LCD_Clear(u32 Color);	 									//清屏
+void LCD_SetCursor(u16 Xpos, u16 Ypos);							//设置光标
+void LCD_DrawPoint(u16 x,u16 y);								//画点
+void LCD_Fast_DrawPoint(u16 x,u16 y,u32 color);					//快速画点
+void LCD_Draw_Circle(u16 x0,u16 y0,u8 r);						//画圆
+void LCD_DrawLine(u16 x1, u16 y1, u16 x2, u16 y2);				//画线
+void LCD_DrawRectangle(u16 x1, u16 y1, u16 x2, u16 y2);			//画矩形
+void LCD_Fill(u16 sx,u16 sy,u16 ex,u16 ey,u32 color);		   	//填充单色
+void LCD_Color_Fill(u16 sx,u16 sy,u16 ex,u16 ey,u16 *color);	//填充指定颜色
+
+void LCD_ShowChar(u16 x,u16 y,u8 num,u8 size,u8 mode);			//显示一个字符
+void LCD_ShowNum(u16 x,u16 y,u32 num,u8 len,u8 size);  			//显示一个数字
+void LCD_ShowxNum(u16 x,u16 y,u32 num,u8 len,u8 size,u8 mode);	//显示 数字
+
+void LCD_ShowString(u16 x,u16 y,u8 size,u8 *p);	
+//显示一个字符串，12/16/24/32字体，用于写英文和数字，不能写中文；推荐只写写英文和数字用（TODO：字库已经加入24和32的编码，测试4种大小是否都可以支持）
+
+void LCD_WriteReg(u16 LCD_Reg, u16 LCD_RegValue);
+void LCD_WriteRAM_Prepare(void);
+void LCD_WriteRAM(u16 RGB_Code);	
+
+
+8、指定颜色，要避免画笔和背景同色
+POINT_COLOR = RED;
+BACK_COLOR = BLACK;
+
+
+	使用说明：
+
+两种驱动，一种16位数据线的FSMC驱动，一种8位数据选的IO口驱动，对应不同的初始化函数：
+
+1、若用FSMC，不用自己初始化IO口，打开宏定义SYSTEM_FSMC_ENABLE和SYSTEM_FSMC_use4LCD，然后调用LCD_Init_with_FSMC()初始化函数即可，
+默认在sys_Device_Init_Seq()里面已经调用。默认使用FSMC的块1区3驱动，IO连接如下：
+	一般接法：（CE前面加一个N，表示CE低有效，其他同理）
+	FSMC			LCD
+	NEx			CS（低选中）
+	NOE			RD（低读）
+	NWE			WR（低写）
+				RS（高数据低命令）——可接至FSMC的一个地址脚如A10
+	D[15:0]			D[15:0]（数据）
+	LCD分辨率参数：
+	1、修改函数void LCD_Display_Dir(u8 dir)内定义的LCD分分辨率
+	2、修改下面的 //LCD分辨率设置（注：这两个参数只用于SSD1963控制器）
+			#define SSD_HOR_RESOLUTION		240		//LCD水平分辨率
+			#define SSD_VER_RESOLUTION		320		//LCD垂直分辨率
+
+2、若用IO口驱动，只需调用LCD_Init_no_FSMC()初始化函数即可，默认在sys_Device_Init_Seq()里面已经调用。
+LCD分辨率参数：
+	如果使用非240x320的屏幕，在LCD_SetParam_4ILI9341()函数里修改分辨率
+若需要改IO按照periphconfig.c里面的定义IO改，并相应的改lcd.h里面的IO口宏定义（比较麻烦）；默认IO口如下：
+	LCD_RST	接PB7	//复位信号
+	LCD_CS	接PB6	//片选信号
+	LCD_RS	接PB5	//寄存器/数据选择信号
+	LCD_WR	接PB4	//写信号
+	LCD_RD	接PB3	//读信号
+	D[0:7]	接PB8~15	//数据线
+	
+	说明：对于0x5510控制器，写寄存器地址是16位的，目前的函数是八位的，还不支持16位的
+	
+
+
+声明：以下几乎全部参考和移植于正点原子的LCD章节源码和网络上的部分源码，但都是开源代码，本代码也开源，并不用于商业用途

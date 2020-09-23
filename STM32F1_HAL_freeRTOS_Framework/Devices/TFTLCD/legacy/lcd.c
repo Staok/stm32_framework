@@ -263,6 +263,7 @@ void LCD_DrawPoint(u16 x,u16 y)
 		LCD_WR_SET;
 		
 		LCD_CS_SET;
+		
 	#else
 		LCD_WR_DATA(POINT_COLOR); 
 	#endif

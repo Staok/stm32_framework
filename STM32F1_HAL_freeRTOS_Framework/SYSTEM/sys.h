@@ -13,8 +13,7 @@
 												
 												
 /*用户设备驱动和APP文件调用*/
-#include "lcd.h"
-#include "GUI.h"
+#include "TFTLCD.h"
 												
 												
 
@@ -63,6 +62,13 @@
 		  HAL_TIMEOUT  = 0x03U
 	9、FSMC的块1的区3和区4分别留给外部RAM和LCD，本模板默认的，慎改
 	10、把本模板各种外设中默认的东西都罗列在这里
+		
+*/
+
+/*坑说明：
+	1、由于历史遗留原因，本MDK工程编码位GB2312，所以用外部文件写程序时请选用GB2312编码来写
+		但是如果已经使用UTF-8等编码编写了很多内容时，只需用notepad软件新建一个新文件，选择GB2312编码，然后复制原来UTF-8等编码格式的原文进来，就自动转为GB2312编码了
+		
 		
 */
 
@@ -719,9 +725,9 @@ PD2			SDIO_CMD
 */
 /*
   如果实际使用了大容量系列和100脚以上系列的片子但是没有LTDC，推荐用FSMC同时管理LCD和SRAM*/
-#define SYSTEM_FSMC_ENABLE	1				//是否启用FSMC
-	#define SYSTEM_FSMC_use4LCD		1		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
-	#define SYSTEM_FSMC_use4SRAM	1		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
+#define SYSTEM_FSMC_ENABLE	0				//是否启用FSMC
+	#define SYSTEM_FSMC_use4LCD		0		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
+	#define SYSTEM_FSMC_use4SRAM	0		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
 /*
 用于LCD的部分：
 	  要做的：	LCD的相关代码还没有移植，LCD的驱动可以完全移用原子的LCD历程

@@ -36,7 +36,6 @@
 /*-------------------------------------------------------------*
  *		Includes and dependencies			*
  *-------------------------------------------------------------*/
-#include <stdlib.h>
 #include "MyString.h"
 #include <stdint.h>
 #include <stdbool.h>

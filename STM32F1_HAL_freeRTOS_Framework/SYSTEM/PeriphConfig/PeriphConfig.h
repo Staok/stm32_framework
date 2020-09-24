@@ -27,7 +27,7 @@ extern u8 key_Down_Interrupted;
 #define	SPI1_CS PAout(4)  		//SPI1的片选信号
 #define	SPI2_CS PBout(12)  		//SPI2的片选信号
 
-#define TestLED_Ctrl	PBout(1)
+#define TestLED_Ctrl	PAout(7)
 
 
 

@@ -72,7 +72,7 @@ ______________________________【PIN MAP】_______________________________________
 */
 GPIO_Init_Struct TestLED_IO_Struct[] = 
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_1, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_RESET,		15,		  FALSE}
+	{{GPIO_PIN_7, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_RESET,		15,		  FALSE}
 };
 //用于菜单的外部输入按键
 GPIO_Init_Struct KEY_IO_Struct[] =

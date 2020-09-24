@@ -10,9 +10,9 @@ void Bare_Begin(void)
 		const u8 RunTimeFaultCheck_TtemMaxNum = 3;	/*故障巡检的最大项目数量*/
 	#endif
 	
-	//char* Head_buf = {"For Test!"};
-	//DrawPageHead((u8*)Head_buf);
-	
+	char* Head_buf = {"For Test!"};
+	DrawPageHead((u8*)Head_buf);
+	BACK_COLOR = BLACK;
 	for(;;)
 	{
 		/*注意：这里尽量不要用10毫秒中断标志！这里只用100毫秒、300毫秒、1秒和一分钟的中断标志，够用了*/
@@ -86,7 +86,7 @@ void Bare_Begin(void)
 			char RTC_buf[50];
 //			sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
 //			printf_uart(UART1,"%s",RTC_buf);
-			POINT_COLOR = RED;
+			POINT_COLOR = BLUE;
 			sprintf(RTC_buf,"%2ds",Timer_IT_flags._1sec);
 			LCD_ShowString(10,20,16,(u8*)RTC_buf);
 			

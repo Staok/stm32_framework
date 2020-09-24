@@ -154,27 +154,12 @@ void sys_MCU_Init_Seq(void)
 		sys_DAC_ENABLE();
 	#endif
 	
+	my_mem_init(InrRAM);
+	
 	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
 		sys_FSMC_SRAM_ENABLE();
+		my_mem_init(ExRAM1);
 	#endif
-	
-	
-	
-	
-	
-	/*初始化并启动TIM4*/
-	#if STSTEM_TIM4_ENABLE
-		sys_TIM4_ENABLE();
-	#endif
-	/*初始化并启动TIM3PWM通道*/
-	#if STSTEM_TIM3PWM_ENABLE
-		sys_TIM3PWM_ENABLE();
-	#endif
-	/*初始化看门狗*/
-	#if SYSTEM_IWDG_ENABLE
-		sys_IWDG_ENABLE();
-	#endif
-	
 	
 }
 
@@ -186,7 +171,7 @@ void sys_MCU_Init_Seq(void)
 ********************************/
 void sys_Device_Init_Seq(void)
 {
-	/*以下为用户应用的Device初始化序列*/
+	/*用户应用的Device初始化序列——开始*/
 	
 	/*用户IO初始化，可选择初始化某个特定器件或者所有器件（ALL_Index）*/
 	Devices_Init(UserDevices,TestLED_Index);
@@ -201,7 +186,21 @@ void sys_Device_Init_Seq(void)
 		LCD_Init_no_FSMC();
 	#endif
 	
+	/*用户应用的Device初始化序列——结束*/
 	
+	/*__________启动模板的心跳，开启MCU的精彩一生__________*/
+	/*初始化并启动TIM4*/
+	#if STSTEM_TIM4_ENABLE
+		sys_TIM4_ENABLE();
+	#endif
+	/*初始化并启动TIM3PWM通道*/
+	#if STSTEM_TIM3PWM_ENABLE
+		sys_TIM3PWM_ENABLE();
+	#endif
+	/*初始化看门狗*/
+	#if SYSTEM_IWDG_ENABLE
+		sys_IWDG_ENABLE();
+	#endif
 	buzzer_bibi_once; //响一声表示初始化结束
 	printf_uart(UART1,"System init over\r\n");
 }

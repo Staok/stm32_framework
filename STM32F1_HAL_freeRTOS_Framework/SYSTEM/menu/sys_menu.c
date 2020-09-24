@@ -369,10 +369,9 @@ void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const i
 	char buf[50];
 	int menu_deepth = deepth; //记录当前在第几层
 	int i; //万年不变的i
-	
+	POINT_COLOR = RED;
 	sprintf(buf,"Menu View : %d %d %d",menuid[0],menuid[1],menuid[2]);
 	LCD_ShowString(50,20,16,(u8*)buf);
-	
 	for(i = 0;i < 5;i++)
 	{
 		if(i < MenuItemNow->MenuCount)

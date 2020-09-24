@@ -23,7 +23,7 @@ void LCD_WR_REG(vu16 regval)
 		LCD_RS_CLR;
 		LCD_CS_CLR;
 		
-		LCD_PBh8dataOut((u8)(regval & 0x00ff));
+		LCD_PBh8dataOut(regval);
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|((data<<8)&0xff00))
 		LCD_WR_CLR;
 		LCD_WR_SET;
@@ -42,7 +42,7 @@ void LCD_WR_DATA(vu16 data)
 		LCD_RS_SET;
 		LCD_CS_CLR;
 		
-		LCD_PBh8dataOut((u8)(data & 0x00ff));
+		LCD_PBh8dataOut(data);
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|((data<<8)&0xff00))
 		LCD_WR_CLR;
 		LCD_WR_SET;
@@ -112,12 +112,12 @@ void LCD_WriteRAM(u16 RGB_Code)
 		LCD_RS_SET;//写地址
 		LCD_CS_CLR;
 		
-		LCD_PBh8dataOut((u8)((RGB_Code >> 8) & 0x00ff)); //先写入u16的高八位
+		LCD_PBh8dataOut(RGB_Code >> 8); //先写入u16的高八位
 		//LCD_PBh8dataOut(color)
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|(color&0xff00))
 		LCD_WR_CLR;
 		LCD_WR_SET;	
-		LCD_PBh8dataOut((u8)(RGB_Code & 0x00ff));
+		LCD_PBh8dataOut(RGB_Code);
 		//LCD_PBh8dataOut(color<<8)
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|((color<<8)&0xff00))	
 		LCD_WR_CLR;
@@ -246,7 +246,6 @@ void LCD_SetCursor(u16 Xpos, u16 Ypos)
 //9341/5310/5510/1963等IC已经实际测试	   	   
 void LCD_Scan_Dir(u8 dir)
 {
-	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
 		u16 regval=0;
 		u16 dirreg=0;
 		u16 temp;  
@@ -337,9 +336,6 @@ void LCD_Scan_Dir(u8 dir)
 				LCD_WR_DATA((lcddev.height-1)>>8);LCD_WR_DATA((lcddev.height-1)&0XFF);  
 			}
 		} 
-	#else
-		//缺省
-	#endif
 }     
 //画点
 //x,y:坐标
@@ -356,12 +352,12 @@ void LCD_DrawPoint(u16 x,u16 y)
 		LCD_RD_SET;
 		LCD_RS_SET;//写地址  
 		LCD_CS_CLR;
-		LCD_PBh8dataOut((u8)((POINT_COLOR >> 8) & 0x00ff)); //先写入u16的高八位
+		LCD_PBh8dataOut(POINT_COLOR >> 8); //先写入u16的高八位
 		//LCD_PBh8dataOut(POINT_COLOR)
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|(POINT_COLOR&0xff00)) 	
 		LCD_WR_CLR;
 		LCD_WR_SET;	
-		LCD_PBh8dataOut((u8)(POINT_COLOR & 0x00ff));
+		LCD_PBh8dataOut(POINT_COLOR);
 		//LCD_PBh8dataOut(POINT_COLOR<<8)
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|((POINT_COLOR<<8)&0xff00))
 		LCD_WR_CLR;
@@ -415,11 +411,11 @@ void LCD_Fast_DrawPoint(u16 x,u16 y,u32 color)
 		LCD_RS_SET;
 		LCD_CS_CLR;
 		
-		LCD_PBh8dataOut((u8)((color >> 8) & 0x00ff));
+		LCD_PBh8dataOut(color >> 8);
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|(color&0xff00)) 
 		LCD_WR_CLR;
 		LCD_WR_SET;	
-		LCD_PBh8dataOut((u8)(color & 0x00ff));
+		LCD_PBh8dataOut(color);
 		//DATAOUT(((GPIOB->IDR)&0x00ff)|((color<<8)&0xff00))	
 		LCD_WR_CLR;
 		LCD_WR_SET;
@@ -449,7 +445,6 @@ void LCD_SSD_BackLightSet(u8 pwm)
 //dir:0,竖屏；1,横屏
 void LCD_Display_Dir(u8 dir)
 {
-	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
 		lcddev.dir=dir;		//竖屏/横屏 
 		if(dir==0)			//竖屏
 		{
@@ -511,10 +506,6 @@ void LCD_Display_Dir(u8 dir)
 			}
 		} 
 		LCD_Scan_Dir(DFT_SCAN_DIR);	//默认扫描方向
-	#else
-		//缺省
-	
-	#endif
 }	 
   
 
@@ -1952,10 +1943,16 @@ void LCD_Init_no_FSMC(void)
 	LCD_WR_DATA(0xef);	 
 	LCD_WR_REG(0x11); //Exit Sleep
 	delay_ms(120);
-	LCD_WR_REG(0x29); //display on	
 	
-	//delay_ms(500)
-	LCD_SetParam_4ILI9341();//设置LCD参数	 
+	LCD_SetParam_4ILI9341();//设置LCD参数
+	#if USE_HORIZONTAL==1	//使用横屏
+		LCD_Display_Dir(1);	
+	#else//竖屏
+		LCD_Display_Dir(0);		//默认为竖屏
+	#endif
+	delay_ms(20);
+	LCD_WR_REG(0x29); //display on
+
 	//LCD_LED=1//点亮背光	 
 	//LCD_Clear(WHITE)
 }
@@ -1965,7 +1962,8 @@ void LCD_Init_no_FSMC(void)
 //写入只支持ILI9341的参数
 void LCD_SetParam_4ILI9341(void)
 { 	
-	lcddev.wramcmd=0x2C;
+	lcddev.wramcmd = 0x2C;
+	lcddev.id = 0x9341;
 #if USE_HORIZONTAL==1	//使用横屏	  
 	lcddev.dir=1;//横屏
 	lcddev.width=			320;
@@ -2075,12 +2073,12 @@ void LCD_Clear(u32 color)
 		LCD_CS_CLR;
 		for(index=0;index<lcddev.width*lcddev.height;index++)
 		{
-			LCD_PBh8dataOut((u8)((color >> 8) & 0x00ff)); //先写入u16的高八位
+			LCD_PBh8dataOut(color >> 8); //先写入u16的高八位
 			//LCD_PBh8dataOut(Color)
 			//DATAOUT(((GPIOB->IDR)&0x00ff)|(Color&0xff00))
 			LCD_WR_CLR;
 			LCD_WR_SET;
-			LCD_PBh8dataOut(color & 0x00ff);
+			LCD_PBh8dataOut(color);
 			//LCD_PBh8dataOut(Color<<8)
 			//DATAOUT(((GPIOB->IDR)&0x00ff)|((Color<<8)&0xff00))
 			LCD_WR_CLR;
@@ -2116,13 +2114,13 @@ void LCD_Fill(u16 sx,u16 sy,u16 ex,u16 ey,u32 color)
 		{
 			for(j=0;j<width;j++)
 			{
-				LCD_PBh8dataOut((u8)((color >> 8) & 0x00ff)); //先写入u16的高八位
+				LCD_PBh8dataOut(color >> 8); //先写入u16的高八位
 				//LCD_PBh8dataOut(color);
 				//DATAOUT(((GPIOB->IDR)&0x00ff)|(color&0xff00)) 
 				LCD_WR_CLR;
 				LCD_WR_SET;	
 				
-				LCD_PBh8dataOut(color & 0x00ff);
+				LCD_PBh8dataOut(color);
 				//LCD_PBh8dataOut(color<<8);
 				//DATAOUT(((GPIOB->IDR)&0x00ff)|((color<<8)&0xff00))
 				LCD_WR_CLR;
@@ -2234,34 +2232,134 @@ void LCD_Draw_Circle(u16 x0,u16 y0,u8 r)
 //size:字体大小 12/16/24/32
 //mode:叠加方式(1)还是非叠加方式(0)
 void LCD_ShowChar(u16 x,u16 y,u8 num,u8 size,u8 mode)
-{  							  
-    u8 temp,t1,t;
-	u16 y0=y;
-	u8 csize=(size/8+((size%8)?1:0))*(size/2);		//得到字体一个字符对应点阵集所占的字节数	
- 	num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
-	for(t=0;t<csize;t++)
-	{   
-		if(size==12)temp=asc2_1206[num][t]; 	 	//调用1206字体
-		else if(size==16)temp=asc2_1608[num][t];	//调用1608字体
-		else if(size==24)temp=asc2_2412[num][t];	//调用2412字体
-		else if(size==32)temp=asc2_3216[num][t];	//调用3216字体
-		else return;								//没有的字库
-		for(t1=0;t1<8;t1++)
-		{			    
-			if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
-			else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
-			temp<<=1;
-			y++;
-			if(y>=lcddev.height)return;		//超区域了
-			if((y-y0)==size)
+{  	
+	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))  
+		u8 temp,t1,t;
+		u16 y0=y;
+		u8 csize=(size/8+((size%8)?1:0))*(size/2);		//得到字体一个字符对应点阵集所占的字节数	
+		num=num-' ';//得到偏移后的值（ASCII字库是从空格开始取模，所以-' '就是对应字符的字库）
+		for(t=0;t<csize;t++)
+		{   
+			if(size==12)
 			{
-				y=y0;
-				x++;
-				if(x>=lcddev.width)return;	//超区域了
-				break;
+				#if USE_ALL_ASC_FONT
+					temp=asc2_1206[num][t]; //调用1206字体
+				#endif
+			}	
+			else if(size==16)
+			{
+					temp=asc2_1608[num][t];	//调用1608字体
 			}
-		}  	 
-	}  	    	   	 	  
+			else if(size==24)
+			{
+				#if USE_ALL_ASC_FONT
+					temp=asc2_2412[num][t];	//调用2412字体
+				#endif
+			}
+			else if(size==32)
+			{
+				#if USE_ALL_ASC_FONT
+					temp=asc2_3216[num][t];	//调用3216字体
+				#endif
+			}
+			else return;								//没有的字库
+			for(t1=0;t1<8;t1++)
+			{			    
+				if(temp&0x80)LCD_Fast_DrawPoint(x,y,POINT_COLOR);
+				else if(mode==0)LCD_Fast_DrawPoint(x,y,BACK_COLOR);
+				temp<<=1;
+				y++;
+				if(y>=lcddev.height)return;		//超区域了
+				if((y-y0)==size)
+				{
+					y=y0;
+					x++;
+					if(x>=lcddev.width)return;	//超区域了
+					break;
+				}
+			}  	 
+		}  	   
+	#else
+		u8 temp;
+		u8 pos,t;   
+			   
+		num=num-' ';//得到偏移后的值
+		LCD_SetWindows(x,y,x+size/2-1,y+size-1);//设置单个文字显示窗口
+		if(!mode) //非叠加方式
+		{
+			
+			for(pos=0;pos<size;pos++)
+			{
+				if(size==12)
+				{
+					#if USE_ALL_ASC_FONT
+						temp=asc2_1206[num][pos]; //调用1206字体
+					#endif
+				}	
+				else if(size==16)
+				{
+						temp=asc2_1608[num][pos];	//调用1608字体
+				}
+				else if(size==24)
+				{
+					#if USE_ALL_ASC_FONT
+						temp=asc2_2412[num][pos];	//调用2412字体
+					#endif
+				}
+				else if(size==32)
+				{
+					#if USE_ALL_ASC_FONT
+						temp=asc2_3216[num][pos];	//调用3216字体
+					#endif
+				}
+//				if(size==12)temp=asc2_1206[num][pos];//调用1206字体
+//				else temp=asc2_1608[num][pos];		 //调用1608字体
+				for(t=0;t<size/2;t++)
+				{                 
+					if(temp&0x01)LCD_WriteRAM(POINT_COLOR); 
+					else LCD_WriteRAM(BACK_COLOR); 
+					temp>>=1; 
+					
+				}
+				
+			}	
+		}else//叠加方式
+		{
+			for(pos=0;pos<size;pos++)
+			{
+				if(size==12)
+				{
+					#if USE_ALL_ASC_FONT
+						temp=asc2_1206[num][pos]; //调用1206字体
+					#endif
+				}	
+				else if(size==16)
+				{
+						temp=asc2_1608[num][pos];	//调用1608字体
+				}
+				else if(size==24)
+				{
+					#if USE_ALL_ASC_FONT
+						temp=asc2_2412[num][pos];	//调用2412字体
+					#endif
+				}
+				else if(size==32)
+				{
+					#if USE_ALL_ASC_FONT
+						temp=asc2_3216[num][pos];	//调用3216字体
+					#endif
+				}
+//				if(size==12)temp=asc2_1206[num][pos];//调用1206字体
+//				else temp=asc2_1608[num][pos];		 //调用1608字体
+				for(t=0;t<size/2;t++)
+				{                
+					if(temp&0x01)LCD_DrawPoint(x+t,y+pos);//画一个点    
+					temp>>=1; 
+				}
+			}
+		}	
+		LCD_SetWindows(0,0,lcddev.width-1,lcddev.height-1);//恢复窗口为全屏  
+	#endif
 }    
 //m^n函数
 //返回值:m^n次方.
@@ -2378,6 +2476,9 @@ void LCD_SetWindows(u16 xStar, u16 yStar,u16 xEnd,u16 yEnd)
 } 
 
 
+
+
+#if USE_Chinese_FONT
 //******************************************************************
 //函数名：  GUI_DrawFont16
 //作者：    xiao冯@全动电子
@@ -2569,6 +2670,8 @@ void Show_Str(u16 x, u16 y, u16 fc, u16 bc, u8 *str,u8 size,u8 mode)
 {					
 	u16 x0=x;							  	  
   	u8 bHz=0;     //字符或者中文 
+	POINT_COLOR = fc;
+	BACK_COLOR = bc;
     while(*str!=0)//数据未结束
     { 
         if(!bHz)
@@ -2618,6 +2721,9 @@ void Show_Str(u16 x, u16 y, u16 fc, u16 bc, u8 *str,u8 size,u8 mode)
     }   
 }
 
+
+#endif
+
 //******************************************************************
 //函数名：  Gui_StrCenter
 //作者：    xiao冯@全动电子
@@ -2636,7 +2742,11 @@ void Gui_StrCenter(u16 x, u16 y, u16 fc, u16 bc, u8 *str,u8 size,u8 mode)
 {
 	u16 len=mystrlen((const char *)str);
 	u16 x1=(lcddev.width-len*8)/2;
-	Show_Str(x+x1,y,fc,bc,str,size,mode);
+	#if USE_Chinese_FONT
+		Show_Str(x+x1,y,fc,bc,str,size,mode);
+	#else
+		LCD_ShowString(x+x1,y,16,(u8*)str);
+	#endif
 } 
  
 //******************************************************************

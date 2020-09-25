@@ -186,6 +186,33 @@ extern int32_t EncoderOverflowCount;//定时器溢出次数
 float peek_TIM2_Encoder_Speed(void);
 int32_t peek_TIM2_Encoder_Value(void);
 
+/*_______________________________TIM1PWM___________________________________*/
+extern TIM_HandleTypeDef TIM1_Handler;
+void sys_TIM1PWM_ENABLE(void);
+#if STSTEM_TIM1PWM_ENABLE
+		#define TIM1PWM_Channel_1	1
+		#define TIM1PWM_Channel_2	2
+		#define TIM1PWM_Channel_3	3
+		#define TIM1PWM_Channel_4	4
+		void TIM1_set_Channel_Pulse(u8 channel,float percent);
+#endif
+
+/*_______________________________TIM6___________________________________*/
+void sys_TIM6_ENABLE(void);
+extern TIM_HandleTypeDef TIM6_Handler;
+#if (STSTEM_TIM6_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+	
+	
+#endif
+/*_______________________________TIM7___________________________________*/
+void sys_TIM7_ENABLE(void);
+extern TIM_HandleTypeDef TIM7_Handler;
+#if (STSTEM_TIM7_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+	
+	
+#endif
+
+
 /*_______________________________ADC1___________________________________*/
 extern ADC_HandleTypeDef ADC1_Handler;
 void sys_ADC1_ENABLE(void);

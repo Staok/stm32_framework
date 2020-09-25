@@ -43,11 +43,19 @@ ______________________________【PIN MAP】_______________________________________
 /*
 优先级分组为4，只有0~15的16级抢占优先级
 
-  优先级
-	0			1				2				3				4				5				...
-   保留	   TIM4(时基)	 	按键外部中断	按键外部中断
-											   TIM3
-											   TIM2
+  
+优先级	0			1				2				3				4				5				...
+	   保留	    TIM4(时基)	 	按键外部中断	按键外部中断	TIM6(辅助时基)
+											    TIM3（PWNM）	TIM7(辅助时基)
+											    TIM2（多功能）   
+*/
+
+/*
+   	CPU内部 FLASH  			【0x0800 0000 - 0x080F FFFF】,容量512K(0x80000)字节
+	CPU内部 SRAM1  			【0x2000 0000 - 0x2000 FFFF】,容量64K(0x10000)字节
+	
+	外部扩展SRAM 在块1区3   【0x6800 0000 - 0x681F FFFF】,容量1M(0x100000)字节
+	TFT LCD地址 在块1区4    【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）
 */
 
 /*___________________________器件IO配置___________________________________________*/
@@ -856,7 +864,7 @@ void Process_TIM2_IC_CallBack_Channel_4(void)
 		if(percent < 0) percent = 0;
 		if(percent > 100) percent = 100.0;
 		percent /= 100.0;
-		compare = (float)tim2arr * percent;
+		compare = ((float)tim2arr) * percent;
 		switch(channel)
 		{
 			case TIM2PWM_Channel_1: TIM2->CCR1=(u32)compare;break;
@@ -867,6 +875,148 @@ void Process_TIM2_IC_CallBack_Channel_4(void)
 		}
 	}
 #endif
+
+#endif
+
+
+/*________________________________________用户定时器1PWM配置_________________________________________________________*/
+#if STSTEM_TIM1PWM_ENABLE
+TIM_HandleTypeDef TIM1_Handler;
+
+void sys_TIM1PWM_ENABLE(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+  
+  TIM1_Handler.Instance = TIM1;
+  TIM1_Handler.Init.Prescaler = (72-1);
+  TIM1_Handler.Init.CounterMode = TIM_COUNTERMODE_UP;
+  TIM1_Handler.Init.Period = tim1arr;							//重装载值，16位
+  TIM1_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
+  TIM1_Handler.Init.RepetitionCounter = 0;
+  HAL_TIM_Base_Init(&TIM1_Handler);
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;	//时钟源来自内部（不启用外部ETR引脚作为时钟源）
+  HAL_TIM_ConfigClockSource(&TIM1_Handler, &sClockSourceConfig);
+
+  HAL_TIM_PWM_Init(&TIM1_Handler);
+  
+   /*如果要用主从定时器，参考https://my.oschina.net/u/4315748/blog/3220499*/
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;			//不输出信号给其他外设
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;	//不使用定时器主从功能，即不用TIM1的定时中断作为其他定时器的计数源
+  HAL_TIMEx_MasterConfigSynchronization(&TIM1_Handler, &sMasterConfig);
+  
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;		//默认disable（）
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;		//默认disable
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_3;				//锁定参数级别，如果死区等参数不再变的话就把LOCK调到最高级
+  /*死区时间设计：DeadTime的8个bits定义如下：DT为死区时间，Tdts为1/72M~13.9ns
+	DTG[7:5]=0xx	=>	DT = DTG[7:0] x Tdtg,        Tdtg  = Tdts; 		最大1.764us
+	DTG[7:5]=10x	=>	DT = (64+DTG[5:0]) x Tdtg,   Tdtg  = 2 x Tdts;	最大3.5288us
+	DTG[7:5]=110	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 8 x Tdts; 	最大7us
+	DTG[7:5]=111	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 16 x Tdts;	最大14us（此时值为0xff）
+																		要3us则设为0xab
+	*/
+  sBreakDeadTimeConfig.DeadTime = 0xab;							//死区时间设置 0x00~0xff
+  #if STSTEM_TIM1PWM_useBreak
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_ENABLE;			//使能或失能TIMx刹车输入
+  #else
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  #endif
+  sBreakDeadTimeConfig.BreakFilter = 0xa;						//刹车输入滤波，0x0~0xF
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_LOW;	//刹车输入脚极性
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;	//默认
+  HAL_TIMEx_ConfigBreakDeadTime(&TIM1_Handler, &sBreakDeadTimeConfig);
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;							//向上计数时，PWM1模式就是计数小于占空比值（TIMx_CNT<TIMx_CCR1），IO变为有效极性，否则相反
+  sConfigOC.Pulse = tim1arr/2;									//占空比值（捕获比较值，16位）
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;					//可选此通道的有效极性为高还是低
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_LOW;					//可选互补通道的有效极性
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;					//disable就好
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;				//空闲电平极性选择（没有启用时的电平，谨慎修改）（也有可能是刹车时的电平）
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_1);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_2);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_3);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_4);
+}
+
+
+void TIM1_set_Channel_Pulse(u8 channel,float percent)
+{
+	float compare;
+	if(percent < 0) percent = 0;
+	if(percent > 100) percent = 100.0;
+	percent /= 100.0;
+	compare = ((float)tim1arr) * percent;
+	switch(channel)
+	{
+		case TIM1PWM_Channel_1: TIM1->CCR1=(u32)compare;break;
+		case TIM1PWM_Channel_2: TIM1->CCR2=(u32)compare;break;
+		case TIM1PWM_Channel_3: TIM1->CCR3=(u32)compare;break;
+		case TIM1PWM_Channel_4: TIM1->CCR4=(u32)compare;break;
+		default:break;
+	}
+}
+
+
+#endif
+
+/*________________________________________用户定时器6配置_________________________________________________________*/
+#if (STSTEM_TIM6_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+
+TIM_HandleTypeDef TIM6_Handler;
+void sys_TIM6_ENABLE(void)
+{
+	TIM4_Handler.Instance=TIM6;                          		//基本定时器6
+    TIM4_Handler.Init.Prescaler = (72-1);                     	//分频系数
+    TIM4_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
+    TIM4_Handler.Init.Period = tim6arr;                        	//自动装载值
+    TIM4_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
+    HAL_TIM_Base_Init(&TIM6_Handler);
+    
+    HAL_TIM_Base_Start_IT(&TIM6_Handler); //使能定时器6和定时器6更新中断：TIM_IT_UPDATE 
+}
+
+
+//定时器6中断服务函数
+void TIM6_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&TIM6_Handler);
+}
+
+#endif
+
+/*________________________________________用户定时器7配置_________________________________________________________*/
+#if (STSTEM_TIM7_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+
+TIM_HandleTypeDef TIM7_Handler;
+void sys_TIM7_ENABLE(void)
+{
+	TIM4_Handler.Instance=TIM7;                          		//基本定时器7
+    TIM4_Handler.Init.Prescaler = (72-1);                     	//分频系数
+    TIM4_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
+    TIM4_Handler.Init.Period = tim7arr;                        	//自动装载值
+    TIM4_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
+    HAL_TIM_Base_Init(&TIM7_Handler);
+    
+    HAL_TIM_Base_Start_IT(&TIM7_Handler); //使能定时器6和定时器7更新中断：TIM_IT_UPDATE 
+}
+
+
+//定时器7中断服务函数
+void TIM7_IRQHandler(void)
+{
+    HAL_TIM_IRQHandler(&TIM7_Handler);
+}
 
 #endif
 

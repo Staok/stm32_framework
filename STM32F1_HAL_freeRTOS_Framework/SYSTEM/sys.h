@@ -58,8 +58,14 @@
 	2、使用C99模式编译！
 	3、I2C使用软件实现
 	4、FreeRTOS所有组件始终使用动态申请内存；FreeRTOS的配置文件除了用户按需更改区域，尽量不要动；一般不使用软件定时器，用硬件定时器或者周期延时替代即可
-	5、
-	6、
+	
+	5、定时器4默认用于提供模板心跳的10ms时基，必须开启并且不可更改
+	6、定时器3默认用于产生PWM，默认开启通道4用于无源报警蜂鸣器，必须开启，但可以更改参数；并且可选开启定时中断，提供一个同步功能
+	6、定时器2是多功能的，可选用于定时中断、PWM、输入捕获和正交解码（编码器解码），是否启用和参数用户可自行更改
+	6、定时器5本模板没有提供选项，用户可按照需求自己灵活编写驱动代码
+	7、定时器6、7仅提供是否开启选项，只能用于定时中断，提供更多的同步功能
+	7、定时器1、8是高级定时器，专门用于产生PWM，定时器1支持1~3通道互补PWM输出和4通道PWM输出，有刹车功能，是否启用和参数用户可自行更改
+	
 	7、外设如串口、PWM等的IO初始化在其初始化函数内，不用单独再初始化
 	8、函数返回值：0表正确，正数表错误并带返回信息，并尽量用HAL类型返回值如：
 		  HAL_OK       = 0x00U,
@@ -129,6 +135,7 @@ STM32F
 	DAC
 	FSMC
 	DMA2
+	TIM6\7\8
 	
 	在STM32F103系列之间切换容量或者芯片时，需要配置以下几项：
 	1、在 Device 里改芯片型号
@@ -136,6 +143,11 @@ STM32F
 		STM32F103x6 —— STM32F103xB —— STM32F103xE ——  STM32F103xG 
 	3、（第一步完成后这里就自动改了，再检查一下）在 Debug 里面的 下载Settings 里面的 Flash Download 里面改相应的小、中大容量下载算法
 	4、在当前工程的CORE文件夹里 只保留 相应的startup.s文件，对于中容量为startup_stm32f103xb.s，以此类推
+*/
+
+/*
+	C编译器中的预定义宏
+		VECT_TAB_SRAM         - 增加这个符号表示中断向量表定位在CPU内部RAM （针对在CPU内部RAM运行的工程才需要添加，一般都不用）
 */
 
 #define SYSTEM_SUPPORT_OS		0				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
@@ -240,8 +252,8 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    114
 F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 高级定时器1、8（定时器中断，
 	高级PWM（7路，具体在xxx引脚，重映射在xxx引脚，形式如HAL F1手册的225页的表）），
-通用定时器2-5（2、5为32位）
-	（4路，具体在xxx引脚，重映射在xxx引脚），定时中断，输入捕获，输出比较，PWM 生成(边缘或中间对齐模式)，单脉冲模式输出，正交编码中断
+通用定时器2-5（都为16位计数）
+	（4路，定时中断，输入捕获，输出比较，PWM 生成(边缘或中间对齐模式)，单脉冲模式输出，正交编码中断
 基本定时器6、7（仅定时器中断，无PWM等）
 */
 #define STSTEM_TIM4_ENABLE		1			/*模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断*/
@@ -259,11 +271,13 @@ F103系列有以下8个定时器：其中x8/xB系列仅有1、2、3、4定时器，xE和以上有全八个。
 */
 
 /*PWM即输出比较，基本原理就是，每个定时器都有唯一一个CNT计数值，随着时钟源加一，到了Period值就会产生溢出中断即定时中断，
-PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独立的PWM*/
+PWM就是四个通道有四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独立的PWM*/
+/*初始化后自动打开相应通道的PWM输出*/
 #define STSTEM_TIM3PWM_ENABLE	1			/*模板基本功能，必须开启！使用通用定时器3，默认不开启中断，提供四路PWM输出*/
-											/*其中一路默认给蜂鸣器，蜂鸣器低电平有效！蜂鸣器控制需要用到TIM4！蜂鸣器连接在通道4上！
+											/*其中一路默认给蜂鸣器，蜂鸣器低电平有效！蜂鸣器控制需要用到TIM4！蜂鸣器连接在TIM3的通道4上！
 											改变占空比可调响度，改变频率可调声调*/
-											/*默认：引脚上拉，输出极性为LOW，PWM1模式			(CH1/PA6, CH2/PA7, CH3/PB0, CH4/PB1)*/
+											/*默认向上计数，输出极性为LOW，PWM1模式，即设置为当计数值小于此值时输出低电平。*/
+											/*默认：引脚上拉									(CH1/PA6, CH2/PA7, CH3/PB0, CH4/PB1)*/
 		#define STSTEM_TIM3PWM_REMAP_PARTIAL	0	/*定时器3部分引脚重映射，Partial remap  	(CH1/PB4, CH2/PB5, CH3/PB0, CH4/PB1)*/
 		#define STSTEM_TIM3PWM_REMAP_ENABLE		0	/*定时器3全部引脚重映射，Full remap     	(CH1/PC6, CH2/PC7, CH3/PC8, CH4/PC9)*/
 		#define STSTEM_TIM3PWM_CHANNEL_ENABLE	B0000_1000 /*输出通道选择，共四个通道，通道四必打开*/
@@ -282,7 +296,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 					HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_2);		开启TIM3的PWM通道2
 					HAL_TIM_PWM_Stop(&TIM3_Handler,TIM_CHANNEL_2);		关闭TIM3的PWM通道2，但看源码好像使所有通道都关闭了，待实验
 					
-					设置TIM3的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。默认向上计数，默认设置为当计数值小于此值时输出低电平。
+					设置TIM3的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
 					TIM3_set_Channel_Pulse(TIM3PWM_Channel_2,88.8);
 					
 					buzzer_bibi_once;			用户使用，蜂鸣器叫唤一声
@@ -290,6 +304,47 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 					define buzzer_bibi_off;		用户使用，蜂鸣器间歇叫唤关闭
 		*/
 
+/*高级定时器1，专门用于产生PWM信号：三路互补PWM输出、死区控制、刹车信号输入*/
+/*引脚：
+				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN（刹车信号输入）
+默认			PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12
+部分重映射		PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6
+完全重映射		PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15
+*/
+/*默认并推荐不开启定时中断；引脚默认没有上下拉；初始化后默认没有打开相应通道的PWM输出，需要手动开启输出*/
+/*定时器工作在向上计数时，PWM信号边缘对齐；定时器工作在向上和向下计数模式时，PWM信号中心对其*/
+#define STSTEM_TIM1PWM_ENABLE		1				/*是否启用并初始化TIM1的三路互补PWM（前三个通道）和一路PWM（通道4）*/
+			#define STSTEM_TIM1PWM_useBreak	1		/*是否启用BKIN刹车信号控制输入，默认低电平有效*/
+													/*选择每一个通道的有效电平和空闲电平（可能是刹车时的电平），默认死区3us，可修改*/
+			#define STSTEM_TIM1PWM_REMAP_PARTIAL  0	/*定时器1部分引脚重映射，Partial remap，	引脚如上边所示*/
+			#define STSTEM_TIM1PWM_REMAP_ENABLE	  0	/*定时器1全部引脚重映射，Full remap，		引脚如上边所示*/
+			/*输出通道选择，共四个通道，可以相与打开多个通道，互补通道默认成对打开*/
+			#define STSTEM_TIM1PWM_CHANNEL_ENABLE (B0000_0001|B0000_0010|B0000_0100|B0000_1000)		/*必须加括号括起来*/
+			#define tim1arr 		STSTEM_TIM1_Period_10K	/*选择定时器1输出频率（预分频系数为72，这里选择重装值）*/
+				#define STSTEM_TIM1_Period_1K	(1000-1)
+				#define STSTEM_TIM1_Period_2K	(500-1)
+				#define STSTEM_TIM1_Period_5K	(200-1)
+				#define STSTEM_TIM1_Period_10K	(100-1)
+				#define STSTEM_TIM1_Period_20K	(50-1)
+				#define STSTEM_TIM1_Period_50K	(20-1)
+				#define STSTEM_TIM1_Period_100K	(10-1)
+				#define STSTEM_TIM1_Period_200K	(5-1)
+/*可用API：
+		启动通道1~4的PWM输出
+		HAL_TIM_PWM_Start(&TIM1_Handler,TIM_CHANNEL_1);
+		
+		启动互补通道1~3的PWM输出
+		HAL_TIMEx_PWMN_Start(&TIM1_Handler,TIM_CHANNEL_1);
+		
+		关闭通道的PWM输出（通道选择同上）
+		HAL_TIM_PWM_Stop(&TIM1_Handler,TIM_CHANNEL_1);
+		HAL_TIMEx_PWMN_Stop(&TIM1_Handler,TIM_CHANNEL_1);
+		
+		设置TIM1的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+		TIM1_set_Channel_Pulse(TIM1PWM_Channel_2,88.8);
+*/
+		
+		
 
 /*通过用定时器2：16位，四个独立通道可用于：输入捕获、输入比较、PWM、单脉冲，多种途径触发DMA中断*/
 #define STSTEM_TIM2_ENABLE		0			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
@@ -306,6 +361,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 												TIM2四个通道：		PA0 PA1 PA2 PA3		含有前面的引脚		PA15 PB3 PB10 PB11
 												注意：由于PA2 PA3串口2占用，PA0 PA1由ADC占用，所以TIM2的PWM只用完全重映射！！
 														但PB10 PB11串口3占用，要么不用串口3，要么串口3重映射
+												初始化后自动打开相应通道的PWM输出
 											*/
 			/*PWM输出比较功能选项*/
 			#define tim2arr STSTEM_TIM2PWM_Period_5K			/*选择定时器输出频率（预分频系数为72，这里选择重装值）*/
@@ -322,7 +378,7 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 				HAL_TIM_PWM_Start(&TIM2_Handler,TIM_CHANNEL_2);		开启TIM2的PWM通道2
 				HAL_TIM_PWM_Stop(&TIM2_Handler,TIM_CHANNEL_2);		关闭TIM2的PWM通道2，但看源码好像使所有通道都关闭了，待实验
 				
-				设置TIM2的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。默认向上计数，默认设置为当计数值小于此值时输出低电平。
+				设置TIM2的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
 				TIM2_set_Channel_Pulse(TIM2PWM_Channel_2,88.8);
 			*/
 			
@@ -344,6 +400,40 @@ PWM就是四个通道由四个独立的比较值，每个比较值与这个CNT计数值比较，从而产生四路独
 				得到当前计数值：int32_t peek_TIM2_Encoder_Value(void); //用于表示编码器当前的绝对位置
 				速度：只需去定时器溢出中断函数HAL_TIM_PeriodElapsedCallback的TIM4中用一个速度变量接着 peek_TIM2_Encoder_Speed()返回的速度值 单位 转/秒
 			*/
+
+/*hd系列外设，基本定时器6、7，只能用于定时中断，提供更多的同步功能*/
+#define STSTEM_TIM6_ENABLE		1
+	#define tim6arr STSTEM_TIM6_Period_5K			/*选择定时器6输出频率（预分频系数为72，这里选择重装值）*/
+		#define STSTEM_TIM6_Period_1K	(1000-1)
+		#define STSTEM_TIM6_Period_2K	(500-1)
+		#define STSTEM_TIM6_Period_5K	(200-1)
+		#define STSTEM_TIM6_Period_10K	(100-1)
+		#define STSTEM_TIM6_Period_20K	(50-1)
+		#define STSTEM_TIM6_Period_50K	(20-1)
+		#define STSTEM_TIM6_Period_100K	(10-1)
+		#define STSTEM_TIM6_Period_200K	(5-1)
+#define STSTEM_TIM7_ENABLE		1
+	#define tim7arr STSTEM_TIM6_Period_5K			/*选择定时器7输出频率（预分频系数为72，这里选择重装值）*/
+		#define STSTEM_TIM7_Period_1K	(1000-1)
+		#define STSTEM_TIM7_Period_2K	(500-1)
+		#define STSTEM_TIM7_Period_5K	(200-1)
+		#define STSTEM_TIM7_Period_10K	(100-1)
+		#define STSTEM_TIM7_Period_20K	(50-1)
+		#define STSTEM_TIM7_Period_50K	(20-1)
+		#define STSTEM_TIM7_Period_100K	(10-1)
+		#define STSTEM_TIM7_Period_200K	(5-1)
+/*
+	关闭定时中断：（先清除中断标志位，再关闭中断）
+		__HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);
+		HAL_TIM_Base_Stop_IT(&TIM6_Handler);
+		
+		__HAL_TIM_CLEAR_IT(&TIM76_Handler, TIM_IT_UPDATE);
+		HAL_TIM_Base_Stop_IT(&TIM7_Handler);
+		
+		注： __HAL_TIM_CLEAR_FLAG(&TIM6_Handler,TIM_FLAG_UPDATE);和
+			 __HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);效果应该一样
+*/
+
 
 /*
 	ADC：STN32的是12位逐次逼近型，分ADC1、2和3，其中ADC1和ADC2的引脚一样（除了内部通道）；

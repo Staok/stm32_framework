@@ -10,8 +10,12 @@ void Bare_Begin(void)
 		const u8 RunTimeFaultCheck_TtemMaxNum = 3;	/*故障巡检的最大项目数量*/
 	#endif
 	
-	char* Head_buf = {"For Test!"};
-	DrawPageHead((u8*)Head_buf);
+	#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+	
+	#else
+		char* Head_buf = {"For Test!"};
+		DrawPageHead((u8*)Head_buf);
+	#endif
 	BACK_COLOR = BLACK;
 	for(;;)
 	{

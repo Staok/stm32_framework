@@ -312,8 +312,8 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 ÍêÈ«ÖØÓ³Éä		PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15
 */
 /*Ä¬ÈÏ²¢ÍÆ¼ö²»¿ªÆô¶¨Ê±ÖÐ¶Ï£»Òý½ÅÄ¬ÈÏÃ»ÓÐÉÏÏÂÀ­£»³õÊ¼»¯ºóÄ¬ÈÏÃ»ÓÐ´ò¿ªÏàÓ¦Í¨µÀµÄPWMÊä³ö£¬ÐèÒªÊÖ¶¯¿ªÆôÊä³ö*/
-/*¶¨Ê±Æ÷¹¤×÷ÔÚÏòÉÏ¼ÆÊýÊ±£¬PWMÐÅºÅ±ßÔµ¶ÔÆë£»¶¨Ê±Æ÷¹¤×÷ÔÚÏòÉÏºÍÏòÏÂ¼ÆÊýÄ£Ê½Ê±£¬PWMÐÅºÅÖÐÐÄ¶ÔÆä*/
-#define STSTEM_TIM1PWM_ENABLE		1				/*ÊÇ·ñÆôÓÃ²¢³õÊ¼»¯TIM1µÄÈýÂ·»¥²¹PWM£¨Ç°Èý¸öÍ¨µÀ£©ºÍÒ»Â·PWM£¨Í¨µÀ4£©*/
+/*¶¨Ê±Æ÷¹¤×÷ÔÚÏòÉÏ¼ÆÊýÊ±£¬PWMÐÅºÅ±ßÔµ¶ÔÆë£»¶¨Ê±Æ÷¹¤×÷ÔÚÏòÉÏºÍÏòÏÂ¼ÆÊýÄ£Ê½Ê±£¬PWMÐÅºÅÖÐÐÄ¶ÔÆë*/
+#define STSTEM_TIM1PWM_ENABLE		0				/*ÊÇ·ñÆôÓÃ²¢³õÊ¼»¯TIM1µÄÈýÂ·»¥²¹PWM£¨Ç°Èý¸öÍ¨µÀ£©ºÍÒ»Â·PWM£¨Í¨µÀ4£©*/
 			#define STSTEM_TIM1PWM_useBreak	1		/*ÊÇ·ñÆôÓÃBKINÉ²³µÐÅºÅ¿ØÖÆÊäÈë£¬Ä¬ÈÏµÍµçÆ½ÓÐÐ§*/
 													/*Ñ¡ÔñÃ¿Ò»¸öÍ¨µÀµÄÓÐÐ§µçÆ½ºÍ¿ÕÏÐµçÆ½£¨¿ÉÄÜÊÇÉ²³µÊ±µÄµçÆ½£©£¬Ä¬ÈÏËÀÇø3us£¬¿ÉÐÞ¸Ä*/
 			#define STSTEM_TIM1PWM_REMAP_PARTIAL  0	/*¶¨Ê±Æ÷1²¿·ÖÒý½ÅÖØÓ³Éä£¬Partial remap£¬	Òý½ÅÈçÉÏ±ßËùÊ¾*/
@@ -343,7 +343,44 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 		ÉèÖÃTIM1µÄPWMÍ¨µÀ2µÄÕ¼¿Õ±È°Ù·ÖÊýÎª88.8%£¬ÖµÐèÔÚ0~100.0Ö®¼ä¡£¼´88.8%µÄµÍµçÆ½Ê±¼ä£¨±¾Ä£°å¹æ·¶£ºµÍµçÆ½ÓÐÐ§£¬¼´ÓÃµçÆ÷¹¤×÷µçÑ¹£©
 		TIM1_set_Channel_Pulse(TIM1PWM_Channel_2,88.8);
 */
+
+/*hdÏµÁÐÍâÉè£¬ÆäËûÓëÉÏÍ¬Àí*/
+/*¸ß¼¶¶¨Ê±Æ÷8£¬×¨ÃÅÓÃÓÚ²úÉúPWMÐÅºÅ£ºÈýÂ·»¥²¹PWMÊä³ö¡¢ËÀÇø¿ØÖÆ¡¢É²³µÐÅºÅÊäÈë*/
+/*Òý½Å£º
+				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN£¨É²³µÐÅºÅÊäÈë£©
+				PC6/PA7			PC7/PB0			PC8/PB1			PC9		PA6
+*/
+/*Ä¬ÈÏ²¢ÍÆ¼ö²»¿ªÆô¶¨Ê±ÖÐ¶Ï£»Òý½ÅÄ¬ÈÏÃ»ÓÐÉÏÏÂÀ­£»³õÊ¼»¯ºóÄ¬ÈÏÃ»ÓÐ´ò¿ªÏàÓ¦Í¨µÀµÄPWMÊä³ö£¬ÐèÒªÊÖ¶¯¿ªÆôÊä³ö*/
+/*¶¨Ê±Æ÷¹¤×÷ÔÚÏòÉÏ¼ÆÊýÊ±£¬PWMÐÅºÅ±ßÔµ¶ÔÆë£»¶¨Ê±Æ÷¹¤×÷ÔÚÏòÉÏºÍÏòÏÂ¼ÆÊýÄ£Ê½Ê±£¬PWMÐÅºÅÖÐÐÄ¶ÔÆë*/
+/*Ã»ÓÐÖØÓ³Éä¹¦ÄÜ*/
+#define STSTEM_TIM8PWM_ENABLE		0				/*ÊÇ·ñÆôÓÃ²¢³õÊ¼»¯TIM8µÄÈýÂ·»¥²¹PWM£¨Ç°Èý¸öÍ¨µÀ£©ºÍÒ»Â·PWM£¨Í¨µÀ4£©*/
+			#define STSTEM_TIM8PWM_useBreak	1		/*ÊÇ·ñÆôÓÃBKINÉ²³µÐÅºÅ¿ØÖÆÊäÈë£¬Ä¬ÈÏµÍµçÆ½ÓÐÐ§*/
+													/*Ñ¡ÔñÃ¿Ò»¸öÍ¨µÀµÄÓÐÐ§µçÆ½ºÍ¿ÕÏÐµçÆ½£¨¿ÉÄÜÊÇÉ²³µÊ±µÄµçÆ½£©£¬Ä¬ÈÏËÀÇø3us£¬¿ÉÐÞ¸Ä*/
+			/*Êä³öÍ¨µÀÑ¡Ôñ£¬¹²ËÄ¸öÍ¨µÀ£¬¿ÉÒÔÏàÓë´ò¿ª¶à¸öÍ¨µÀ£¬»¥²¹Í¨µÀÄ¬ÈÏ³É¶Ô´ò¿ª*/
+			#define STSTEM_TIM8PWM_CHANNEL_ENABLE (B0000_0001|B0000_0010|B0000_0100|B0000_1000)		/*±ØÐë¼ÓÀ¨ºÅÀ¨ÆðÀ´*/
+			#define tim8arr 		STSTEM_TIM8_Period_10K	/*Ñ¡Ôñ¶¨Ê±Æ÷1Êä³öÆµÂÊ£¨Ô¤·ÖÆµÏµÊýÎª72£¬ÕâÀïÑ¡ÔñÖØ×°Öµ£©*/
+				#define STSTEM_TIM8_Period_1K	(1000-1)
+				#define STSTEM_TIM8_Period_2K	(500-1)
+				#define STSTEM_TIM8_Period_5K	(200-1)
+				#define STSTEM_TIM8_Period_10K	(100-1)
+				#define STSTEM_TIM8_Period_20K	(50-1)
+				#define STSTEM_TIM8_Period_50K	(20-1)
+				#define STSTEM_TIM8_Period_100K	(10-1)
+				#define STSTEM_TIM8_Period_200K	(5-1)
+/*¿ÉÓÃAPI£º
+		Æô¶¯Í¨µÀ1~4µÄPWMÊä³ö
+		HAL_TIM_PWM_Start(&TIM8_Handler,TIM_CHANNEL_1);
 		
+		Æô¶¯»¥²¹Í¨µÀ1~3µÄPWMÊä³ö
+		HAL_TIMEx_PWMN_Start(&TIM8_Handler,TIM_CHANNEL_1);
+		
+		¹Ø±ÕÍ¨µÀµÄPWMÊä³ö£¨Í¨µÀÑ¡ÔñÍ¬ÉÏ£©
+		HAL_TIM_PWM_Stop(&TIM8_Handler,TIM_CHANNEL_1);
+		HAL_TIMEx_PWMN_Stop(&TIM8_Handler,TIM_CHANNEL_1);
+		
+		ÉèÖÃTIM1µÄPWMÍ¨µÀ2µÄÕ¼¿Õ±È°Ù·ÖÊýÎª88.8%£¬ÖµÐèÔÚ0~100.0Ö®¼ä¡£¼´88.8%µÄµÍµçÆ½Ê±¼ä£¨±¾Ä£°å¹æ·¶£ºµÍµçÆ½ÓÐÐ§£¬¼´ÓÃµçÆ÷¹¤×÷µçÑ¹£©
+		TIM8_set_Channel_Pulse(TIM8PWM_Channel_2,88.8);
+*/		
 		
 
 /*Í¨¹ýÓÃ¶¨Ê±Æ÷2£º16Î»£¬ËÄ¸ö¶ÀÁ¢Í¨µÀ¿ÉÓÃÓÚ£ºÊäÈë²¶»ñ¡¢ÊäÈë±È½Ï¡¢PWM¡¢µ¥Âö³å£¬¶àÖÖÍ¾¾¶´¥·¢DMAÖÐ¶Ï*/
@@ -402,7 +439,7 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 			*/
 
 /*hdÏµÁÐÍâÉè£¬»ù±¾¶¨Ê±Æ÷6¡¢7£¬Ö»ÄÜÓÃÓÚ¶¨Ê±ÖÐ¶Ï£¬Ìá¹©¸ü¶àµÄÍ¬²½¹¦ÄÜ*/
-#define STSTEM_TIM6_ENABLE		1
+#define STSTEM_TIM6_ENABLE		0
 	#define tim6arr STSTEM_TIM6_Period_5K			/*Ñ¡Ôñ¶¨Ê±Æ÷6Êä³öÆµÂÊ£¨Ô¤·ÖÆµÏµÊýÎª72£¬ÕâÀïÑ¡ÔñÖØ×°Öµ£©*/
 		#define STSTEM_TIM6_Period_1K	(1000-1)
 		#define STSTEM_TIM6_Period_2K	(500-1)
@@ -412,7 +449,7 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 		#define STSTEM_TIM6_Period_50K	(20-1)
 		#define STSTEM_TIM6_Period_100K	(10-1)
 		#define STSTEM_TIM6_Period_200K	(5-1)
-#define STSTEM_TIM7_ENABLE		1
+#define STSTEM_TIM7_ENABLE		0
 	#define tim7arr STSTEM_TIM6_Period_5K			/*Ñ¡Ôñ¶¨Ê±Æ÷7Êä³öÆµÂÊ£¨Ô¤·ÖÆµÏµÊýÎª72£¬ÕâÀïÑ¡ÔñÖØ×°Öµ£©*/
 		#define STSTEM_TIM7_Period_1K	(1000-1)
 		#define STSTEM_TIM7_Period_2K	(500-1)
@@ -557,7 +594,7 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 #define SYSTEM_UART1_REMAP_ENABLE	0		/*´®¿Ú1Òý½ÅÖØÓ³Éä£ºTX/PB6, RX/PB7		*/
 #define SYSTEM_UART1_BOUND			115200	/*´®¿Ú1²¨ÌØÂÊ*/
 
-/*×¢£º´®¿Ú2ÔÚÄ¿Ç°²»ÄÜÓÃ£¬Ã»ÓÐ·´Ó¦£¬²»ÖªµÀÊÇHAL¿âÎÊÌâ»¹ÊÇÐ¾Æ¬ÎÊÌâ*/
+/*×¢£º´®¿Ú2ÔÚÄ¿Ç°²»ÄÜÓÃ£¬Ã»ÓÐ·´Ó¦£¬HAL¿âÎÊÌâ*/
 #define SYSTEM_UART2_ENABLE			0		/*Ê¹ÄÜ´®¿Ú2	       TX/PA2, RX/PA3		*/
 #define SYSTEM_UART2_REMAP_ENABLE	0		/*´®¿Ú2Òý½ÅÖØÓ³Éä£ºTX/PD5, RX/PD6£¬¿ÉÒÔÉèÖÃ£¬µ«¶ÔÓÚC8T6ÎÞ´ËÒý½Å*/
 #define SYSTEM_UART2_BOUND			115200	/*´®¿Ú2²¨ÌØÂÊ*/
@@ -851,15 +888,14 @@ PD2			SDIO_CMD
 
 
 /*_____________ÏµÍ³º¯Êý_______________*/
-extern u16	StartUpTimes;			/*ÓÃÓÚ±£´æ¿ª»ú´ÎÊý£¬´¢´æÔÚ×îºóÒ»¸ö»òµ¹ÊýµÚ¶þ¸öÒ³*/
-extern uint32_t UIDw[3]; /*±£´æSTM32ÄÚ²¿UIDÊ¶±ðÂë£¬È«ÇòÎ¨Ò»Ê¶±ðÂë*/
-extern uint32_t sysCoreClock; /*»ñÈ¡HCLKÆµÂÊ£¬ÍâÉèÊ±ÖÓ¾ùÀ´×Ô´ËÔÙ·ÖÆµ*/
+extern u16	StartUpTimes;					/*ÓÃÓÚ±£´æ¿ª»ú´ÎÊý£¬´¢´æÔÚ×îºóÒ»¸ö»òµ¹ÊýµÚ¶þ¸öÒ³*/
+extern uint32_t UIDw[3]; 					/*±£´æSTM32ÄÚ²¿UIDÊ¶±ðÂë£¬È«ÇòÎ¨Ò»Ê¶±ðÂë*/
+extern uint32_t sysCoreClock; 				/*»ñÈ¡HCLKÆµÂÊ£¬ÍâÉèÊ±ÖÓ¾ùÀ´×Ô´ËÔÙ·ÖÆµ*/
 
 void sys_MCU_Init_Seq(void);				/*MCUÍâÉè³õÊ¼»¯ÐòÁÐ£¬ËùÓÐ³õÊ¼»¯Ð´µ½ÕâÀïÃæ*/
 void sys_Device_Init_Seq(void);				/*Æ÷¼þÍâÉè³õÊ¼»¯£¬²¢¿ª»ú×Ô¼ì*/
 
-extern uint8_t is_quitFault;
-void FaultASSERT(char* FaultMessage);				/*±íÊ¾³õÊ¼»¯ÓÐÎÊÌâ£¬´®¿ÚÌáÊ¾£¬Ö¸Ê¾µÆ»òÕß·äÃùÆ÷½øÐÐÌáÊ¾*/
+void FaultASSERT(char* FaultMessage);		/*±íÊ¾³õÊ¼»¯ÓÐÎÊÌâ£¬´®¿ÚÌáÊ¾£¬Ö¸Ê¾µÆ»òÕß·äÃùÆ÷½øÐÐÌáÊ¾*/
 int8_t Stm32_Clock_Init(uint32_t PLL);		/*Ê±ÖÓÏµÍ³ÅäÖÃ*/
 
 #if SYSTEM_UART1_ENABLE||SYSTEM_UART2_ENABLE||SYSTEM_UART3_ENABLE

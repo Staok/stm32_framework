@@ -197,6 +197,17 @@ void sys_TIM1PWM_ENABLE(void);
 		void TIM1_set_Channel_Pulse(u8 channel,float percent);
 #endif
 
+/*_______________________________TIM1PWM___________________________________*/
+extern TIM_HandleTypeDef TIM8_Handler;
+void sys_TIM8PWM_ENABLE(void);
+#if (STSTEM_TIM8PWM_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+		#define TIM8PWM_Channel_1	1
+		#define TIM8PWM_Channel_2	2
+		#define TIM8PWM_Channel_3	3
+		#define TIM8PWM_Channel_4	4
+		void TIM8_set_Channel_Pulse(u8 channel,float percent);
+#endif
+
 /*_______________________________TIM6___________________________________*/
 void sys_TIM6_ENABLE(void);
 extern TIM_HandleTypeDef TIM6_Handler;
@@ -292,13 +303,12 @@ u8 SD_Init(void);
 u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt);
 u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt);
 void show_sdcard_info(void);						//通过串口1打印SD卡相关信息
-#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 
+#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD卡信息
 extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
 extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
 #define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
-
 #endif
 
 /*____________________________FSMC for SARM_____________________________________________*/

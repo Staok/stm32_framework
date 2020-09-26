@@ -893,7 +893,7 @@ void sys_TIM1PWM_ENABLE(void)
   
   TIM1_Handler.Instance = TIM1;
   TIM1_Handler.Init.Prescaler = (72-1);
-  TIM1_Handler.Init.CounterMode = TIM_COUNTERMODE_UP;
+  TIM1_Handler.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
   TIM1_Handler.Init.Period = tim1arr;							//重装载值，16位
   TIM1_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
   TIM1_Handler.Init.RepetitionCounter = 0;
@@ -936,7 +936,7 @@ void sys_TIM1PWM_ENABLE(void)
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_LOW;					//可选互补通道的有效极性
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;					//disable就好
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;				//空闲电平极性选择（没有启用时的电平，谨慎修改）（也有可能是刹车时的电平）
-  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_SET;
   HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_1);
 
   sConfigOC.Pulse = tim1arr/2;
@@ -963,6 +963,97 @@ void TIM1_set_Channel_Pulse(u8 channel,float percent)
 		case TIM1PWM_Channel_2: TIM1->CCR2=(u32)compare;break;
 		case TIM1PWM_Channel_3: TIM1->CCR3=(u32)compare;break;
 		case TIM1PWM_Channel_4: TIM1->CCR4=(u32)compare;break;
+		default:break;
+	}
+}
+
+
+#endif
+
+/*________________________________________用户定时器8PWM配置_________________________________________________________*/
+#if (STSTEM_TIM8PWM_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+TIM_HandleTypeDef TIM8_Handler;
+
+void sys_TIM8PWM_ENABLE(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+  
+  TIM1_Handler.Instance = TIM8;
+  TIM1_Handler.Init.Prescaler = (72-1);
+  TIM1_Handler.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
+  TIM1_Handler.Init.Period = tim8arr;							//重装载值，16位
+  TIM1_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
+  TIM1_Handler.Init.RepetitionCounter = 0;
+  HAL_TIM_Base_Init(&TIM8_Handler);
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;	//时钟源来自内部（不启用外部ETR引脚作为时钟源）
+  HAL_TIM_ConfigClockSource(&TIM8_Handler, &sClockSourceConfig);
+
+  HAL_TIM_PWM_Init(&TIM8_Handler);
+  
+   /*如果要用主从定时器，参考https://my.oschina.net/u/4315748/blog/3220499*/
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;			//不输出信号给其他外设
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;	//不使用定时器主从功能，即不用TIM1的定时中断作为其他定时器的计数源
+  HAL_TIMEx_MasterConfigSynchronization(&TIM8_Handler, &sMasterConfig);
+  
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;		//默认disable（）
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;		//默认disable
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_3;				//锁定参数级别，如果死区等参数不再变的话就把LOCK调到最高级
+  /*死区时间设计：DeadTime的8个bits定义如下：DT为死区时间，Tdts为1/72M~13.9ns
+	DTG[7:5]=0xx	=>	DT = DTG[7:0] x Tdtg,        Tdtg  = Tdts; 		最大1.764us
+	DTG[7:5]=10x	=>	DT = (64+DTG[5:0]) x Tdtg,   Tdtg  = 2 x Tdts;	最大3.5288us
+	DTG[7:5]=110	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 8 x Tdts; 	最大7us
+	DTG[7:5]=111	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 16 x Tdts;	最大14us（此时值为0xff）
+																		要3us则设为0xab
+	*/
+  sBreakDeadTimeConfig.DeadTime = 0xab;							//死区时间设置 0x00~0xff
+  #if STSTEM_TIM8PWM_useBreak
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_ENABLE;			//使能或失能TIMx刹车输入
+  #else
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  #endif
+  sBreakDeadTimeConfig.BreakFilter = 0xa;						//刹车输入滤波，0x0~0xF
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_LOW;	//刹车输入脚极性
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;	//默认
+  HAL_TIMEx_ConfigBreakDeadTime(&TIM8_Handler, &sBreakDeadTimeConfig);
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;							//向上计数时，PWM1模式就是计数小于占空比值（TIMx_CNT<TIMx_CCR1），IO变为有效极性，否则相反
+  sConfigOC.Pulse = tim8arr/2;									//占空比值（捕获比较值，16位）
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;					//可选此通道的有效极性为高还是低
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_LOW;					//可选互补通道的有效极性
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;					//disable就好
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;				//空闲电平极性选择（没有启用时的电平，谨慎修改）（也有可能是刹车时的电平）
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_SET;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_1);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_2);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_3);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_4);
+}
+
+
+void TIM8_set_Channel_Pulse(u8 channel,float percent)
+{
+	float compare;
+	if(percent < 0) percent = 0;
+	if(percent > 100) percent = 100.0;
+	percent /= 100.0;
+	compare = ((float)tim8arr) * percent;
+	switch(channel)
+	{
+		case TIM8PWM_Channel_1: TIM8->CCR1=(u32)compare;break;
+		case TIM8PWM_Channel_2: TIM8->CCR2=(u32)compare;break;
+		case TIM8PWM_Channel_3: TIM8->CCR3=(u32)compare;break;
+		case TIM8PWM_Channel_4: TIM8->CCR4=(u32)compare;break;
 		default:break;
 	}
 }

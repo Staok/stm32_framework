@@ -2,26 +2,19 @@
 
 /*
 现存BUG记录:
-	FIFO库的初始化经常不好使，返回值常为NULL，暂时不明原因
-	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果再另一个项目重新遇到就换一个小巧简单的库
+	FIFO库的初始化经常不好使，返回值常为NULL，暂时不明原因，不知道换成自己的malloc好不好使了，还没有试验
+	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果在另一个项目重新遇到就换一个小巧简单的库
 	
 即将加上的东西：
-	FATFS：就差移植原子两个.c文件里的各种API 和 mymolloc、myfree
-		文件系统要实现：
-		√	SD卡文件读存，
-			内部FLASH划分区域当作文件系统读存，
-			USB U盘读存，
-			把内部FLASH划分一块通过USB插入电脑当作U盘，可在电脑操作文件的读存
-	
-	把stdlib排除在项目之外（逐个.c文件查看），不编译，自己实现malloc和free函数（借鉴原子的），并替换在FIFO.c和ffsystem.c里面的
-	确保工程内不含string、stdio和stdlib等不适合用于mcu平台的头文件，已经都用开源的线程安全软件或者自实现替换
-	IAP：即将加上
-	
 	之后要做的：
 		原子的FATFS的API再包装的移植
-		FSMC驱动LCD的代码，和现有LCD代码的写寄存器、数据的底层函数融合，用预编译控制编译哪个
-	
-	
+		FATFS：就差移植原子两个.c文件里的各种API 和 mymolloc、myfree
+			文件系统要实现：
+			√	SD卡文件读存，
+				内部FLASH划分区域当作文件系统读存，
+				USB U盘读存，
+				把内部FLASH划分一块通过USB插入电脑当作U盘，可在电脑操作文件的读存
+	IAP：即将加上
 	线性回归：即将加上
 	常用校验、加密算法：即将加上
 	JPEG、GIF解码和BMP编解码：即将加上
@@ -31,7 +24,7 @@
 	完成	移植菜单模板，连带按键检测也都搞了
 	完成	FLASH存储开机次数
 	待做	串口2、3完成相关的接收功能，与串口1一样的，用预编译控制是否编译相关代码
-	待完善	完善菜单框架，有硬件基础（至少有多按键，LCD时）再完善好~~
+	已完善	完善菜单框架，有硬件基础（至少有多按键，LCD时）再完善好~~
 	完成	开始完成RTOS框架，写上所有API
 	...		歇会儿
 			开始所有HAL库的罗列！可以参考的：原子的HAL手册和历程直接复制；硬石的HAL每天一例（这个很多）；安富莱
@@ -59,7 +52,6 @@ uint32_t UIDw[3]; 			/*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; 		/*获取HCLK频率，外设时钟均来自此再分频*/
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
-uint8_t is_quitFault;
 void sys_MCU_Init_Seq(void)
 {
 	/*设置时钟,8M * 9 = 72M，涉及到延时准确性，不要乱动！*/
@@ -123,11 +115,6 @@ void sys_MCU_Init_Seq(void)
 		StartUpTimes += 1;
 		STMFLASH_Write( (0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
 		printf_uart(UART1,"StartUpTimes : %d\r\n",StartUpTimes);
-	#endif
-	
-	#if STSTEM_TIM2_ENABLE
-	/*说明TIM2的用途*/
-	sys_TIM2_ENABLE();
 	#endif
 	
 	#if SYSTEM_ADC1_ENABLE
@@ -199,15 +186,30 @@ void sys_Device_Init_Seq(void)
 		sys_TIM3PWM_ENABLE();
 	#endif
 	
+	/*初始化高级定时器1*/
 	#if STSTEM_TIM1PWM_ENABLE
 		sys_TIM1PWM_ENABLE();
 	#endif
 	
+	/*初始化高级定时器8*/
+	#if (STSTEM_TIM8PWM_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+		sys_TIM8PWM_ENABLE();
+	#endif
+	
+	/*初始化时基定时器6*/
 	#if (STSTEM_TIM6_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 		sys_TIM6_ENABLE();
 	#endif
+	
+	/*初始化时基定时器7*/
 	#if (STSTEM_TIM7_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 		sys_TIM7_ENABLE();
+	#endif
+	
+	/*初始化多功能定时器2*/
+	#if STSTEM_TIM2_ENABLE
+	/*说明TIM2的用途*/
+	sys_TIM2_ENABLE();
 	#endif
 	
 	/*初始化看门狗*/

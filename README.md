@@ -20,10 +20,12 @@ System init over!
 
 ## 计划组件
 
--   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ IAP \ IO \ SDIO \ LTDC LCD \ DCMI \ FSMC \ DMA \ DSP \ FPU \ USB \ CAN \ Ethernet）
+（加粗体为暂时尚未实现的外设或者组件）
+
+-   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **LTDC LCD** \ **DCMI** \ FSMC \ DMA \ **DSP** \ FPU \ **USB** \ **CAN** \ **Ethernet**）
 -   FreeRTOS
--   LittlevGL或者STemWin
--   LWIP
+-   **LittlevGL或者STemWin**
+-   **LWIP**
 -   FATFS
 -   PID算法
 -   ringbuf环形缓冲（类FIFO）
@@ -31,12 +33,12 @@ System init over!
 -   Menu框架
 -   无依赖的string库和sprintf库
 -   软件模拟I2C\SPI
--   线性回归
--   常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）
--   音频编解码（MP3转PCM，外接一个功放直接播放）
--   Modbus协议
--   MQTT协议（包含cjson）
--   JPEG、GIF解码和BMP编解码
+-   **线性回归**
+-   **常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）**
+-   **音频编解码（MP3转PCM，外接一个功放直接播放）**
+-   **Modbus协议**
+-   **MQTT协议（包含cjson）**
+-   **JPEG、GIF解码和BMP编解码**
 
 ## 组件说明
 
@@ -47,9 +49,9 @@ System init over!
 -   所有头文件均放在sys.h里面，其他库文件想互相调用时只需调sys.h即可，不乱
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h的上面
 
-### 裸跑或者FreeRTOS
+### 裸跑或者FreeRTOS选择
 
--   SYSTEM_SUPPORT_OS：是否开启FreeRTOS，不开为裸跑；具体应用逻辑编写和任务配置分别在TaskConfig.c和BareConfig.c里面
+-   sys.h和FreeRTOSConfig.h里面的宏定义SYSTEM_SUPPORT_OS：是否开启FreeRTOS，不开为裸跑；具体应用逻辑编写和任务配置分别在TaskConfig.c和BareConfig.c里面
 
     FreeRTOS说明：所有API均罗列在TaskConfig.h里！关于FreeRTOS的信号量和事件标志组，均用任务通知替代！关于FreeRTOS的任务与任务、任务与中断间的通讯只用消息队列，功能最全！
 
@@ -82,8 +84,8 @@ System init over!
 -   TIM4：STSTEM_TIM4_ENABLE：模板基本功能，必须开启！使用通用定时器4，提供时基，默认10ms周期中断
 -   TIM3：STSTEM_TIM3PWM_ENABLE：模板基本功能，必须开启！使用通用定时器3，默认不开启中断，提供四路PWM输出；引脚重映射、中断、频率、占空比均提供修改
 -   TIM2：STSTEM_TIM2_ENABLE：通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义；提供定时器中断、PWM、输入捕获和正交解码功能，用户按需自定
--   **TIM1\8：TODO：即将加上，（看一些哪些STM32有这个）提供多路带四区的互补PWM功能**
--   **TIM5\6：TODO：即将加上，（看一些哪些STM32有这个）仅用于定时器中断提供一些同步和时基的工作，减轻TIM4的压力**
+-   TIM1\8：STSTEM_TIM1/8_ENABLE：默认专门产生PWM，提供三路带死区（默认3us，可调）的互补PWM输出和一路PWM输出，引脚映射、频率、刹车、极性等均可按需调节
+-   TIM6/7：STSTEM_TIM6/7_ENABLE仅用于实现定时器中断，提供一些同步和时基的工作，减轻TIM4的压力
 -   ADC1：SYSTEM_ADC1_ENABLE：启否ADC1；提供添加规则组通道、是否连续扫描、是否使用DMA等可选功能；有详细注释
 -   IWDG：SYSTEM_IWDG_ENABLE：开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4
 -   USART：SYSTEM_UARTx_ENABLE：开启串口，x = 1、2和3；引脚重映射和波特率可选（HAL库目前对串口2无效，不知道是不是HAL库的BUG..）
@@ -95,8 +97,8 @@ System init over!
 -   SDIO：SYSTEM_SDIO_SD_ENABLE：大容量芯片系列外设，底层API已经写入FATFS的底层，请用FATFS的API以文件方式操作
 -   IAP：**TODO：即将加上**，提供用SD卡（SDIO（大容量芯片）或者SPI驱动）、串口（可选串口1、2、3）、USB（暂时缺省，以U盘形式或者USB传输）和SPI更新固件bin文件。在每次上电前会让用户选择固件索引（可以存在多个固件），再选择是更新还是运行此区域固件，如果是更新，则下载前会进行协议握手（专有协议+非对称加密握手，防止陌生固件下载），如果是下载，则在启动运行固件前会用硬件CRC进行一次固件校验（防止以存固件篡改）
 -   DMA：默认用于ADC1的多通道扫描模式DMA传送（如果开启SYSTEM_ADC1_useScan的话），另提供驱动代码的模板以供参考
+-   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改动；就不支持各种FLASH了，MCU毕竟程序写不大，就算大了就用SPI的FLASH，也节约IO口。LCD的相关API说明在TFTLCD.h里面，字库也可剪裁
 -   Ethernet：暂时缺省
--   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改动；就不支持各种FLASH了，MCU毕竟程序写不大，就算大了就用SPI的FLASH，也节约IO口。**（TODO：LCD的API还没有测试，暂时不要用，会在近几天更新好~）**
 -   LTDC LCD：暂时缺省
 -   DCMI：暂时缺省
 -   USB：暂时缺省

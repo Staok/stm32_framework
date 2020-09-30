@@ -1,6 +1,7 @@
 #ifndef __TFTLCD_H__
 #define __TFTLCD_H__
 
+#include "sys.h"
 /*
   ËµÃ÷ºÍAPI£º
 

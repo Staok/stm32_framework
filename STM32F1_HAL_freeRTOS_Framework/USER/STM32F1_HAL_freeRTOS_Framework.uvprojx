@@ -138,7 +138,7 @@
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3>"" ()</Flash3>
+          <Flash3></Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\ringbuf;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\SYSTEM\FATFS;..\SYSTEM\malloc;..\Devices\TFTLCD</IncludePath>
+              <IncludePath>..\CORE;..\HAL\Inc;.\Inc;..\SYSTEM;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\APP\Inc;..\SYSTEM\simu_i2c_spi;..\SYSTEM\printf;..\SYSTEM\pid;..\SYSTEM\menu;..\SYSTEM\MyString;..\SYSTEM\PeriphConfig;..\Devices\MAX7219;..\SYSTEM\FATFS;..\SYSTEM\malloc;..\Devices\TFTLCD</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -815,11 +815,6 @@
               <FileName>PeriphConfig.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\SYSTEM\PeriphConfig\PeriphConfig.c</FilePath>
-            </File>
-            <File>
-              <FileName>FIFO.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\SYSTEM\ringbuf\FIFO.c</FilePath>
             </File>
             <File>
               <FileName>malloc.c</FileName>

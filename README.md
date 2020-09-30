@@ -28,7 +28,7 @@ System init over!
 -   **LWIP**
 -   FATFS
 -   PID算法
--   ringbuf环形缓冲（类FIFO）
+-   ~~ringbuf环形缓冲（类FIFO）~~
 -   内存管理（malloc和free）
 -   Menu框架
 -   无依赖的string库和sprintf库
@@ -44,9 +44,9 @@ System init over!
 
 （标为“缺省”的为暂未实现的，以后会加上- -，工作量好大的！ ）
 
--   **所有基础外设均在sys.h里面通过宏定义配置，每一个宏定义旁边均有使用说明的注释**；所有用户配置外设均在PeriphConfig.c里面，有详细注释，不看不会用
+-   **所有基础外设均在sys.h里面通过宏定义配置，每一个宏定义旁边均有使用说明的注释**，有详细注释，不看不会用
+-   外设驱动代码分别在sys.c和periphconfig.c两个文件里，其所有的外设API声明均在sys.h里，所有的独立GPIO的API均在periphconfig.h里，用户程序调用外设控制API时，按需调用这两个文件即可
 -   MCU外设配置的统一函数为void sys_MCU_Init_Seq(void)，一般无需改动；外接器件初始化统一函数为void sys_Device_Init_Seq(void)，需要自行按需修改
--   所有头文件均放在sys.h里面，其他库文件想互相调用时只需调sys.h即可，不乱
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h的上面
 
 ### 裸跑或者FreeRTOS选择
@@ -61,11 +61,11 @@ System init over!
 -   string、sprintf库：SYSTEM_SUPPORT_MyString：提供一个实现了string.h大部分字符操作函数的库；具体作用看MyString.c文件里的注释
 -   string、sprintf库：SYSTEM_SUPPORT_sprintf：提供一个无依赖的独立实现的sprint库，github开源库from：mpaland/printf；经过修改，可以实现对指定串口发送printf格式化的字符串
 -   PID算法：SYSTEM_SUPPORT_pid：提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面
--   ringbuf：提供一个软件实现的唤醒缓冲区，依据FIFO规则；默认已经用在串口接收的地方，具体看串口宏定义处旁边的注释
+-   ringbuf：由于应对大数据传输时，开源FIFO和FreeRTOS自带的消息列队的测试均表现不行，故弃之
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL或者STemWin：暂时缺省（优先LittlevGL）
 -   LWIP：暂时缺省
--   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释**（TODO：添加SPI FLASH驱动并写入FATFS底层，添加MCU内部FLASH驱动并写入FATFS底层）**
+-   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释**（TODO：添加SPI FLASH驱动并写入FATFS底层（考虑这个开源库驱动SPI FLASH：https://github.com/armink/SFUD），添加MCU内部FLASH驱动并写入FATFS底层）**
 -   DSP\FPU：暂时缺省
 -   线性回归：即将加上
 -   常用校验、加密算法：即将加上

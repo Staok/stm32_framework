@@ -2,7 +2,7 @@
 #define __SYS_MENU_H
 
 #include "sys.h"
-#include "FIFO.h"
+#include "periphconfig.h"
 
 
 /*______________________这里基本不动，按键输入信息_________________________________*/

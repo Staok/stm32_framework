@@ -1,9 +1,9 @@
 #include "sys.h"
+#include "periphconfig.h"
 
 /*
 现存BUG记录:
-	FIFO库的初始化经常不好使，返回值常为NULL，暂时不明原因，不知道换成自己的malloc好不好使了，还没有试验
-	sprintf()函数，有时会改变MCU执行速度，会变得超级快，现在先不动，如果在另一个项目重新遇到就换一个小巧简单的库
+	sprintf()函数，有一次改变了MCU执行速度，会变得超级快，现在先不动，如果在另一个项目重新遇到就换一个小巧简单的库
 	
 即将加上的东西：
 	之后要做的：
@@ -74,17 +74,6 @@ void sys_MCU_Init_Seq(void)
 	#if SYSTEM_MCO_PA8_OUT
 		sys_MCO_Out_Enable();
 	#endif
-	/*设置RTC*/
-	#if SYSTEM_RTC_ENABLE
-		sys_RTC_Enable();
-		//用户自行更改设置RTC和闹钟的日期和时间，在	sys_RTC_Enable() 里面		
-	#endif
-	/*设置CRC*/
-	#if SYSTEM_CRC_ENABLE
-		sys_CRC_ENABLE();
-		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
-		{}else{FaultASSERT("AT : CRC init");}
-	#endif
 
 	/*按照设定初始化串口1、2、3*/
 	#if SYSTEM_UART1_ENABLE
@@ -100,7 +89,23 @@ void sys_MCU_Init_Seq(void)
 		sys_USART3_ENABLE();
 	#endif
 	
-	printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\nSystem is starting...\r\n");
+	/*设置RTC*/
+	#if SYSTEM_RTC_ENABLE
+		sys_RTC_Enable();
+		//用户自行更改设置RTC和闹钟的日期和时间，在	sys_RTC_Enable() 里面		
+	#endif
+	/*设置CRC*/
+	#if SYSTEM_CRC_ENABLE
+		sys_CRC_ENABLE();
+		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
+		{}else{FaultASSERT("AT : CRC init");}
+	#endif
+	
+	printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\n");
+	printf_uart(UART1,"Compile time : %s,%s\r\n",__DATE__,__TIME__);
+	printf_uart(UART1,"Version : %s\r\n",Version_of_stm32_framework);
+	printf_uart(UART1,"OK,then...System is starting...\r\n");
+		
 	
 	/*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
 	sysCoreClock = HAL_RCC_GetHCLKFreq(); 
@@ -229,7 +234,8 @@ void sys_Device_Init_Seq(void)
 void FaultASSERT(char* FaultMessage)
 {
 	/*往串口1发送数据*/
-	printf_uart(UART1,"Fault Message : %s\r\n",FaultMessage);
+	printf_uart(UART1,"Fault Message : %s\n",FaultMessage);
+	printf_uart(UART1,"File&Line : %s,%s\n",__FILE__,__LINE__);
 	//灯提示，声提示
 	buzzer_bibi_on;
 	while(1){;}
@@ -242,9 +248,12 @@ void FaultASSERT(char* FaultMessage)
 ********************************/
 u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms)
 {
-	*mins = Timer_IT_flags._1min;
-	*secs = Timer_IT_flags._1sec;
-	*_10ms = Timer_IT_flags._10msec;
+	if(mins != NULL)
+		*mins = Timer_IT_flags._1min;
+	if(secs != NULL)
+		*secs = Timer_IT_flags._1sec;
+	if(_10ms != NULL)
+		*_10ms = Timer_IT_flags._10msec;
 	return ((Timer_IT_flags._1min)*60 + Timer_IT_flags._1sec);
 }
 /*__________时钟系统配置函数_____________*/
@@ -295,14 +304,19 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
     if(htim->Instance==TIM4)
 	{
 		__HAL_RCC_TIM4_CLK_ENABLE();            //使能TIM4时钟
+		__HAL_TIM_CLEAR_IT(&TIM4_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
+		
 		HAL_NVIC_SetPriority(TIM4_IRQn,1,0);    //设置中断优先级，抢占优先级1，响应优先级0。分组为4
 		HAL_NVIC_EnableIRQ(TIM4_IRQn);          //开启ITM4中断   
 	}
+	
 	#if (STSTEM_TIM6_ENABLE) && ((STM32F103xG) || (STM32F103xE))
 		if(htim->Instance==TIM6)
 		{
 			__HAL_RCC_TIM6_CLK_ENABLE();            //使能TIM6时钟
 			__HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
+			__HAL_TIM_ENABLE_IT(&TIM7_Handler,TIM_IT_UPDATE);  // 使能更新中断
+			
 			HAL_NVIC_SetPriority(TIM6_IRQn,4,0);    //设置中断优先级，抢占优先级1，响应优先级0。分组为4
 			HAL_NVIC_EnableIRQ(TIM6_IRQn);          //开启ITM6中断   
 		}
@@ -313,6 +327,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 		{
 			__HAL_RCC_TIM7_CLK_ENABLE();            //使能TIM7时钟
 			__HAL_TIM_CLEAR_IT(&TIM7_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
+			__HAL_TIM_ENABLE_IT(&TIM7_Handler,TIM_IT_UPDATE);  // 使能更新中断
+			
 			HAL_NVIC_SetPriority(TIM7_IRQn,4,0);    //设置中断优先级，抢占优先级1，响应优先级0。分组为4
 			HAL_NVIC_EnableIRQ(TIM7_IRQn);          //开启ITM7中断   
 		}
@@ -322,25 +338,29 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 	{
 		__HAL_RCC_TIM3_CLK_ENABLE();            //使能TIM3时钟
 		__HAL_TIM_CLEAR_IT(&TIM3_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
-		HAL_NVIC_SetPriority(TIM3_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
 		
 		#if STSTEM_TIM3PWM_TI_ENABLE
+			__HAL_TIM_ENABLE_IT(&TIM3_Handler,TIM_IT_UPDATE);  // 使能更新中断
+			HAL_NVIC_SetPriority(TIM3_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
 			HAL_NVIC_EnableIRQ(TIM3_IRQn);      //开启ITM3中断
 		#endif
 	}
-	if(htim->Instance==TIM2)
-	{
-		__HAL_RCC_TIM2_CLK_ENABLE();            //使能TIM2时钟
-		
-		#if STSTEM_TIM2_TI_ENABLE
+	
+	#if STSTEM_TIM2_ENABLE
+		if(htim->Instance==TIM2)
+		{
+			__HAL_RCC_TIM2_CLK_ENABLE();            //使能TIM2时钟
 			__HAL_TIM_CLEAR_IT(&TIM2_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
-			__HAL_TIM_URS_ENABLE(&TIM2_Handler);               // 仅允许计数器溢出才产生更新中断
-			__HAL_TIM_ENABLE_IT(&TIM2_Handler,TIM_IT_UPDATE);  // 使能更新中断
-		#endif
-		
-		HAL_NVIC_SetPriority(TIM2_IRQn,3,0);
-		HAL_NVIC_EnableIRQ(TIM2_IRQn);
-	}
+			
+			#if STSTEM_TIM2_TI_ENABLE
+				__HAL_TIM_URS_ENABLE(&TIM2_Handler);               // 仅允许计数器溢出才产生更新中断
+				__HAL_TIM_ENABLE_IT(&TIM2_Handler,TIM_IT_UPDATE);  // 使能更新中断
+				
+				HAL_NVIC_SetPriority(TIM2_IRQn,3,0);
+				HAL_NVIC_EnableIRQ(TIM2_IRQn);
+			#endif
+		}
+	#endif
 }
 
 /*__________定时器中断回调函数_____________*/
@@ -457,7 +477,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			
 		}
 	#endif
-	
+		
+	#if STSTEM_TIM2_ENABLE
 	/*定时器2周期回调*/
 	if(htim==(&TIM2_Handler))
     {
@@ -482,6 +503,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			EncoderOverflowCount++;       //向上计数溢出
 		#endif
     }
+	#endif
 }
 
 
@@ -489,7 +511,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 UART_HandleTypeDef UART1_Handler,UART2_Handler,UART3_Handler; //UART句柄
 u8 aRxBuffer1[RXBUFFERSIZE],aRxBuffer2[RXBUFFERSIZE],aRxBuffer3[RXBUFFERSIZE];//HAL库使用的串口接收缓冲
-
+//QueueHandle_t Uart1_fifo;	/*串口1的模式1数据接受fifo句柄*/
 
 /*printf函数和printf_uart会调用此函数发送单个字节，需填入串口发送，只用printf_uart就行了*/
 void _putchar(char character)
@@ -529,36 +551,35 @@ void sys_USART1_ENABLE(void)
 	
 	HAL_UART_Receive_IT(&UART1_Handler, (u8 *)aRxBuffer1, RXBUFFERSIZE);//该函数会开启接收中断：标志位UART_IT_RXNE，并且设置接收缓冲以及接收缓冲接收最大数据量
 	
-//	if(fifo_create_static(Uart1_fifo, USART1_RX_FIFO_buf, (uint16_t)USART1_RX_FIFO_MaxNum, sizeof(char)) == NULL)
-//	{
-//		FaultASSERT("AT:fifo_create_static");
-//	}
-	Uart1_fifo = fifo_create((uint16_t)USART1_RX_FIFO_MaxNum, sizeof(char));
-	if(Uart1_fifo == NULL)
-	{
-		FaultASSERT("AT:fifo_create");
-	}
-}
-
-char sys_USART1_RX_Fetch(u8 is_print, char* buf)
-{
-	char CharData,is_Data;
-	u16 i;
 	
-	if(!(USART1_RX_CONFIG & USART1_RX_MODE_mask))
+//	Uart1_fifo = xQueueCreate(USART1_RX_FIFO_MaxNum,sizeof( char ));
+//	
+//	if(Uart1_fifo == NULL)
+//	{
+//		FaultASSERT("AT:fifo_create");
+//	}
+}
+char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; 		/*串口1的模式0数据接受区*/
+
+char sys_USART1_RX_Fetch(u8 is_print, char *buf,u16 *RX_ByteNum)
+{
+	if(!((USART1_RX_CONFIG) & (USART1_RX_MODE_mask)))
 	{
 		/*0为只接受以'\r\n'结尾的数据*/
 		if(USART1_isDone)
 		{
 			if(is_print)
 				printf_uart(UART1,"%s",USART1_RX_BUF);
+			
 			if(USART1_RX_ByteNum >= USART1_RX_BUF_MaxNum) /*防止栈溢出*/
 			{
 				mystrncpy(buf,USART1_RX_BUF,USART1_RX_BUF_MaxNum);
 			}else{
 				mystrncpy(buf,USART1_RX_BUF,USART1_RX_ByteNum);
 			}
-			//buf = USART1_RX_BUF; /*与fifo共用的char*在这里不能直接赋地址，带结束符\0，不带\r\n的字符串*/ 
+			//buf = USART1_RX_BUF;
+			*RX_ByteNum = USART1_RX_ByteNum;
+			/*USART1_RX_BUF共有USART1_RX_ByteNum个有效字节，不带\r\n的字符串，第USART1_RX_ByteNum的位置是结束符\0*/
 			USART1_SetUnDone;
 			return (char)ReturnOK;
 		}else{
@@ -567,24 +588,20 @@ char sys_USART1_RX_Fetch(u8 is_print, char* buf)
 	}else{
 		/*1为以FIFO先进先出的环形缓存实现接受区，无协议*/
 		
-		is_Data = FALSE;i = 0;
-		while(fifo_get(Uart1_fifo, &CharData))
-		{
-			is_Data = TRUE;
-			buf[i++] = CharData;
-		}
+//		u16 i = 0;
+		char ibuf = 42;
 		
-		if(i >= USART1_RX_FIFO_MaxNum) /*防止栈溢出*/
-		{
-			buf[(USART1_RX_FIFO_MaxNum-1)] = '\0';
-		}else{
-			buf[i] = '\0';
-		}
-		
-		if(is_print)
-			printf_uart(UART1,"%c",CharData);
-		
-		if(is_Data == TRUE)
+//		while(xQueueReceive(Uart1_fifo, &ibuf, 0) == pdPASS)
+//		{
+//			buf[i++] = ibuf;
+//		}
+//		buf[i] = '\0';
+//		*RX_ByteNum = i;
+//		
+//		if(is_print)
+//			printf_uart(UART1,"%s",buf);
+//		
+		if(ibuf != 42)
 		{
 			return (char)ReturnOK;
 		}else{
@@ -738,11 +755,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 
 
 
-char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; 		/*串口1的模式1数据接受区*/
 
-//	fifo_t Test_fifo;
-//	fifo_t Test2_fifo;
-	fifo_t Uart1_fifo;
+
 //char USART1_RX_FIFO_buf[USART1_RX_FIFO_MaxNum] = "0"; 	/*串口1的模式0的FIFO数据接受区，静态创建时才用*/
 /*以下四行放在了sys.h里面*/
 //#define USART1_RX_DONE_mask 0x8000
@@ -783,24 +797,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 						USART1_SetDone;
 						//USART1_RX_CONFIG++; 
 						/*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
-					}else{USART1_Set_r_UnDone;} /*没有接收到\n，则重新等到\r出现*/
+					}else{USART1_SetUnDone;} /*没有接收到\n，则重新开始*/
 				}else
 				{
-					if(aRxBuffer1[0] == '\r') {USART1_RX_CONFIG |= USART1_RX_Rec_r_mask;
-												//USART1_RX_CONFIG++; /*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
-					}
-					else{
+					if(aRxBuffer1[0] == '\r') {
+						USART1_RX_CONFIG |= (USART1_RX_Rec_r_mask);
+						//USART1_RX_CONFIG++; /*接受完成后的 接受数据字节计数 不包含 '\r\n' 两个*/
+					}else{
 						USART1_RX_BUF[(USART1_RX_CONFIG) & (USART1_RX_Num_mask)] = aRxBuffer1[0];
 						USART1_RX_CONFIG++;
-						if(((USART1_RX_CONFIG) & (USART1_RX_Num_mask)) >= (USART1_RX_BUF_MaxNum)) USART1_SetDone; 
+						if(((USART1_RX_CONFIG) & (USART1_RX_Num_mask)) > (USART1_RX_BUF_MaxNum-1)) USART1_SetUnDone;
 					}
-
+					
 				}
 			}
 		}else 		/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时拿走，如果缓存满了则新入数据丢失*/
 		{
-			if(!fifo_is_full(Uart1_fifo))
-				fifo_add(Uart1_fifo, &aRxBuffer1[0]);
+			/*这里不好使，当数据量很大的时候MCU就卡死了，以后换成一个别的协议解析比如modbus等等*/
+//			BaseType_t YieldRequired;
+//			if(uxQueueSpacesAvailable(Uart1_fifo) > 0)
+//			{
+//				xQueueSendFromISR(Uart1_fifo,&aRxBuffer1[0],&YieldRequired);
+//			}else{
+//				xQueueOverwriteFromISR(Uart1_fifo,&aRxBuffer1[0],&YieldRequired);
+//			}
+//			if(YieldRequired == pdTRUE) portYIELD_FROM_ISR(YieldRequired);
 		}
 	}else if(huart->Instance==USART2)//如果是串口2
 	{

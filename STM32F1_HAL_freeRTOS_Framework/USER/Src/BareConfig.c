@@ -1,5 +1,6 @@
 #include "BareConfig.h"
 #include "sys_menu.h"
+#include "periphconfig.h"
 
 #define RunTimeFaultCheck_ENABLE 0	/*使能故障巡检，300ms周期*/
 
@@ -35,14 +36,18 @@ void Bare_Begin(void)
             Timer_IT_flags._100msec_flag = FALSE;
 			
 			/*100ms周期要做的事情*/
-			//TestLED_Ctrl = !TestLED_Ctrl;
 			
 			/*串口回显*/
-			char buf4uart1[(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum) ? (USART1_RX_BUF_MaxNum):(USART1_RX_FIFO_MaxNum)];
-			if(sys_USART1_RX_Fetch(FALSE, buf4uart1) == ReturnOK)
+			u16 num4uart1;
+			char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
+			if(buf4uart1 != NULL)
 			{
-				printf_uart(UART1,"%s-%d",buf4uart1,mystrlen(buf4uart1));
+				if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == ReturnOK)
+				{
+					printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
+				}
 			}
+			myfree(InrRAM,buf4uart1);
 			
 			
 		}
@@ -77,7 +82,7 @@ void Bare_Begin(void)
 			
 			keyProcess();	//菜单框架里的输入接管和获取函数
 			menuProcess();	//菜单框架里的按照输入执行功能函数
-						
+			TestLED_Ctrl = !TestLED_Ctrl;
 		}
 		
 		/*____________________________________1s周期执行：通常为运行状态指示，滴答心跳提醒等等__________________________________________*/
@@ -87,13 +92,19 @@ void Bare_Begin(void)
 			
 			/*1s周期要做的事情*/
 			
-			char RTC_buf[50];
-//			sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
-//			printf_uart(UART1,"%s",RTC_buf);
-			POINT_COLOR = BLUE;
-			sprintf(RTC_buf,"%2ds",Timer_IT_flags._1sec);
-			LCD_ShowString(10,20,16,(u8*)RTC_buf);
+			//显示RTC时间
 			
+			char RTC_buf[50];
+			#if SYSTEM_RTC_ENABLE
+				sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
+				printf_uart(UART1,"%s",RTC_buf);
+			#endif
+			POINT_COLOR = BLUE;
+			sprintf(RTC_buf,"%4ds",sys_GetsysRunTime(NULL,NULL,NULL));
+			LCD_ShowString(5,20,16,(u8*)RTC_buf);
+			
+			
+			//显示启动次数
 			#if SYSTEM_FLASH_IAP_ENABLE
 				sprintf(RTC_buf,"%d",StartUpTimes);
 				LCD_ShowString(35,20,16,(u8*)RTC_buf);

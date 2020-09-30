@@ -34,9 +34,9 @@ void Stdby_task(void *pvParameters);
 //STEP 4:设置任务要素
 struct TaskStructure Define_Task[task_Num] = {
 	/*任务函数      	任务名称      	分配堆栈      传入参数   任务优先级*/
-    {start_task,    	"start_task",   	128,        NULL,       2 },	//创建用户任务的任务，固定的不要删
-    {led0_task,     	"led0_task",    	50,         NULL,       3 },
-    {Stdby_task,     	"Stdby_task",    	2000,       NULL,       3 }
+    {start_task,		"start_task",		128,		NULL,		2	},	//创建用户任务的任务，固定的不要删
+    {led0_task,			"led0_task",		50,			NULL,		3	},
+    {Stdby_task,		"Stdby_task",		200,		NULL,		3	}
 };  
 /*注；堆栈实际占用字节数为定义数的四倍，即定义数的单位为字*/
 
@@ -68,16 +68,19 @@ void Task_Begin(void)
     }
 }
 
-/*__________开始初始化任务函数，这部分固定的不用动_____________*/
+/*__________开始初始化任务函数_____________*/
 void start_task(void *pvParameters)
 {
 	uint16 TaskCount;
     taskENTER_CRITICAL();           //进入临界区
 	
-	//进行队列、信号量等相关的初始化
-    
+	////STEP 4.5:设置通讯要素
+	//进行消息队列和任务通知等相关的初始化，用户按需要修改
 	
-	//进行任务相关的初始化
+	
+	
+	
+	//进行任务相关的初始化，以下部分固定的不用动
 	for(TaskCount = 1;TaskCount < task_Num;TaskCount++)
 	{
 		xTaskCreate_t(TaskCount);
@@ -107,7 +110,7 @@ void led0_task(void *pvParameters)
         vTaskDelayUntil(&PreviousWakeTime,pdMS_TO_TICKS(300));
 		//vTaskDelay(300);
 		//delay_ms(300);
-		//TestLED_Ctrl = !TestLED_Ctrl;
+		TestLED_Ctrl = !TestLED_Ctrl;
     }
 	
 	/*不能从任务函数中退出，除非提前删除任务，否则会调用configASSERT()引起错误*/
@@ -125,12 +128,16 @@ void Stdby_task(void *pvParameters)
 		#endif
 		
 		/*串口回显*/
-		char RTOS_buf4uart1[(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum) ? (USART1_RX_BUF_MaxNum):(USART1_RX_FIFO_MaxNum)];
-		
-		if(sys_USART1_RX_Fetch(FALSE, RTOS_buf4uart1) == ReturnOK)
+		u16 num4uart1;
+		char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
+		if(buf4uart1 != NULL)
 		{
-			printf_uart(UART1,"%s-%d",RTOS_buf4uart1,mystrlen(RTOS_buf4uart1));
+			if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == ReturnOK)
+			{
+				printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
+			}
 		}
+		myfree(InrRAM,buf4uart1);
 
 	}
 }
@@ -194,14 +201,14 @@ _____________大部分API罗列_____________
 			规范：1、FIFO先进先出储存缓存机制，永远队列尾存储据，队列头取数据
 				  2、小数据用拷贝方式（实参还可变），大数据用传递指针方式（实参与队列中数据同指针，不可随意变）
 				  3、队列为空时读取，有出队阻塞，可选0（不等），x（等x个节拍），portMAX_DELAY（死等），队列为满时写入则为入队阻塞。
-			创建：	QueueHandle_t qMsg = xQueueCreate(length,sizeof( uint32_t )); //参数：队列项目；每一项的长度，即项的数据类型
+			创建：	QueueHandle_t qMsg = xQueueCreate(length,sizeof( uint32_t )); //参数：队列项目数量；每一项的字节数
 			发送：	xQueueSend(qMsg,&Value,233); 				//参数：队列句柄；传入变量（拷贝）；超时时间（入队阻塞时间），
 																返回值：pdPASS成功；errQUEUE_FULL队列满，发送失败
 					xQueueSendFromISR(qMsg,&Value,BaseType_t Y) //中断版，参数：前两个一样，最后一个用于判断是否进行任务切换，中断函数没有超时时间，返回值同上
 						用法：BaseType_t YieldRequired;
 							  u8 err;
 							err = xQueueSendFromISR(qMsg,&Value,&YieldRequired);
-							if(err = pdPASS){;}//成功发送或者成功接收
+							if(err == pdPASS){;}//成功发送或者成功接收
 							if(YieldRequired == pdTRUE) portYIELD_FROM_ISR(YieldRequired);
 					xQueueOverwrite(qMsg,&Value); 				//覆盖写，仅没有超时时间，其他一样，返回值只有成功
 					xQueueOverwriteFromISR 						//中断版，覆盖写，参数同xQueueSendFromISR()

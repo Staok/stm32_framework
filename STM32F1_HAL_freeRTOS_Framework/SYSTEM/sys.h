@@ -4,10 +4,12 @@
 #include "sysVar.h"								/*¶¨ÒåÏµÍ³¼¶³£ÓÃµÄ±äÁ¿¡¢Êý¾ÝÀàÐÍºÍ¶þ½øÖÆ±íÊ¾ºê*/
 #include "stm32f1xx.h"
 #include "stm32f1xx_hal.h"						/*ÔÚÀïÃæµÄstm32f1xx_hal_conf.hÀïÃæÑ¡ÔñÓÃÄÄÐ©ÍâÉèµÄHAL¿â¡ª¡ª¡ª¡ª¡ª¡ª£¡°´ÐèÒª½øÐÐÐÞ¸Ä£¡*/
-#include "PeriphConfig.h"
-#include "FIFO.h"								/*ÓÃGithubÉÏÃæµÄÒ»¸ö¿ªÔ´²Ö¿â£¬
+//#include "FIFO.h"								
+												/*ÓÃGithubÉÏÃæµÄÒ»¸ö¿ªÔ´²Ö¿â£¬
 												Ò»¸öÊµÏÖ¶ÔÈÎºÎÐÎÊ½Êý¾ÝµÄ»·ÐÎ»º´æ£¬Ä¬ÈÏÒÑ¾­ÓÃÓÚ´®¿Ú½ÓÊÕ£¬²Î¿¼³ÌÐò¿´.hÎÄ¼þÄÚ
 												¿ªÔ´²Ö¿âµØÖ·£ºhttps://github.com/geekfactory/FIFO.git*/
+												
+												
 #include "malloc.h"								/*½è¼øÕýµãÔ­×ÓµÄ ÄÚ´æ¹ÜÀí ÕÂ½ÚµÄÔ´´úÂë×ÔÊµÏÖµÄmallocºÍfree*/				
 												
 												
@@ -25,6 +27,13 @@
 		  º¯Êý·µ»ØÖµ0±íÊ¾³É¹¦£¬ÕýÊý±íÊ¾Ê§°Ü£¬´ËÕýÊý¿ÉÒÔ±íÊ¾´íÎó´úÂë
 		  IO¾¡Á¿Éè¼ÆÎªµÍµçÆ½ÓÐÐ§£¬¸ßµçÆ½½ØÖ¹£»°´¼üIO¾¡Á¿¶¼Ê¹ÓÃÍâ²¿ÖÐ¶Ï
 		  ´ó¿éÄÚ´æÊ¹ÓÃÇëÓÃ±¾Ä£°åÄÚ´æ¹ÜÀíÏà¹ØAPI
+		  
+		  ÍâÉèÏà¹ØµÄËùÓÐAPI¾ùÔÚ£º
+				#include "sys.h"
+				ÀïÃæ£¬APP±àÐ´Ê±°´ÐèÒªÔÚ.cÎÄ¼þÄÚµ÷ÓÃÕâ¸ö¼´¿É
+		¶ÀÁ¢IO¿ÚÏà¹ØµÄËùÓÐAPI¾ùÔÚ£º
+				#include "PeriphConfig.h"
+				ÀïÃæ£¬APP±àÐ´Ê±°´ÐèÒªÔÚ.cÎÄ¼þÄÚµ÷ÓÃÕâ¸ö¼´¿É
 
 */
 
@@ -196,9 +205,13 @@ u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*Ìá¹©»ñÈ¡ÏµÍ³ÔËÐÐÊ±¼äµÄº¯
 #if SYSTEM_SUPPORT_OS
 	#include "FreeRTOS.h"	//FreeRTOSÊ¹ÓÃ,ÕâÀï²»ÒªÂÒ¶¯	  
 	#include "task.h"
+	#include "queue.h"
 	#include "TaskConfig.h"
 #else
 	#include "BareConfig.h"
+	
+//	#include "FreeRTOS.h"  /*ÕâÀïÊÇÎªÁË´®¿ÚÓÃÏûÏ¢¶ÓÁÐ½ÓÊÕÊý¾Ý£¬µ«ÊÇ²»ºÃÊ¹£¬ÒÔºó¸ÄÁË²»ÓÃ½ÓÊÕº¯ÊýµÄÊ±ºòÕâÁ½¸öinclude¾Í¿ÉÒÔÈ¥µô£¡*/
+//	#include "queue.h"
 #endif
 
 #if SYSTEM_SUPPORT_Menu
@@ -387,7 +400,7 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 #define STSTEM_TIM2_ENABLE		0			/*Í¨ÓÃ¶¨Ê±Æ÷2£¬¹¦ÄÜ×Ô¶¨£¬Ä¬ÈÏ·ÖÆµÏµÊýÎª72£¬³õÊ¼»¯º¯ÊýÔÚPeriphCconfig.cÀïÃæ¶¨Òå*/
 	#define STSTEM_TIM2_TI_ENABLE	1		/*ÊÇ·ñ¿ªÆô¶¨Ê±Æ÷2µÄ¶¨Ê±ÖÐ¶Ï*/
 	
-	#define STSTEM_TIM2_asPWMorCap	2		/*Ñ¡Ôñ¶¨Ê±Æ÷2×÷Îª...×¢£ºPWM(Êä³ö±È½Ï)¡¢ÊäÈë²¶»ñºÍÕý½»½âÂëÈý¸ö¹¦ÄÜ²»ÄÜ¹²ÓÃ£¡*/
+	#define STSTEM_TIM2_asPWMorCap	3		/*Ñ¡Ôñ¶¨Ê±Æ÷2×÷Îª...×¢£ºPWM(Êä³ö±È½Ï)¡¢ÊäÈë²¶»ñºÍÕý½»½âÂëÈý¸ö¹¦ÄÜ²»ÄÜ¹²ÓÃ£¡*/
 											/*Ð´3×÷ÎªÕý½»±àÂëÆ÷µÄ½âÂëÊ¹ÓÃ£¬Ö»ÄÜÊ¹ÓÃCH1ºÍCH2£¬¼´PA15ºÍPB3£¬Ä¬ÈÏÊ¹ÓÃÁ½Â·±ßÑØ´¥·¢£¬¼ÆÊýÖµÎªµ¥Â·ÉÏÉýÑØÊýµÄËÄ±¶
 												Õý½»½âÂëÊ¹ÓÃµ½TIM2µÄ¶¨Ê±ÖÐ¶Ï£¬±ØÐë´ò¿ª£¡µ«ÔÚ³õÊ¼»¯Ê±ÒÑ¾­Ä¬ÈÏ´ò¿ª*/
 											/*Ð´2×÷ÎªÆÕÍ¨¶¨Ê±Æ÷ÖÐ¶ÏÊ¹ÓÃ*/
@@ -526,7 +539,7 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 			×¢Òâ£º²É¼¯ÎÂ¶ÈÍ¨µÀ·µ»ØµÄÊÇADCµÄÔ­Ê¼Öµ£¬ÓÃ float Get_Temprate(u32 adcx) °ÑÔ­Ê¼Öµ×ª»»ÎªÊµ¼ÊÎÂ¶ÈÖµ(floatÀàÐÍ)
 	*/
 		
-#define SYSTEM_IWDG_ENABLE		1			/*¿ªÆô¶ÀÁ¢¿´ÃÅ¹·£¬Ä¬ÈÏ1SµÄÎ¹¹·ÖÜÆÚ£¬Ä¬ÈÏÔÚTIM4¶¨Ê±ÖÐ¶ÏÀïÎ¹¹·£¬ÓÃIWDG±Ø¿ªTIM4*/
+#define SYSTEM_IWDG_ENABLE		0			/*¿ªÆô¶ÀÁ¢¿´ÃÅ¹·£¬Ä¬ÈÏ1SµÄÎ¹¹·ÖÜÆÚ£¬Ä¬ÈÏÔÚTIM4¶¨Ê±ÖÐ¶ÏÀïÎ¹¹·£¬ÓÃIWDG±Ø¿ªTIM4*/
 											/*×¢£º¿´ÃÅ¹·ºÍµÍ¹¦ºÄ´ý»úÄ£Ê½²»ÄÜÍ¬Ê±¿ªÆô£¬ÒòÎª¿´ÃÅ¹·²»ÄÜ¹Ø±Õ£¬¿´ÃÅ¹·¸´Î»»á»½ÐÑµÍ¹¦ºÄ×´Ì¬*/
 
 /*DMAÓÃ·¨¼òµ¥ÁÐ¾Ù*/
@@ -618,30 +631,18 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 			Í³Ò»½ÓÊÕº¯Êý£º ·µ»ØreturnOK¼´ÓÐÊý¾Ý¿ÉÒÔÈ¡£¬·´Ö®ÎªReturnErr£»is_print£ºÊÇ·ñ´òÓ¡½ÓÊÕµ½µÄÊý¾Ý£»bufÓÃÓÚ´æ·Å½ÓÊÕµ½µÄÊý¾Ý£¬±ØÐëÏÈ¸ø¸ö×ã¹»´óµÄÈÝÆ÷
 							char sys_USART1_RX_Fetch(u8 is_print, char* buf)
 							ÓÃÀý£º
-								char buf4uart1[(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum) ? (USART1_RX_BUF_MaxNum):(USART1_RX_FIFO_MaxNum)];
-								if(sys_USART1_RX_Fetch(FALSE, buf4uart1) == ReturnOK)
+								u16 num4uart1;
+								char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
+								if(buf4uart1 != NULL)
 								{
-									printf_uart(UART1,"%s-",buf4uart1);
-									printf_uart(UART1,"%d",mystrlen(buf4uart1));
+									if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == ReturnOK)
+									{
+										printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
+									}
 								}
-			ÒÔÏÂÁ½¸öÊÇÐ­Òé0¡¢1µÄ½ÓÊÕÏ¸½Ú£¬ÒÑ¾­ÔÚsys_USART1_RX_Fetch()ÄÚÊµÏÖ£¬Ò»°ã²»ÓÃ¿´
-			Ð­Òé0£º
-				½ÓÊÜÇø»º´æ´óÐ¡ÉèÖÃ£º#define USART1_RX_BUF_MaxNum 200 Õâ¸öÓï¾äÔÚÏÂÃæ´®¿Úºê¶¨ÒåÇøÀïÃæ
-				ÅÐ¶ÏÊÇ·ñ½ÓÊÕÍê³ÉÒ»´Î£ºUSART1_isDone		ÓÃÓÚÅÐ¶ÏÊÇ·ñ½ÓÊÜÍê³ÉÒ»´Î Àý×Ó£º if(USART1_isDone){±íÊ¾½ÓÊÕÍê³ÉÒ»´Î}
-				²éÑ¯±¾´Î½ÓÊÕÍê³ÉÒ»´Îºó½ÓÊÕµ½µÄ×Ö·ûÊýÁ¿£ºUSART1_RX_ByteNum u8ÀàÐÍ ²»°üº¬"\r\n"Á½¸ö×Ö·û£¡
-				½ÓÊÕ»º´æÇø£º	USART1_RX_BUF[x] £¬x : 0~USART1_RX_ByteNum
-				½ÓÊÜ³É¹¦Ò»´ÎÖ®ºó£¬´¦ÀíÍêÊý¾ÝÖ®ºó£¬Çå½ÓÊÕÍê³É±êÖ¾£ºUSART1_SetUnDone;
-			Ð­Òé1£º
-				ÒÔFIFO´¢´æÇø½ÓÊÕ±£´æÊý¾Ý£¬FIFO³õÊ¼»¯º¯ÊýÔÚsys.cÀïÃæµÄ´®¿Ú³õÊ¼»¯º¯ÊýÖÐ
-				½ÓÊÜÇø»º´æ´óÐ¡ÉèÖÃ£º#define USART1_RX_FIFO_MaxNum 200 Õâ¸öÓï¾äÔÚÏÂÃæ´®¿Úºê¶¨ÒåÇøÀïÃæ
-				while (!fifo_is_empty(Uart1_fifo))
-				{
-					char/int/float/struct... fifodata;
-					fifo_get(Uart1_fifo, &fifodata);	//fifodata¿ÉÒÔÎª¸÷ÖÖ×Ö·ûÐÍ¡¢ÕûÐÎ¡¢¸¡µãÐÍ¡¢½á¹¹ÌåÐÍµÈµÈ
-					printf_uart(UART1,"%c",fifodata); 
-				}
-				ÓÉÓÚÃ»ÓÐÐ­Òé£¬Ö»ÊÇ´¢´æ£¬ËùÒÔÃ»ÓÐ½ÓÊÕÍê³É±êÖ¾
-				
+								myfree(InrRAM,buf4uart1);
+			¹ØÓÚÁ½¸öÐ­Òé0¡¢1µÄ½ÓÊÕÏ¸½Ú£¬ÒÑ¾­ÔÚsys_USART1_RX_Fetch()ÄÚÊµÏÖ£¬Ò»°ã²»ÓÃ¿´
+			×îÐÂ£º´®¿Ú1µÄ½ÓÊÕÐ­Òé1Ä¿Ç°²»¿ÉÓÃ£¬µÈÒÔºó¼ÓÉÏ¿ÉÒÔ½âÎö±ðµÄÐ­ÒéÈçmodbusµÈµÈ
 */
 
 /*¿ªÆôÓ²¼þSPI£¬x8/xBÏµÁÐÓÐÁ½¸öSPI£¬×î¸ß18MÎ»Ã¿Ãë
@@ -900,7 +901,7 @@ int8_t Stm32_Clock_Init(uint32_t PLL);		/*Ê±ÖÓÏµÍ³ÅäÖÃ*/
 
 #if SYSTEM_UART1_ENABLE||SYSTEM_UART2_ENABLE||SYSTEM_UART3_ENABLE
 	
-	#define USART1_RX_BUF_MaxNum 	500 	/*¶¨ÒåÓÃÐ­Òé0Ö»½ÓÊÜÒÔ'\r\n'½áÎ²µÄÊý¾ÝÊ±¿ÉÒÔ´æÔÚ×Ö·ûÊý×éÀïÃæµÄ×î´ó×Ö½ÚÊýÄ¿*/
+	#define USART1_RX_BUF_MaxNum 	200 	/*¶¨ÒåÓÃÐ­Òé0Ö»½ÓÊÜÒÔ'\r\n'½áÎ²µÄÊý¾ÝÊ±¿ÉÒÔ´æÔÚ×Ö·ûÊý×éÀïÃæµÄ×î´ó×Ö½ÚÊýÄ¿*/
 	#define USART1_RX_FIFO_MaxNum	200		/*¶¨ÒåÓÃÐ­Òé1ÓÃFIFO´æ´¢Êý¾ÝÊ±¿ÉÒÔ´æµÄ×î´ó×Ö½ÚÊýÄ¿*/
 	
 	#define UART1	1
@@ -919,24 +920,18 @@ int8_t Stm32_Clock_Init(uint32_t PLL);		/*Ê±ÖÓÏµÍ³ÅäÖÃ*/
 	#define USART1_RX_Rec_r_mask 0x2000
 	#define USART1_RX_Num_mask 0x1fff /*0001 1111 1111 1111*/
 	
-
-	extern char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; /*´®¿Ú1µÄÄ£Ê½1Êý¾Ý½ÓÊÜÇø*/
 	extern u16 USART1_RX_CONFIG;	/*    x            x           x        x xxxx xxxx xxxx      */
 									/*(½ÓÊÜÍê³É) (Ð­ÒéÄ£Ê½0/1) (½ÓÊÕµ½\r)   ´®¿Ú1½ÓÊÜÊý¾Ý×Ö½Ú¼ÆÊý */
 									/*´®¿Ú1½ÓÊÜÐ­Òé£º0ÎªÖ»½ÓÊÜÒÔ'\r\n'½áÎ²µÄÊý¾Ý£¬1ÎªÒÔFIFOÏÈ½øÏÈ³öÊµÏÖ½ÓÊÜÇø£¬ÎÞÐ­Òé*/
-									
-	#define USART1_SetDone 		USART1_RX_CONFIG |= USART1_RX_DONE_mask /*ÉèÖÃ´®¿Ú1½ÓÊÕÍê³É±êÖ¾Î»*/
-	#define USART1_SetUnDone 	USART1_RX_CONFIG &= USART1_RX_MODE_mask /*ÔÚÈÎÎñÖÐ´¦ÀíÍêºó¶Ô´®¿Ú1±êÖ¾Î»½øÐÐ¸´Î»£¬³ýÁËmodeÎ»£¬ÆäËûÎ»¶¼Ð´0*/
-	#define USART1_Set_r_UnDone	USART1_RX_CONFIG &= (!USART1_RX_Rec_r_mask)
-	#define USART1_SetMode(x) 	USART1_RX_CONFIG |= (((u16)x)<<14) 		/*ÓÃ»§¿ÉÓÃ£¬ÔÚÈÎÎñÖÐÉèÖÃ´®¿Ú1½ÓÊÕÐ­Òé*/
-	#define USART1_isDone 		(USART1_RX_CONFIG & USART1_RX_DONE_mask)/*ÓÃ»§ÓÃ£¬ÓÃÓÚÅÐ¶ÏÊÇ·ñ½ÓÊÜÍê³ÉÒ»´Î*/
-	#define USART1_RX_ByteNum 	(USART1_RX_CONFIG & USART1_RX_Num_mask)/*ÓÃ»§¿ÉÓÃ£¬·µ»Ø½ÓÊÕµÄ×Ö·ûÊýÁ¿*/
 	
-//	extern char USART1_RX_FIFO_buf[USART1_RX_FIFO_MaxNum]; /*´®¿Ú1µÄÄ£Ê½0µÄFIFOÊý¾Ý½ÓÊÜÇø*/
-//	extern fifo_t Test_fifo;
-//	extern fifo_t Test2_fifo;
-	extern fifo_t Uart1_fifo;
-	char sys_USART1_RX_Fetch(u8 is_print, char* buf);
+	#define USART1_SetDone 		USART1_RX_CONFIG |= (USART1_RX_DONE_mask) /*ÉèÖÃ´®¿Ú1½ÓÊÕÍê³É±êÖ¾Î»*/
+	#define USART1_SetUnDone 	USART1_RX_CONFIG &= (USART1_RX_MODE_mask) /*ÔÚÈÎÎñÖÐ´¦ÀíÍêºó¶Ô´®¿Ú1±êÖ¾Î»½øÐÐ¸´Î»£¬³ýÁËmodeÎ»£¬ÆäËûÎ»¶¼Ð´0*/
+	#define USART1_SetMode(x) 	USART1_RX_CONFIG |= (((u16)x)<<14) 		/*ÓÃ»§¿ÉÓÃ£¬ÔÚÈÎÎñÖÐÉèÖÃ´®¿Ú1½ÓÊÕÐ­Òé*/
+	#define USART1_isDone 		((USART1_RX_CONFIG) & (USART1_RX_DONE_mask))/*ÓÃ»§ÓÃ£¬ÓÃÓÚÅÐ¶ÏÊÇ·ñ½ÓÊÜÍê³ÉÒ»´Î*/
+	#define USART1_RX_ByteNum 	((USART1_RX_CONFIG) & (USART1_RX_Num_mask))/*ÓÃ»§¿ÉÓÃ£¬·µ»Ø½ÓÊÕµÄ×Ö·ûÊýÁ¿*/
+	
+//	extern QueueHandle_t Uart1_fifo;
+	char sys_USART1_RX_Fetch(u8 is_print, char *buf,u16 *RX_ByteNum);
 	
 	
 #endif
@@ -1024,6 +1019,200 @@ int8_t Stm32_Clock_Init(uint32_t PLL);		/*Ê±ÖÓÏµÍ³ÅäÖÃ*/
 	//HAL_StatusTypeDef HAL_RTC_SetAlarm_IT (RTC_HandleTypeDef * hrtc, RTC_AlarmTypeDef * sAlarm,uint32_t Format);
 #endif
 
+/*_______________________________¶¨Ê±Æ÷2___________________________________*/
+#if STSTEM_TIM2_ENABLE
+	extern TIM_HandleTypeDef TIM2_Handler;
+	void sys_TIM2_ENABLE(void); //Ð´ÔÚÔ¤±àÒëÍâÃæÎªÁËÍâ²¿ÎÄ¼þÄÜ¹»µ÷ÓÃ
+	#if (STSTEM_TIM2_asPWMorCap == 0)
+		#define TIM2PWM_Channel_1	1
+		#define TIM2PWM_Channel_2	2
+		#define TIM2PWM_Channel_3	3
+		#define TIM2PWM_Channel_4	4
+		extern TIM_OC_InitTypeDef 	TIM2_CH1Handler,TIM2_CH2Handler,TIM2_CH3Handler,TIM2_CH4Handler;
+		void TIM2_set_Channel_Pulse(u8 channel,float percent);
+	#elif (STSTEM_TIM2_asPWMorCap == 1)
+		extern TIM_IC_InitTypeDef TIM2_CHxConfig;
+		void Process_TIM2_IC_CallBack_Channel_1(void);
+		void Process_TIM2_IC_CallBack_Channel_2(void);
+		void Process_TIM2_IC_CallBack_Channel_3(void);
+		void Process_TIM2_IC_CallBack_Channel_4(void);
+	#elif (STSTEM_TIM2_asPWMorCap == 3)
+		extern TIM_Encoder_InitTypeDef sEncoderConfig;
+	#endif
+	
+	/*ÊäÈë²¶»ñË½ÓÐ±äÁ¿*/
+	extern u8  	TIM2CHx_CAPTURE_STA;	    				
+	extern u16	TIM2CHx_CAPTURE_VAL;
+	float Peek_TIM2_Cap_Val(void);
+
+	/*Õý½»½âÂëË½ÓÐ±äÁ¿*/
+	extern int32_t EncoderOverflowCount;//¶¨Ê±Æ÷Òç³ö´ÎÊý
+	float peek_TIM2_Encoder_Speed(void);
+	int32_t peek_TIM2_Encoder_Value(void);
+#endif
+
+/*_______________________________TIM1PWM___________________________________*/
+#if STSTEM_TIM1PWM_ENABLE
+		void sys_TIM1PWM_ENABLE(void);
+		extern TIM_HandleTypeDef TIM1_Handler;
+		#define TIM1PWM_Channel_1	1
+		#define TIM1PWM_Channel_2	2
+		#define TIM1PWM_Channel_3	3
+		#define TIM1PWM_Channel_4	4
+		void TIM1_set_Channel_Pulse(u8 channel,float percent);
+#endif
+
+/*_______________________________TIM8PWM___________________________________*/
+
+#if (STSTEM_TIM8PWM_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+		extern TIM_HandleTypeDef TIM8_Handler;
+		void sys_TIM8PWM_ENABLE(void);
+		#define TIM8PWM_Channel_1	1
+		#define TIM8PWM_Channel_2	2
+		#define TIM8PWM_Channel_3	3
+		#define TIM8PWM_Channel_4	4
+		void TIM8_set_Channel_Pulse(u8 channel,float percent);
+#endif
+
+/*_______________________________TIM6___________________________________*/
+
+#if (STSTEM_TIM6_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+	void sys_TIM6_ENABLE(void);
+	extern TIM_HandleTypeDef TIM6_Handler;
+#endif
+/*_______________________________TIM7___________________________________*/
+
+#if (STSTEM_TIM7_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+	void sys_TIM7_ENABLE(void);
+	extern TIM_HandleTypeDef TIM7_Handler;
+#endif
+
+
+/*_______________________________ADC1___________________________________*/
+
+#if SYSTEM_ADC1_ENABLE
+	void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
+	u16 Get_Adc(u32 ch);
+	#if SYSTEM_ADC1_useScan
+		extern DMA_HandleTypeDef  ADC1rxDMA_Handler;
+		void ADC_DMA_Cfg(void);
+	#endif
+	
+	extern ADC_HandleTypeDef ADC1_Handler;
+	void sys_ADC1_ENABLE(void);
+	u32 Get_Adc_Average(u32 ch,u8 times);
+	float Get_Temprate(u32 adcx);
+#endif
+
+/*_______________________________SPI1¡¢2________________________________*/
+
+#if (SYSTEM_SPI1_ENABLE) || (SYSTEM_SPI1_ENABLE)
+extern SPI_HandleTypeDef SPI1_Handler;  //SPI1¾ä±ú
+extern SPI_HandleTypeDef SPI2_Handler;  //SPI2¾ä±ú
+void sys_SPI1_ENABLE(void);
+void sys_SPI2_ENABLE(void);
+void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);
+void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);
+
+//Ð´¶Á8×Ö½Ú
+u8 SPI1_ReadWriteByte_8Byte(u8 TxData);
+//Ð´¶Á16×Ö½Ú£¬´«ÈëÒ»¸ö°üº¬2×Ö½ÚµÄu8*Ö¸Õë
+u8 SPI1_ReadWriteByte_16Byte(u8* TxData);
+//Ð´8×Ö½Ú
+u8 SPI1_WriteByte_8Byte(u8 TxData);
+//Ð´16×Ö½Ú£¬´«ÈëÒ»¸ö°üº¬2×Ö½ÚµÄu8*Ö¸Õë
+u8 SPI1_WriteByte_16Byte(u8* TxData);
+
+u8 SPI2_ReadWriteByte(u8 TxData);
+
+void sys_SPI1_SS_io_Init(void);
+void sys_SPI2_SS_io_Init(void);
+
+#endif
+/*_________________________________µÍ¹¦ºÄStandbyMode________________________________*/
+
+#if SYSTEM_StdbyWKUP_ENABLE
+	void sys_StdbyWKUP_ENABLE(void);
+	void sys_CheckWKUP_4RTOS(void);
+	#define WKUP_KD HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0)  //PA0 ¼ì²âÊÇ·ñÍâ²¿WK_UP°´¼ü°´ÏÂ
+	u8 Check_WKUP(void);  			//¼ì²âWKUP½ÅµÄÐÅºÅ
+	void Sys_Enter_Standby(void);	//ÏµÍ³½øÈë´ý»úÄ£Ê½
+#endif
+
+/*____________________________FLASH±à³Ì___________________________________*/
+
+#if SYSTEM_FLASH_IAP_ENABLE
+	void STMFLASH_Read(		u32 ReadAddr,	u16 *pBuffer,	u16 NumToRead);		//¿ÉÓÃAPI
+	void STMFLASH_Write(	u32 WriteAddr,	u16 *pBuffer,	u16 NumToWrite);	//¿ÉÓÃAPI
+	#if STM32_FLASH_WREN	//Èç¹ûÊ¹ÄÜÁËÐ´   
+		extern void FLASH_PageErase(uint32_t PageAddress);
+		void STMFLASH_Write_NoCheck(u32 WriteAddr,u16 *pBuffer,u16 NumToWrite);
+	#endif
+
+	u16 STMFLASH_ReadHalfWord(u32 faddr);
+#endif
+
+/*_____________________________________DAC________________________________________*/
+
+#if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)) && ((STM32F103xG) || (STM32F103xE))
+	extern DAC_HandleTypeDef DAC1_Handler;//DAC¾ä±ú
+	void sys_DAC_ENABLE(void);
+	void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac);
+	void DAC_Set_Ch1_Vol(float vol);
+	void DAC_Set_Ch2_Vol(float vol);
+#endif
+
+
+
+/*____________________SDIO SD_____________________________________________*/
+
+#if (SYSTEM_SDIO_SD_ENABLE) && ((STM32F103xG) || (STM32F103xE))
+	extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD¿¨ÐÅÏ¢
+	extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD¿¨CIDÐÅÏ¢
+	extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD¿¨¾ä±ú
+	#define SD_TIMEOUT 			((uint32_t)100000000)  			//³¬Ê±Ê±¼ä
+
+	u8 SD_Init(void);
+	u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt);
+	u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt);
+	void show_sdcard_info(void);						//Í¨¹ý´®¿Ú1´òÓ¡SD¿¨Ïà¹ØÐÅÏ¢
+
+#endif
+
+/*____________________________FSMC for SARM_____________________________________________*/
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
+
+	extern SRAM_HandleTypeDef SRAM_Handler;    //SRAM¾ä±ú
+	//Ê¹ÓÃNOR/SRAMµÄ Bank1.sector3,µØÖ·Î»HADDR[27,26]=10 
+	//¶ÔIS61LV25616/IS62WV25616,µØÖ·Ïß·¶Î§ÎªA0~A17 
+	//¶ÔIS61LV51216/IS62WV51216,µØÖ·Ïß·¶Î§ÎªA0~A18
+	#define SRAM1_BANK3_ADDR    ((u32)(0x68000000))	//¼ÆËã£º (0x6000 0000 | ((u32)64*1024*1024*(3 - 1)))
+
+	void sys_FSMC_SRAM_ENABLE(void);
+	void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n);
+	void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);
+
+#endif
+
+
+/*____________________________FSMC for LCD_____________________________________________*/
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
+	extern SRAM_HandleTypeDef TFTSRAM_Handler;    //SRAM¾ä±ú(ÓÃÓÚ¿ØÖÆLCD)
+
+	void LCD_with_FSMC_init_FSMC(void);
+	//LCDµØÖ·½á¹¹Ìå
+	typedef struct
+	{
+		vu16 LCD_REG;
+		vu16 LCD_RAM;
+	} LCD_TypeDef;
+	//Ê¹ÓÃNOR/SRAMµÄ Bank1.sector4,µØÖ·Î»HADDR[27,26]=11 A10×÷ÎªÊý¾ÝÃüÁîÇø·ÖÏß 
+	//×¢ÒâÉèÖÃÊ±STM32ÄÚ²¿»áÓÒÒÆÒ»Î»¶ÔÆä! 			    
+	#define LCD_BASE        ((u32)(0x6C000000 | 0x000007FE))
+	#define LCD             ((LCD_TypeDef *) LCD_BASE)
+#endif
+	
+	
 
 void delay_init(void);
 void delay_ms(uint16_t nms);

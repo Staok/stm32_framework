@@ -5,6 +5,8 @@ Welcome to the stm32_framework !
 
 目前只有F1，当F1完成后，F4就快了...吧。
 
+喜讯，STM32F207IET6的模板要来了~
+
 ```
 Author : Staok
 Email : superxhy@qq.com

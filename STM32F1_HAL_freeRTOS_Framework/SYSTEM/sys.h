@@ -774,7 +774,7 @@ PC12		SDIO_CK
 PD2			SDIO_CMD
 */
 /*备注：可用开发用DMA读写SD卡，这样更省时间，读写的时候就不用关中断了*/
-#define SYSTEM_SDIO_SD_ENABLE	0
+#define SYSTEM_SDIO_SD_ENABLE	1
 /*底层API：（不推荐直接读写！要用文件系统FATFS按照文件读写，并且SDIO的SD初始化就在FATFS初始化里）
 	一个块的大小：SDCardInfo.LogBlockSize
 	SD卡块的数量：SDCardInfo.LogBlockNbr
@@ -864,8 +864,7 @@ PD2			SDIO_CMD
 	#define SYSTEM_FSMC_use4SRAM	0		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
 /*
 用于LCD的部分：
-	  要做的：	LCD的相关代码还没有移植，LCD的驱动可以完全移用原子的LCD历程
-				但是还保留现在的LCD驱动，用预编译命令控制，我说的明白了吗，到用的时候好好改
+	  可用API详看TFTLCD.h
 
 用于SRAM的部分：
 	这里默认用的 块1（NORSRAM块）的区域3（区域4留给LCD喽~）（块1的区3和区4分别留给外部RAM和LCD，本模板默认，否则还得改地址）

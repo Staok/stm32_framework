@@ -1128,7 +1128,7 @@ void sys_ADC1_ENABLE(void)
 	#if SYSTEM_ADC1_useScan
 		/*先初始化DMA，再初始化ADC*/
 		ADC_DMA_Cfg();
-		//HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，指定接收数组，最后一个参数为数据长度
+		//HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，指定接收数组，最后一个参数为数据长度（要传多少次）
 	#endif
 	
 	ADC_CLKInit.PeriphClockSelection=RCC_PERIPHCLK_ADC;			//ADC外设时钟
@@ -1139,12 +1139,15 @@ void sys_ADC1_ENABLE(void)
     ADC1_Handler.Init.DataAlign=ADC_DATAALIGN_RIGHT;             //右对齐
 	
 	if(!SYSTEM_ADC1_useScan)
+	{
 		ADC1_Handler.Init.ScanConvMode=DISABLE;                  //非扫描模式
-	else ADC1_Handler.Init.ScanConvMode=ENABLE;					 //扫描模式
-	
-	if(SYSTEM_ADC1_useCircular)
-		ADC1_Handler.Init.ContinuousConvMode=ENABLE;                //连续转换 开启：本次转换玩规则通道内全部通道后又自动启动下一次转换；不开启：触发一次转换一次；
-    else ADC1_Handler.Init.ContinuousConvMode=DISABLE;
+	}else{
+		ADC1_Handler.Init.ScanConvMode=ENABLE;					 //扫描模式
+		
+		if(SYSTEM_ADC1_useCircular)
+			ADC1_Handler.Init.ContinuousConvMode=ENABLE;                //连续转换 开启：本次转换玩规则通道内全部通道后又自动启动下一次转换；不开启：触发一次转换一次；
+		else ADC1_Handler.Init.ContinuousConvMode=DISABLE;
+	}
 	
 	if(SYSTEM_ADC1_useScan)
 		ADC1_Handler.Init.NbrOfConversion=SYSTEM_ADC1_useChanlNum;   	//n个转换在规则序列中
@@ -1317,6 +1320,7 @@ void ADC_DMA_Cfg(void)
         
 		/*			数据源   数据源句柄中的DMA变量	  使用的DMA句柄*/
 	__HAL_LINKDMA(&ADC1_Handler,DMA_Handle,ADC1rxDMA_Handler);               //将DMA与ADC联系起来(发送DMA)
+	/*把DMA句柄ADC1rxDMA_Handler赋给ADC1_Handler的DMA_Handle*/
         
     HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 3, 0);                          //DMA中断优先级 必须开，勿动！
     HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);                                  //使能DMA中断
@@ -1330,6 +1334,11 @@ void DMA1_Channel1_IRQHandler(void)
 }
 
 //HAL_DMA_IRQHandler的回调函数，ADC转换完成所有规则组通道后的中断函数
+/*HAL_ADC_Start_DMA这个函数把HAL_ADC_ConvCpltCallback设为ADC1rxDMA_Handler这个DMA句柄的回调函数了，
+自动的，所以只需开DMA的中断，不需要开ADC中断，当所有通道都转换好后，DMA中断就会回调这个函数*/
+/*TODO：试验一下，把ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;这句话注释掉，应该不影响效果，
+因为HAL_ADC_Start_DMA这个函数必须要最后调用，所以DMA的回调函数被更新了！*/
+/*总之，把ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;注释掉，剩下的部分就是最标准的写法，大概*/
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	adValueDone = 1; /*标志本次规则组通道全部转换完成，勿动！*/
@@ -1849,7 +1858,7 @@ u8 SD_Init(void)
     SDCARD_Handler.Init.ClockEdge=SDIO_CLOCK_EDGE_RISING;          		//上升沿     
     SDCARD_Handler.Init.ClockBypass=SDIO_CLOCK_BYPASS_DISABLE;     		//不使用bypass模式，直接用HCLK进行分频得到SDIO_CK
     SDCARD_Handler.Init.ClockPowerSave=SDIO_CLOCK_POWER_SAVE_DISABLE;   //空闲时不关闭时钟电源
-    SDCARD_Handler.Init.BusWide=SDIO_BUS_WIDE_1B;                       //1位数据线
+    SDCARD_Handler.Init.BusWide=SDIO_BUS_WIDE_4B;                       //4位数据线
     SDCARD_Handler.Init.HardwareFlowControl=SDIO_HARDWARE_FLOW_CONTROL_ENABLE;//开启硬件流控
     SDCARD_Handler.Init.ClockDiv=SDIO_TRANSFER_CLK_DIV;            		//SD传输时钟频率最大25MHZ
 	

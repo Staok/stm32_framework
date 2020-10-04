@@ -1069,11 +1069,11 @@ void TIM8_set_Channel_Pulse(u8 channel,float percent)
 TIM_HandleTypeDef TIM6_Handler;
 void sys_TIM6_ENABLE(void)
 {
-	TIM4_Handler.Instance=TIM6;                          		//基本定时器6
-    TIM4_Handler.Init.Prescaler = (72-1);                     	//分频系数
-    TIM4_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
-    TIM4_Handler.Init.Period = tim6arr;                        	//自动装载值
-    TIM4_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
+	TIM6_Handler.Instance=TIM6;                          		//基本定时器6
+    TIM6_Handler.Init.Prescaler = (72-1);                     	//分频系数
+    TIM6_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
+    TIM6_Handler.Init.Period = tim6arr;                        	//自动装载值
+    TIM6_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
     HAL_TIM_Base_Init(&TIM6_Handler);
     
     HAL_TIM_Base_Start_IT(&TIM6_Handler); //使能定时器6和定时器6更新中断：TIM_IT_UPDATE 
@@ -1094,11 +1094,11 @@ void TIM6_IRQHandler(void)
 TIM_HandleTypeDef TIM7_Handler;
 void sys_TIM7_ENABLE(void)
 {
-	TIM4_Handler.Instance=TIM7;                          		//基本定时器7
-    TIM4_Handler.Init.Prescaler = (72-1);                     	//分频系数
-    TIM4_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
-    TIM4_Handler.Init.Period = tim7arr;                        	//自动装载值
-    TIM4_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
+	TIM7_Handler.Instance=TIM7;                          		//基本定时器7
+    TIM7_Handler.Init.Prescaler = (72-1);                     	//分频系数
+    TIM7_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
+    TIM7_Handler.Init.Period = tim7arr;                        	//自动装载值
+    TIM7_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
     HAL_TIM_Base_Init(&TIM7_Handler);
     
     HAL_TIM_Base_Start_IT(&TIM7_Handler); //使能定时器6和定时器7更新中断：TIM_IT_UPDATE 

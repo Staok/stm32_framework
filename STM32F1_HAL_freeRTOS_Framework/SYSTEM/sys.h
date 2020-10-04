@@ -230,7 +230,7 @@ u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*提供获取系统运行时间的函
 	#include "pid.h"
 #endif
 
-/*_____MCU外设启用选择函数_____*/
+/*_____MCU外设启用选择_____*/
 #define SYSTEM_MCO_PA8_OUT		0				/*设置PA8为MCO输出，默认时钟源为HSE*/
 
 /*配置使用RTC，确保LSE连接有36.768kHz的晶振，确保RTC有VBAT备用电源

@@ -129,7 +129,7 @@ void runFunctions(const struct MenuItem *MenuItemNow,const struct input_struct i
 							RunMode1.isRun = !RunMode1.isRun;
 							RunMode2.isRun = !RunMode1.isRun;//mode1与mode2的运行状态应该互斥
 							
-							//TestLED_Ctrl = RunMode1.isRun; //点个灯，以示庆祝，不，以示RunMode1成功执行
+							TestLED_Ctrl = RunMode1.isRun; //点个灯，以示庆祝，不，以示RunMode1成功执行
 							
 						}else if(mystrcmp(MenuItemNow->DisplayString,"RunMode2") == 0)
 						{

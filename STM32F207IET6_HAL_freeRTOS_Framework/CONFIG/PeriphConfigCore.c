@@ -128,10 +128,10 @@ void sys_Device_Init_Seq(void)
 {
 	/*用户应用的Device初始化序列——开始*/
 	
-	// /*用户IO初始化，可选择初始化某个特定器件或者所有器件（ALL_Index）*/
-	// Devices_Init(UserDevices,TestLED_Index);
-	// Devices_Init(UserDevices,KEY_Index);
-	// //Devices_Init(UserDevices,LCD_Index); //使用LCD设备的初始化函数初始化IO
+	/*用户IO初始化，可选择初始化某个特定器件或者所有器件（ALL_Index）*/
+	Devices_Init(UserDevices,TestLED_Index);
+	Devices_Init(UserDevices,KEY_Index);
+	Devices_Init(UserDevices,LCD_Index); //使用LCD设备的初始化函数初始化IO
 	
 	// /*LCD初始化*/
 	// #if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))

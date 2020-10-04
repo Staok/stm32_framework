@@ -1,6 +1,60 @@
 #ifndef __PERIPHCONFIGCORE_H
 #define __PERIPHCONFIGCORE_H
+
 /*
+启动：	BOOT1	BOOT0		启动区域
+		  x		  0			FLASH
+		  0		  1			系统储存器(ISP下载)
+		  1		  1			SRAM
+*/
+/*_________________________________PIN MAP_________________________________________
+注：以下这些外设的IO在其初始化函数内已经初始化好，不用再单独初始化
+						[IO]										[描述]
+外设：	* PA8												MCO输出，默认时钟源为HSE
+
+		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
+		  CH1/PB4	CH2/PB5		CH3/PB0		CH4/PB1			TIM3部分重映射PWM口
+		  CH1/PC6	CH2/PC7		CH3/PC8		CH4/PC9			TIM3完全重映射PWM口
+		  
+		* TX/PA9	RX/PA10		TX/PB6		RX/PB7			USART1默认引脚和重映射引脚
+		  TX/PA2	RX/PA3		TX/PD5		RX/PD6			USART2默认引脚和重映射引脚
+		  TX/PB10	RX/PB11		TX/PD8		RX/PD9			USART3默认引脚和重映射引脚
+		  
+		* CS/PA4	CLK/PA5		MISO/PA6	MOSI/PA7		SPI1默认引脚
+		  CS/PB12	CLK/PB13	MISO/PB14 	MOSI/PB15		SPI2默认引脚
+		  
+		* 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15	ADC1各个通道引脚
+		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
+		  
+		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
+		
+		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
+		
+		* PA4		PA5										DAC_OUT1  DAC_OUT2（hd容量系类外设）
+		
+		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
+		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
+		  
+		* 													FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
+		  D2	D3	NOE	NWE	NE1/NCE2	D13	D14 D15 	A16 	A17 	A18 	D0 		D1
+		  PD0	PD1	PD4	PD5	PD7			PD8	PD9	PD10	PD11	PD12	PD13	PD14	PD15
+		  
+		  NBL0	NBL1	A23	A19	A20	A21	A22	D4	D5	D6	D7		D8		D9		D10		D11		D12
+		  PE0	PE1		PE2	PE3	PE4	PE5	PE6	PE7	PE8	PE9	PE10	PE11	PE12	PE13	PE14	PE15
+		  
+		  A0	A1	A2	A3	A4	A5	A6		A7		A8		A9		A10	A11	A12	A13	A14	A15
+		  PF0	PF1	PF2	PF3	PF4	PF5	PF12	PF13	PF14	PF15	PG0	PG1	PG2	PG3	PG4	PG5
+		  
+		  NE2/NCE3	NCE4_1/NE3	NCE4_2	NE4		A24		A25
+		  PG9		PG10		PG11	PG12	PG13	PG14
+		  
+		* ...TODO:TIM1/8等、DCMI、USB、CAN等外设的IO还没有列出
+
+
+用户：	*
+*/
+
+/*_______________________________外设资源介绍___________________________________________
 	STM32F207IET6：
 		512KB(hd)FLASH，128KB（SRAM1）+112KB+16KB（SRAM2）RAM，176脚LQFP封装，140个GPIO，-40~85℃
 	
@@ -29,11 +83,23 @@
 	
 */
 
+/*_______________________________外设优先级划分___________________________________________*/
 /*
-启动：	BOOT1	BOOT0		启动区域
-		  x		  0			FLASH
-		  0		  1			系统储存器(ISP下载)
-		  1		  1			SRAM
+优先级分组为4，只有0~15的16级抢占优先级
+
+
+优先级	0			1				2				3				4				5				...
+	   保留	    TIM4(时基)	 	按键外部中断	按键外部中断	TIM6(辅助时基)
+											    TIM3（PWNM）	TIM7(辅助时基)
+											    TIM2（多功能）   
+*/
+
+/*
+   	CPU内部 FLASH  			【0x0800 0000 - 0x080F FFFF】,容量512K(0x80000)字节
+	CPU内部 SRAM1  			【0x2000 0000 - 0x2000 FFFF】,容量128K(0x20000)字节
+	
+	外部扩展SRAM 在块1区3   【0x6800 0000 - 0x681F FFFF】,容量1MB(0x100000)字节（512K个16bit）
+	TFT LCD 地址 在块1区4   【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）TODO：改为A0
 */
 
 /*所有main的头文件都放在这里*/
@@ -116,22 +182,11 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
  *_________________________________________________用户GPIO配置_________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
 
-
-
-
-
-
-
-
-
-
-
+/*在PeriphConfig.c文件里去配置用户GPIO*/
 
 /*_____________________________________\\\                               ///____________________________________________*
  *___________________________________________________外设配置___________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
-
-
 /*
  *FreeRTOS启用
  */
@@ -140,9 +195,9 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 													默认用于任务的RAM堆栈大小为5KB，按需修改！
 												注意：还要在FreeRTOSConfig.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则系统不会调用FreeRTOS的任务切换SVC中断函数，跑不起来！*/
 	#if SYSTEM_SUPPORT_OS
-		 #include "FreeRTOS.h"	//FreeRTOS使用,这里不要乱动	  
-		 #include "task.h"
-		 #include "queue.h"
+		#include "FreeRTOS.h"	//FreeRTOS使用,这里不要乱动	  
+		#include "task.h"
+		#include "queue.h"
 		#include "TaskConfig.h"
 	#else
 		#include "BareConfig.h"	
@@ -293,6 +348,11 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 #endif
 
 
+
+
+
+
+#define Version_of_stm32_framework "2.3"
 
 /*Author:		MaxwellXyao*/
 #define BIT(n) 					(1 << n) 				//位mask

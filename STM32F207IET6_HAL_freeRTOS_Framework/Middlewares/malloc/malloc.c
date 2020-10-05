@@ -5,7 +5,7 @@
 
 //内存池(32字节对齐)（真正储存东西的地方）
 __align(32) u8 mem1base[InrRAM_MAX_SIZE];														//内部SRAM内存池
-#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM))
 	__align(32) u8 mem2base[ExRAM1_MAX_SIZE] __attribute__((at(0X68000000)));					//外部SRAM内存池
 #else
 	__align(32) u8 mem2base[1]; //防止报错
@@ -13,27 +13,30 @@ __align(32) u8 mem1base[InrRAM_MAX_SIZE];														//内部SRAM内存池
 
 //内存管理表
 u16 mem1mapbase[InrRAM_ALLOC_TABLE_SIZE];													//内部SRAM内存池MAP
-#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM))
 	u16 mem2mapbase[ExRAM1_ALLOC_TABLE_SIZE] __attribute__((at(0X68000000 + ExRAM1_MAX_SIZE)));	//外部SRAM内存池MAP
 #else 
 	u16 mem2mapbase[1]; //防止报错
 #endif
 
 //内存管理参数	   
-const u32 memtblsize[RAM_Num] = {InrRAM_ALLOC_TABLE_SIZE,	ExRAM1_ALLOC_TABLE_SIZE};		//存储各个内存表的大小参数
-const u32 memblksize[RAM_Num] = {InrRAM_BLOCK_SIZE,			ExRAM1_BLOCK_SIZE};				//存储各个内存块的分块大小参数
-const u32 memsize[RAM_Num]	= 	{InrRAM_MAX_SIZE,			ExRAM1_MAX_SIZE};				//存储各个内存块的字节数总大小参数
+const u32 memtblsize[RAM_Num]	= {InrRAM_ALLOC_TABLE_SIZE,	ExRAM1_ALLOC_TABLE_SIZE};		//存储各个内存块的内存表的大小
+const u32 memblksize[RAM_Num]	= {InrRAM_BLOCK_SIZE,		ExRAM1_BLOCK_SIZE};				//存储各个内存块的块大小
+const u32 memsize[RAM_Num]		= {InrRAM_MAX_SIZE,			ExRAM1_MAX_SIZE};				//存储各个内存块的字节数总大小
 
 
 //内存管理控制器
 struct _m_malloc_dev malloc_dev =
 {
-	my_mem_init,				//内存初始化
-	my_mem_perused,				//内存使用率
-	mem1base,mem2base,			//内存池
-	mem1mapbase,mem2mapbase,	//内存管理状态表
-	0,0,  		 				//内存管理未就绪
+	.init = my_mem_init,										//内存初始化
+	.perused = my_mem_perused,									//内存使用率
+	.membase[0] = mem1base, 	.membase[1] = mem2base,			//内存池（有几个内存块写几个）
+	.memmap[0] = mem1mapbase, 	.memmap[1] = mem2mapbase,		//内存管理状态表（有几个内存块写几个）
+	.memrdy[0] = 0, 			.memrdy[1] = 0,  		 		//内存管理未就绪（有几个内存块写几个）
 };
+
+
+/*__________以下基本不用动_________________*/
 
 //内存管理初始化  
 //memx:所属内存块

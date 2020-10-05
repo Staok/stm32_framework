@@ -60,11 +60,12 @@
 	
 	时钟分配：
 		HSE外接25Mhz晶振，LSE外接32.768Khz晶振
+		开启HSE（25M）、LSE（32.768K）和LSI（32K），关闭HSI（16M）
 		PLLCLK = SYSCLK = AHBCLK = HCLK 均为120MHz，APB2外设为60MHz，APB1外设为30Mhz，APB2定时器为120MHz，APB1定时器为60Mhz
 		
 		ETH\RNG\FSMC\USB FS\USB HS\GPIO\DMA 均在120M
 		RTC 时钟取自 LSE = 32.768K
-		IWDG时钟取自 HSE = 25M
+		IWDG时钟取自 LSI = 32K
 		DCMI 48 Mbyte/s max
 		
 		APB2外设(60M)：SDIO\USART1\USART6\SPI1\ADC123
@@ -102,12 +103,13 @@
 	TFT LCD 地址 在块1区4   【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）TODO：改为A0
 */
 
+/*________________________________模板固定搭配____________________________________________*/
 /*所有main的头文件都放在这里*/
 #include "sysVar.h"								/*定义系统级常用的变量、数据类型和二进制表示宏*/
 #include "stm32f2xx.h"
 #include "stm32f2xx_hal.h"						/*在里面的stm32f2xx_hal_conf.h里面选择用哪些外设的HAL库——————！按需要进行修改！*/
 
-//#include "malloc.h"								/*借鉴的 内存管理 章节的源代码自实现的malloc和free*/	
+#include "malloc.h"							/*借鉴的 内存管理 章节的源代码自实现的malloc和free*/	
 #include "sys_menu.h"							/*模板固定搭配！必须开启！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！相当于io_ctrl*/
 #include "MyString.h"							
 												/*模板固定搭配！必须开启！提供一个实现了string.h大部分字符操作函数的库
@@ -123,6 +125,8 @@
 													void *mymemcpy(void *des,const void *src,size_t len);
 													char *mystrtok(char *s, const char *delim);*/
 int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
+unsigned char BCD2HEX(unsigned char bcd_data); 	//提供BCD转为HEX子程序
+unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 #include "printf.h"								
 												/*模板固定搭配！必须开启！包含且编译printf.h，github开源文件，无依赖，功能比较全。
 													约占6KB，对于stm32够，对于其他小容量MCU则看“其他几个sprintf实现”文件夹里面的,不要纠结了。
@@ -142,12 +146,12 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 												/*默认：引脚上拉							(CH1/PA6, CH2/PA7, CH3/PB0, CH4/PB1)*/
 		#define STSTEM_TIM3PWM_REMAP_PARTIAL	0	/*定时器3部分引脚重映射，Partial remap  (CH1/PB4, CH2/PB5, CH3/PB0, CH4/PB1)*/
 		#define STSTEM_TIM3PWM_REMAP_ENABLE		0	/*定时器3全部引脚重映射，Full remap     (CH1/PC6, CH2/PC7, CH3/PC8, CH4/PC9)*/
-		#define STSTEM_TIM3PWM_CHANNEL_ENABLE	B0000_1000 /*输出通道选择，共四个通道*/
+		#define STSTEM_TIM3PWM_CHANNEL_ENABLE	(B0000_1000) /*输出通道选择，共四个通道*/
 													/*可选  B0000_0001|B0000_0010|B0000_0100|B0000_1000	*/
 		#define TIM3PWM_BuzzerCh				TIM3PWM_Channel_4	//选择用于蜂鸣器的PWM通道
 		#define STSTEM_TIM3PWM_TI_ENABLE		0	/*是否开启定时器3的定时中断，除非急需用，否则一般不开*/
 		
-		#define tim3prsc STSTEM_TIM3PWM_Period_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为720，这里是选择预分频系数）*/
+		#define tim3prsc STSTEM_TIM3PWM_Period_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为1000，这里是选择预分频系数）*/
 			#define STSTEM_TIM3PWM_Period_2K	(30-1)
 			#define STSTEM_TIM3PWM_Period_5K	(12-1)
 			#define STSTEM_TIM3PWM_Period_10K	(6-1)
@@ -170,14 +174,24 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 /*_____________________________________\\\                               ///____________________________________________*
  *___________________________________________________组件选择___________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
-#define SYSTEM_SUPPORT_pid		1				/*提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面*/
+#define SYSTEM_SUPPORT_pid		0				/*提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面*/
 												/*里面另提供一个一阶低通滤波实现函数*/
 												/*一阶低通滤波器 float FirstOrderLPF(float NewValue);*/												
 	#if SYSTEM_SUPPORT_pid						/*如果不包含，其他文件就无法调用此组件的API*/
 		#include "pid.h"
 	#endif
 
+#define SYSTEM_SUPPORT_simuspi	0				/*是否调用软件模拟SPI，具体用法在.h文件里介绍*/
+	#if SYSTEM_SUPPORT_simuspi
+		#include "simuspi.h"
+	#endif
+	
+#define SYSTEM_SUPPORT_simui2c	0				/*是否调用软件模拟I2C，具体用法在.h文件里介绍*/
+	#if SYSTEM_SUPPORT_simui2c
+		#include "simui2c.h"
+	#endif
 
+#include "TFTLCD.h"
 /*_____________________________________\\\                               ///____________________________________________*
  *_________________________________________________用户GPIO配置_________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
@@ -202,6 +216,47 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 	#else
 		#include "BareConfig.h"	
 	#endif
+
+#define SYSTEM_IWDG_ENABLE		0			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/
+											/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
+#define SYSTEM_MCO_PA8_OUT		0			/*设置PA8为MCO输出，默认时钟源为HSE（25M），五倍分频（最大分频）*/
+
+
+/*配置使用RTC，确保LSE连接有36.768kHz的晶振，确保RTC有VBAT备用电源
+	默认开启RTC闹钟中断，系统在待机模式下可选被闹钟唤醒
+API:
+	设置时分秒：HAL_StatusTypeDef HAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format);
+	读取时分秒：HAL_StatusTypeDef HAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format);
+	设置年月日：HAL_StatusTypeDef HAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format);
+	读取年月日：HAL_StatusTypeDef HAL_RTC_GetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format);
+	
+	设置闹钟：HAL_StatusTypeDef HAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sAlarm, uint32_t Format);
+	闹钟A的事件回调函数在.c里：void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+	例子：
+		RTC_TimeTypeDef RTC_RealTime = {
+			.Hours = xx,
+			.Minutes = xx,
+			.Seconds = xx,
+		};
+		RTC_DateTypeDef RTC_RealDate = {0}; //这两个和上面同理
+		RTC_AlarmTypeDef RTC_AlarmA = {0};
+		
+		HAL_RTC_SetTime(&RTC_Handler, &sTime, RTC_FORMAT_BCD); 		//设置时分秒
+		//日期不举例了，不常用
+		HAL_RTC_SetAlarm_IT(&RTC_Handler, &sAlarm, RTC_FORMAT_BCD); //设置闹钟
+		HAL_RTC_DeactivateAlarm(&RTC_Handler,RTC_ALARM_A);
+*/
+#define SYSTEM_RTC_ENABLE		0
+
+
+/*配置使用CRC循环冗余校验
+这个CRC计算模块使用常见的、在以太网中使用的计算多项式：
+X32 + X26 + X23 + X22 + X16 + X12 + X11 + X10 +X8 + X7 + X5 + X4 + X2 + X + 1
+写成16进制就是：0x04C11DB7
+API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    114
+	HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE); //返回值为uint32_t的计算结果*/
+#define SYSTEM_CRC_ENABLE		1
+
 
 /*
  *串口配置
@@ -249,9 +304,223 @@ int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 			关于两个协议0、1的接收细节，已经在sys_USART1_RX_Fetch()内实现，一般不用看
 */
 
+/*通过用定时器2：16位，四个独立通道可用于：输入捕获、输入比较、PWM、单脉冲，多种途径触发DMA中断*/
+#define STSTEM_TIM2_ENABLE		0			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
+	#define STSTEM_TIM2_TI_ENABLE	0		/*是否开启定时器2的定时中断*/
+	
+	#define STSTEM_TIM2_asPWMorCap	3		/*选择定时器2作为...注：PWM(输出比较)、输入捕获和正交解码三个功能不能共用！*/
+											/*写3作为正交编码器的解码使用，只能使用CH1和CH2，即PA15和PB3（已经默认上拉），默认使用两路边沿触发，计数值为单路上升沿数的四倍
+												正交解码使用到TIM2的定时中断，必须打开！但在初始化时已经默认打开*/
+											/*写2作为普通定时器中断使用*/
+											/*写1作为输入捕获：可以获取高电平或者低电平的时间，默认不分频，不滤波
+												输入捕获使用到TIM2的定时中断，必须打开！但在初始化时已经默认打开*/
+											/*写0作为PWM：默认PWM1模式，向上计数，低电平有效，一个周期内占空比越大低电平时间越长
+												引脚说明：			没有重映射			两种部分重映射			完全重映射
+												TIM2四个通道：		PA0 PA1 PA2 PA3		含有前面的引脚		PA15 PB3 PB10 PB11
+												注意：由于PA2 PA3串口2占用，PA0 PA1由ADC占用，所以TIM2的PWM只用完全重映射！！
+														但PB10 PB11串口3占用，要么不用串口3，要么串口3重映射
+												初始化后自动打开相应通道的PWM输出
+											*/
+			/*PWM输出比较功能选项*/
+			#define tim2arr STSTEM_TIM2PWM_Period_5K			/*选择定时器输出频率（预分频系数为60，计数频率为1Mhz，这里选择重装值）*/
+				#define STSTEM_TIM2PWM_Period_1K	(1000-1)	/*注意：这里是选择重装值，也是占空比的分辨率，频率高则分辨率低，反之亦然，慎选*/
+				#define STSTEM_TIM2PWM_Period_2K	(500-1)
+				#define STSTEM_TIM2PWM_Period_5K	(200-1)
+				#define STSTEM_TIM2PWM_Period_10K	(100-1)
+				#define STSTEM_TIM2PWM_Period_20K	(50-1)
+				#define STSTEM_TIM2PWM_Period_50K	(20-1)
+				#define STSTEM_TIM2PWM_Period_100K	(10-1)
+				#define STSTEM_TIM2PWM_Period_200K	(5-1)
+			#define STSTEM_TIM2PWM_CHANNEL_ENABLE	(B0000_0001|B0000_0010) /*输出通道选择，共四个通道，可以相与打开多个通道，PA15 PB3 PB10 PB11*/
+			/*可用API：
+				HAL_TIM_PWM_Start(&TIM2_Handler,TIM_CHANNEL_2);		开启TIM2的PWM通道2
+				HAL_TIM_PWM_Stop(&TIM2_Handler,TIM_CHANNEL_2);		关闭TIM2的PWM通道2，但看源码好像使所有通道都关闭了，待实验
+				
+				设置TIM2的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+				TIM2_set_Channel_Pulse(TIM2PWM_Channel_2,88.8);
+			*/
+			
+			/*输入捕获功能选项，自动设置庄装在值为0xff，计数频率为1Mhz*/
+			#define STSTEM_TIM2_Cap_trigV	1			/*写1高电平触发一次输入捕获，写0相反，写2双边沿触发*/
+			#define STSTEM_TIM2_Cap_Channel	B0000_0001	/*选择用哪个通道当输入捕获，只能四选一！！*/
+			/*可用API：
+				float Peek_TIM2_Cap_Val();		获取最近一次TIM2输入捕获的脉冲时间，单位 毫秒，float类型，按照设置的捕获沿进行，可以随时随地调用此函数
+			*/
+			
+			/*正交解码功能选项，自动设置庄装在值为0xff，计数频率为1Mhz*/
+			// 4 : 			使用定时器编码器接口捕获AB相的上升沿和下降沿，一个脉冲*4
+			// ENCODER：	编码器线数(转速一圈输出脉冲数)
+			// SPEEDRATIO：	电机减数比，内部电机转动圈数与电机输出轴转动圈数比，即减速齿轮比，编码器一般和电机转速一致，即直接把编码器安装到电机轴上！
+			#define ENCODER     300    	// 编码器线数
+			#define SPEEDRATIO  1   	// 电机减速比
+			#define PPR         (SPEEDRATIO*ENCODER*4) // Pulse/r 每圈可捕获的脉冲数，不用动！
+			/*可用API：
+				得到当前计数值：int32_t peek_TIM2_Encoder_Value(void); //用于表示编码器当前的绝对位置
+				速度：只需去定时器溢出中断函数HAL_TIM_PeriodElapsedCallback的TIM4中用一个速度变量接着 peek_TIM2_Encoder_Speed()返回的速度值 单位 转/秒
+			*/
+			
+
+/*hd系列外设，基本定时器6、7，只能用于定时中断，提供更多的同步功能*/
+#define STSTEM_TIM6_ENABLE		1
+	#define tim6arr STSTEM_TIM6_Period_5K			/*选择定时器6输出频率（预分频系数为60，这里选择重装值）*/
+		#define STSTEM_TIM6_Period_1K	(1000-1)
+		#define STSTEM_TIM6_Period_2K	(500-1)
+		#define STSTEM_TIM6_Period_5K	(200-1)
+		#define STSTEM_TIM6_Period_10K	(100-1)
+		#define STSTEM_TIM6_Period_20K	(50-1)
+		#define STSTEM_TIM6_Period_50K	(20-1)
+		#define STSTEM_TIM6_Period_100K	(10-1)
+		#define STSTEM_TIM6_Period_200K	(5-1)
+#define STSTEM_TIM7_ENABLE		1
+	#define tim7arr STSTEM_TIM6_Period_5K			/*选择定时器7输出频率（预分频系数为60，这里选择重装值）*/
+		#define STSTEM_TIM7_Period_1K	(1000-1)
+		#define STSTEM_TIM7_Period_2K	(500-1)
+		#define STSTEM_TIM7_Period_5K	(200-1)
+		#define STSTEM_TIM7_Period_10K	(100-1)
+		#define STSTEM_TIM7_Period_20K	(50-1)
+		#define STSTEM_TIM7_Period_50K	(20-1)
+		#define STSTEM_TIM7_Period_100K	(10-1)
+		#define STSTEM_TIM7_Period_200K	(5-1)
+/*
+	关闭定时中断：（先清除中断标志位，再关闭中断）
+		__HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);
+		HAL_TIM_Base_Stop_IT(&TIM6_Handler);
+		
+		__HAL_TIM_CLEAR_IT(&TIM76_Handler, TIM_IT_UPDATE);
+		HAL_TIM_Base_Stop_IT(&TIM7_Handler);
+		
+		注： __HAL_TIM_CLEAR_FLAG(&TIM6_Handler,TIM_FLAG_UPDATE);和
+			 __HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);效果应该一样
+*/
+
+
+/*开启硬件SPI，x8/xB系列有两个SPI，最高18M位每秒
+默认：尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射，默认一次发送八位bits数据，SS引脚用户单独定义！
+		master模式，MSB First，SS低电平选中器件
+		SCK空闲时刻为高电平(时钟极性CPOL=1)（默认）：
+			若使用第二跳变沿数据被采样(时钟相位CPHA=1)：数据线在 SCK 的偶数边沿采样（默认）
+			若使用第一跳变沿数据被采样(时钟相位CPHA=0)：数据线在 SCK 的奇数边沿采样
+引脚：
+	SPI1->CS	SPI1->CLK	SPI1->MISO	SPI1->MOSI 	—————— 	SPI2->CS	SPI2->CLK	SPI2->MISO	SPI2->MOSI
+	PA4			PA5			PA6			PA7					PB12		PB13		PB14		PB15
+*/
+#define SYSTEM_SPI1_ENABLE		0		/*使能SPI1*/
+#define SYSTEM_SPI2_ENABLE		0		/*使能SPI2*/
+/*提供API：
+	用户自定SS引脚：
+		到PeriphConfig.c里面的
+			sys_SPI1_SS_io_Init();		自行更改
+			sys_SPI2_SS_io_Init();		自行更改
+		以及 到PeriphConfig.h里面的
+			#define	SPI1_CS PAout(4)	自行更改
+			#define	SPI2_CS PBout(12)	自行更改
+	写读函数：(目前只写了SPI1，SPI2如果要用的话同理)
+		u8 SPI1_ReadWriteByte_8Byte(u8 TxData) 		读写一个字节
+		u8 SPI1_ReadWriteByte_16Byte(u8* TxData) 	连写两个字节并读回，传入一个包含2字节的u8*指针
+		u8 SPI1_WriteByte_8Byte(u8 TxData)			写一个字节
+		u8 SPI1_WriteByte_16Byte(u8* TxData)		连写两个字节，传入一个包含2字节的u8*指针
+		例子：
+			u8 Max7219_adr_data[Max7219_regNum][2] = 
+			{
+				{0x09,0xFF},
+				{0x0A,0x08},
+				...
+			}
+			for(i = 0;i < Max7219_regNum;i++)
+				SPI1_WriteByte_16Byte(Max7219_adr_data[i]);
+	
+	设置SPI速度函数：参数可选：
+					SPI_BAUDRATEPRESCALER_2 SPI_BAUDRATEPRESCALER_4 SPI_BAUDRATEPRESCALER_8 SPI_BAUDRATEPRESCALER_16 
+					SPI_BAUDRATEPRESCALER_32 SPI_BAUDRATEPRESCALER_64 SPI_BAUDRATEPRESCALER_128 SPI_BAUDRATEPRESCALER_256
+		void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI1由APB2(60M)分频得来
+		void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI2由APB1(30M)分频得来
+*/
+
+/*对于ADC和DAC，如果Vref+连接到3.0V基准，则要修改程序！*/
+
+/*hd系列外设，DAC两个输出通道 PA4和PA5，默认初始化为12位右对齐，速度最快为250K左右，输出范围 0~Vref+，默认Vref+为3.3V，否则自行更改转换计算*/
+/*可选输出 噪声波形 和 三角波波形 ，默认不适用外部触发，可选触发源在初始化函数中修改（有定时器中断和外部中断线9）*/
+#define SYSTEM_DAC_OUT1_ENABLE	0
+#define SYSTEM_DAC_OUT2_ENABLE	0
+/*可用API:
+	设置通道1输出电压,vol:0~3.30V
+		void DAC_Set_Ch1_Vol(float vol)
+	设置通道2输出电压,vol:0~3.30V
+		void DAC_Set_Ch2_Vol(float vol)
+*/
+
+/*hd系列外设，FSMC*/
+/*FSMC为16位数据线，分为四个256MB的块（28跟地址线）（地址从0x6000 0000开始，第二个块开始在0x7000 0000，以此类推），每一块分为四个64MB的区（BANK1~4）*/
+/*第一个块用于NOR/SRAM，第二、三个块用于NAND，第四个块用于PC卡，块一属于NOR FLASH控制器，块二、三和四属于NAND FLASH控制器*/
+/*
+一般接法：（CE前面加一个N，表示CE低有效，其他同理）
+	FSMC			SRAM					LCD
+	NEx				NCE（低选中）			CS（低选中）
+	NOE				NOE（低使能输出）		RD（低读）
+	NWE				NWE（高读低写）			WR（低写）
+											RS（高数据低命令）——可接至FSMC的一个地址脚如A10
+	NUB				NUB（低选高八位）
+	NLB				NLB（低选低八位）
+	A[x:0]			A[x:0]（地址，可乱序）
+	D[15:0]									D[15:0]（数据）
+*/
+/*原子的FSMC驱动LCD历程的解释：时序选择模式A，RS连接到了A10
+	typedef struct
+	{
+		vu16 LCD_REG;	//0111 1111 1110 0X7FE
+		vu16 LCD_RAM;	//1000 0000 0000 0X7FE+0x02
+	}LCD_TypeDef;
+	#define LCD_BASE        ((u32)(0x6C000000 | 0x000007FE))
+	#define LCD             ((LCD_TypeDef *) LCD_BASE)
+	
+	0x7FE为：	0111 1111 1110（因为FSMC选择了16位模式，实际地址脚为0x7FE再右移1）
+	右移之后  0011 1111 1111 此为LCD->LCD_REG的 实际地址脚 情况，此时A10为0，LCD->LCD_RAM的地址为LCD->LCD_REG地址+2
+	LCD->LCD_REG 的地址脚 0011 1111 1111		A10为0 	RS低地址
+	LCD->LCD_RAM 的地址脚 0100 0000 0001		A10为1	RS高数据
+	这样命令和数据就区分开了
+	
+	然后读写：（读写相关的CS、WR和RD脚等的电平由FSMC自动设置）
+		写：	LCD->LCD_REG = LCD_Reg;				//要写的寄存器地址 
+				LCD->LCD_RAM = LCD_RegValue;		//写入一个16位数据
+		读：	LCD_WR_REG(LCD_Reg);				//先写寄存器地址
+				vu16 LCD_RegValue = LCD->LCD_RAM;	//再读出一个16位数据
+*/
+/*可以用FSMC同时管理LCD和SRAM（对于MCU来说，外部FLASH可以用SPI的FLASH当作文件系统使用（如存图、当USB U盘或者IAP等等），不用上NOR/NAND之流，那是对MPU的）
+	这是对于不带LTDC LCD外设的如STM32F429以下的如STM32F1和STM32F40x系列而言
+  对于STM32F429，可以用LTDC LCD单独驱动LCD
+*/
+/*
+  如果实际使用了大容量系列和100脚以上系列的片子但是没有LTDC，推荐用FSMC同时管理LCD和SRAM*/
+#define SYSTEM_FSMC_ENABLE	1				//是否启用FSMC
+	#define SYSTEM_FSMC_use4LCD		1		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
+	#define SYSTEM_FSMC_use4SRAM	1		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
+/*
+用于LCD的部分：
+	  可用API详看TFTLCD.h
+
+用于SRAM的部分：
+	这里默认用的 块1（NORSRAM块）的区域3（区域4留给LCD喽~）（块1的区3和区4分别留给外部RAM和LCD，本模板默认，否则还得改地址）
+	默认用于驱动IS62WV51216，地址线范围为A0~A18，数据线范围D0~D15，（NUB、NLB、NWE、NOE、NCE五根控制线都对应接好）
+	底层API：（不推荐直接调用，使用自实现的malloc和free）（以字节为单位）
+		u32 testsram[250000] __attribute__((at(SRAM1_BANK3_ADDR))); 	//地址定义在外部SRAM中
+		void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n); 	//写 参数：数据指针，外部SRAM内的地址(从0开始)，写入的字节数
+		void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);   	//读 类似上
+*/
+/*
+内存管理：先到malloc.h里面定义有几块RAM，RAM的标志位，和各个RAM给内存管理分配的空间
+	应用层API：（分配内存的数量以字节为单位）
+		my_mem_init(InrRAM);				//初始化内部内存池（系统自带）
+		my_mem_init(ExRAM1);				//初始化外部内存池（如果不开启SYSTEM_FSMC_use4SRAM则没有这句话）
+		
+		void myfree(u8 memx,void *ptr);  			//内存释放
+		void *mymalloc(u8 memx,u32 size);			//内存分配
+		void *myrealloc(u8 memx,void *ptr,u32 size);//重新分配内存
+*/
+
 
 
 /*_____________系统变量和函数（莫要乱动撒）_______________*/
+void sys_ENswd_DISjtag(void);
 extern u16	StartUpTimes;					/*用于保存开机次数，储存在最后一个或倒数第二个页*/
 extern uint32_t UIDw[3]; 					/*保存STM32内部UID识别码，全球唯一识别码*/
 extern uint32_t sysCoreClock; 				/*获取HCLK频率，外设时钟均来自此再分频*/
@@ -273,6 +542,7 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 
 
 /*_____________核心外设变量和函数（莫要乱动撒）_______________*/
+/*_______________________________时基定时器4___________________________________*/
 #if STSTEM_TIM4_ENABLE
 
 	__packed struct TIM4_IT_FLAGS
@@ -296,6 +566,7 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 	void sys_TIM4_ENABLE(void);
 #endif
 
+/*_______________________________辅助PWM定时器3___________________________________*/
 #if STSTEM_TIM3PWM_ENABLE
 	extern TIM_HandleTypeDef 	TIM3_Handler;      	//定时器3句柄
 	extern TIM_OC_InitTypeDef 	TIM3_CH1Handler,TIM3_CH2Handler,TIM3_CH3Handler,TIM3_CH4Handler;	//定时器3通道1-4句柄
@@ -308,6 +579,7 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 #endif
 
 
+/*_______________________________串口们___________________________________*/
 #if SYSTEM_UART1_ENABLE||SYSTEM_UART2_ENABLE||SYSTEM_UART3_ENABLE
 	
 	#define USART1_RX_BUF_MaxNum 	200 	/*定义用协议0只接受以'\r\n'结尾的数据时可以存在字符数组里面的最大字节数目*/
@@ -347,9 +619,226 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 	
 #endif
 
+/*_______________________________MCO___________________________________*/
+#if SYSTEM_MCO_PA8_OUT
+	void sys_MCO_Out_Enable(void);				/*MCO在PA8上输出启动，默认时钟源HSE*/
+#endif
+/*_______________________________IWDG___________________________________*/
+#if SYSTEM_IWDG_ENABLE
+	extern IWDG_HandleTypeDef IWDG_Handler; //独立看门狗句柄
+	void sys_IWDG_ENABLE(void);
+	void IWDG_Feed(void);
+#endif
+
+/*_______________________________CRC___________________________________*/
+#if SYSTEM_CRC_ENABLE
+	#define BUFFER_SIZE    114
+	extern CRC_HandleTypeDef hcrc;
+	extern const uint32_t aDataBuffer[BUFFER_SIZE];
+	extern uint32_t uwExpectedCRCValue;
+	void sys_CRC_ENABLE(void);
+	void HAL_CRC_MspInit(CRC_HandleTypeDef* hcrc);
+#endif
+/*_______________________________RTC___________________________________*/
+#if SYSTEM_RTC_ENABLE
+	extern RTC_HandleTypeDef RTC_Handler;  //RTC句柄
+
+	void sys_RTC_Enable(void);						/*RTC配置*/
+
+#endif
+
+/*_______________________________定时器2___________________________________*/
+#if STSTEM_TIM2_ENABLE
+	extern TIM_HandleTypeDef TIM2_Handler;
+	void sys_TIM2_ENABLE(void); //写在预编译外面为了外部文件能够调用
+	#if (STSTEM_TIM2_asPWMorCap == 0)
+		/*PWM私有变量*/
+		#define TIM2PWM_Channel_1	1
+		#define TIM2PWM_Channel_2	2
+		#define TIM2PWM_Channel_3	3
+		#define TIM2PWM_Channel_4	4
+		extern TIM_OC_InitTypeDef 	TIM2_CH1Handler,TIM2_CH2Handler,TIM2_CH3Handler,TIM2_CH4Handler;
+		void TIM2_set_Channel_Pulse(u8 channel,float percent);
+	#elif (STSTEM_TIM2_asPWMorCap == 1)
+		/*输入捕获私有变量*/
+		extern u8  	TIM2CHx_CAPTURE_STA;	    				
+		extern u16	TIM2CHx_CAPTURE_VAL;
+		float Peek_TIM2_Cap_Val(void);
+		extern TIM_IC_InitTypeDef TIM2_CHxConfig;
+		void Process_TIM2_IC_CallBack_Channel_1(void);
+		void Process_TIM2_IC_CallBack_Channel_2(void);
+		void Process_TIM2_IC_CallBack_Channel_3(void);
+		void Process_TIM2_IC_CallBack_Channel_4(void);
+	#elif (STSTEM_TIM2_asPWMorCap == 3)
+		/*正交解码私有变量*/
+		extern TIM_Encoder_InitTypeDef sEncoderConfig;
+		extern int32_t EncoderOverflowCount;//定时器溢出次数
+		float peek_TIM2_Encoder_Speed(void);
+		int32_t peek_TIM2_Encoder_Value(void);
+	#endif
+#endif
+
+/*_______________________________TIM1PWM___________________________________*/
+
+#if STSTEM_TIM1PWM_ENABLE
+		void sys_TIM1PWM_ENABLE(void);
+		extern TIM_HandleTypeDef TIM1_Handler;
+		#define TIM1PWM_Channel_1	1
+		#define TIM1PWM_Channel_2	2
+		#define TIM1PWM_Channel_3	3
+		#define TIM1PWM_Channel_4	4
+		void TIM1_set_Channel_Pulse(u8 channel,float percent);
+#endif
+
+/*_______________________________TIM1PWM___________________________________*/
+
+#if STSTEM_TIM8PWM_ENABLE
+		extern TIM_HandleTypeDef TIM8_Handler;
+		void sys_TIM8PWM_ENABLE(void);
+		#define TIM8PWM_Channel_1	1
+		#define TIM8PWM_Channel_2	2
+		#define TIM8PWM_Channel_3	3
+		#define TIM8PWM_Channel_4	4
+		void TIM8_set_Channel_Pulse(u8 channel,float percent);
+#endif
+
+/*_______________________________TIM6___________________________________*/
+
+#if STSTEM_TIM6_ENABLE
+	void sys_TIM6_ENABLE(void);
+	extern TIM_HandleTypeDef TIM6_Handler;
+#endif
+/*_______________________________TIM7___________________________________*/
+
+#if STSTEM_TIM7_ENABLE
+	void sys_TIM7_ENABLE(void);
+	extern TIM_HandleTypeDef TIM7_Handler;
+#endif
+
+
+/*_______________________________ADC1___________________________________*/
+
+#if SYSTEM_ADC1_ENABLE
+	void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
+	u16 Get_Adc(u32 ch);
+	#if SYSTEM_ADC1_useScan
+		extern DMA_HandleTypeDef  ADC1rxDMA_Handler;
+		void ADC_DMA_Cfg(void);
+	#endif
+	
+	extern ADC_HandleTypeDef ADC1_Handler;
+	void sys_ADC1_ENABLE(void);
+	u32 Get_Adc_Average(u32 ch,u8 times);
+	float Get_Temprate(u32 adcx);
+#endif
+
+/*_______________________________SPI1、2________________________________*/
+
+#if (SYSTEM_SPI1_ENABLE) || (SYSTEM_SPI1_ENABLE)
+extern SPI_HandleTypeDef SPI1_Handler;  //SPI1句柄
+extern SPI_HandleTypeDef SPI2_Handler;  //SPI2句柄
+void sys_SPI1_ENABLE(void);
+void sys_SPI2_ENABLE(void);
+void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);
+void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);
+
+//写读8字节
+u8 SPI1_ReadWriteByte_8Byte(u8 TxData);
+//写读16字节，传入一个包含2字节的u8*指针
+u8 SPI1_ReadWriteByte_16Byte(u8* TxData);
+//写8字节
+u8 SPI1_WriteByte_8Byte(u8 TxData);
+//写16字节，传入一个包含2字节的u8*指针
+u8 SPI1_WriteByte_16Byte(u8* TxData);
+
+u8 SPI2_ReadWriteByte(u8 TxData);
+
+void sys_SPI1_SS_io_Init(void);
+void sys_SPI2_SS_io_Init(void);
+
+#endif
+/*_________________________________低功耗StandbyMode________________________________*/
+
+#if SYSTEM_StdbyWKUP_ENABLE
+	void sys_StdbyWKUP_ENABLE(void);
+	void sys_CheckWKUP_4RTOS(void);
+	#define WKUP_KD HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_0)  //PA0 检测是否外部WK_UP按键按下
+	u8 Check_WKUP(void);  			//检测WKUP脚的信号
+	void Sys_Enter_Standby(void);	//系统进入待机模式
+#endif
+
+/*____________________________FLASH编程___________________________________*/
+
+#if SYSTEM_FLASH_IAP_ENABLE
+	void STMFLASH_Read(		u32 ReadAddr,	u16 *pBuffer,	u16 NumToRead);		//可用API
+	void STMFLASH_Write(	u32 WriteAddr,	u16 *pBuffer,	u16 NumToWrite);	//可用API
+	#if STM32_FLASH_WREN	//如果使能了写   
+		extern void FLASH_PageErase(uint32_t PageAddress);
+		void STMFLASH_Write_NoCheck(u32 WriteAddr,u16 *pBuffer,u16 NumToWrite);
+	#endif
+
+	u16 STMFLASH_ReadHalfWord(u32 faddr);
+#endif
+
+/*_____________________________________DAC________________________________________*/
+
+#if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE))
+	extern DAC_HandleTypeDef DAC1_Handler;//DAC句柄
+	void sys_DAC_ENABLE(void);
+	//void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac);
+	void DAC_Set_Ch1_Vol(float vol);
+	void DAC_Set_Ch2_Vol(float vol);
+#endif
 
 
 
+/*____________________SDIO SD_____________________________________________*/
+
+#if SYSTEM_SDIO_SD_ENABLE
+	extern HAL_SD_CardInfoTypeDef  	SDCardInfo;              	//SD卡信息
+	extern HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
+	extern SD_HandleTypeDef        	SDCARD_Handler;     		//SD卡句柄
+	#define SD_TIMEOUT 			((uint32_t)100000000)  			//超时时间
+
+	u8 SD_Init(void);
+	u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt);
+	u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt);
+	void show_sdcard_info(void);						//通过串口1打印SD卡相关信息
+
+#endif
+
+/*____________________________FSMC for SARM_____________________________________________*/
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM))
+
+	extern SRAM_HandleTypeDef SRAM_Handler;    //SRAM句柄
+	//使用NOR/SRAM的 Bank1.sector3,地址位HADDR[27,26]=10 
+	//对IS61LV25616/IS62WV25616,地址线范围为A0~A17 
+	//对IS61LV51216/IS62WV51216,地址线范围为A0~A18
+	#define SRAM1_BANK3_ADDR    ((u32)(0x68000000))	//计算： (0x6000 0000 | ((u32)64*1024*1024*(3 - 1)))
+
+	void sys_FSMC_SRAM_ENABLE(void);
+	void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n);
+	void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);
+
+#endif
+
+
+/*____________________________FSMC for LCD_____________________________________________*/
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD))
+	extern SRAM_HandleTypeDef TFTSRAM_Handler;    //SRAM句柄(用于控制LCD)
+
+	void LCD_with_FSMC_init_FSMC(void);
+	//LCD地址结构体
+	typedef struct
+	{
+		vu16 LCD_REG;
+		vu16 LCD_RAM;
+	} LCD_TypeDef;
+	//使用NOR/SRAM的 Bank1.sector4,地址位HADDR[27,26]=11 A10作为数据命令区分线 
+	//注意设置时STM32内部会右移一位对其! 			    
+	#define LCD_BASE        ((u32)(0x6C000000 | 0x000007FE))
+	#define LCD             ((LCD_TypeDef *) LCD_BASE)
+#endif
 
 
 #define Version_of_stm32_framework "2.3"

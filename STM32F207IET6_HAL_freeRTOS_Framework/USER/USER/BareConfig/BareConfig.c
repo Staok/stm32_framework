@@ -9,13 +9,13 @@ void Bare_Begin(void)
 		const u8 RunTimeFaultCheck_TtemMaxNum = 3;	/*故障巡检的最大项目数量*/
 	#endif
 	
-	// #if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)
+	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)
 	
-	// #else
-		// char* Head_buf = {"For Test!"};
-		// DrawPageHead((u8*)Head_buf);
-	// #endif
-	// BACK_COLOR = BLACK;
+	#else
+		char* Head_buf = {"For Test!"};
+		DrawPageHead((u8*)Head_buf);
+	#endif
+	BACK_COLOR = BLACK;
 	for(;;)
 	{
 		/*注意：这里尽量不要用10毫秒中断标志！这里只用100毫秒、300毫秒、1秒和一分钟的中断标志，够用了*/
@@ -36,16 +36,16 @@ void Bare_Begin(void)
 			/*100ms周期要做的事情*/
 			
 			/*串口回显*/
-			// u16 num4uart1;
-			// char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
-			// if(buf4uart1 != NULL)
-			// {
-				// if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == ReturnOK)
-				// {
-					// printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
-				// }
-			// }
-			// myfree(InrRAM,buf4uart1);
+//			u16 num4uart1;
+//			char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
+//			if(buf4uart1 != NULL)
+//			{
+//				if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == HAL_OK)
+//				{
+//					printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
+//				}
+//			}
+//			myfree(InrRAM,buf4uart1);
 			
 			
 		}
@@ -78,9 +78,8 @@ void Bare_Begin(void)
 			
 			/*刷新界面信息*/
 			
-			// keyProcess();	//菜单框架里的输入接管和获取函数
-			// menuProcess();	//菜单框架里的按照输入执行功能函数
-			// TestLED_Ctrl = !TestLED_Ctrl;
+			keyProcess();	//菜单框架里的输入接管和获取函数
+			menuProcess();	//菜单框架里的按照输入执行功能函数
 		}
 		
 		/*____________________________________1s周期执行：通常为运行状态指示，滴答心跳提醒等等__________________________________________*/
@@ -92,21 +91,21 @@ void Bare_Begin(void)
 			
 			//显示RTC时间
 			
-			// char RTC_buf[50];
-			// #if SYSTEM_RTC_ENABLE
-				// sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
-				// printf_uart(UART1,"%s",RTC_buf);
-			// #endif
-			// POINT_COLOR = BLUE;
-			// sprintf(RTC_buf,"%4ds",sys_GetsysRunTime(NULL,NULL,NULL));
-			// LCD_ShowString(5,20,16,(u8*)RTC_buf);
+			char RTC_buf[50];
+			#if SYSTEM_RTC_ENABLE
+				sprintf(RTC_buf,"%d-%d-%d   %d-%d-%d",calendar.w_year,calendar.w_month,calendar.w_date,calendar.hour,calendar.min,calendar.sec);
+				printf_uart(UART1,"%s",RTC_buf);
+			#endif
+			POINT_COLOR = BLUE;
+			sprintf(RTC_buf,"%4ds",sys_GetsysRunTime(NULL,NULL,NULL));
+			LCD_ShowString(5,20,16,(u8*)RTC_buf);
 			
 			
-			// //显示启动次数
-			// #if SYSTEM_FLASH_IAP_ENABLE
-				// sprintf(RTC_buf,"%d",StartUpTimes);
-				// LCD_ShowString(35,20,16,(u8*)RTC_buf);
-			// #endif
+			//显示启动次数
+			#if SYSTEM_FLASH_IAP_ENABLE
+				sprintf(RTC_buf,"%d",StartUpTimes);
+				LCD_ShowString(35,20,16,(u8*)RTC_buf);
+			#endif
 			
 		}
 		

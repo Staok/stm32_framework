@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F207xx</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;..\CORE;..\CONFIG;..\HAL\Inc;..\Middlewares\menu;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;..\CORE;..\CONFIG;..\HAL\Inc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi;..\Middlewares\malloc;..\DEVICES\TFTLCD;.\USER\menu;.\USER\BareConfig;.\USER\TaskConfig</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -435,12 +435,17 @@
             <File>
               <FileName>BareConfig.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USER\BareConfig.c</FilePath>
+              <FilePath>.\USER\BareConfig\BareConfig.c</FilePath>
             </File>
             <File>
               <FileName>TaskConfig.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USER\TaskConfig.c</FilePath>
+              <FilePath>.\USER\TaskConfig\TaskConfig.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys_menu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\menu\sys_menu.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -462,11 +467,6 @@
         <Group>
           <GroupName>Middle</GroupName>
           <Files>
-            <File>
-              <FileName>sys_menu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middlewares\menu\sys_menu.c</FilePath>
-            </File>
             <File>
               <FileName>MyString.c</FileName>
               <FileType>1</FileType>
@@ -491,6 +491,16 @@
               <FileName>simuspi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\simu_i2c_spi\simuspi.c</FilePath>
+            </File>
+            <File>
+              <FileName>malloc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\malloc\malloc.c</FilePath>
+            </File>
+            <File>
+              <FileName>TFTLCD.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\TFTLCD\TFTLCD.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1255,12 +1265,17 @@
             <File>
               <FileName>BareConfig.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USER\BareConfig.c</FilePath>
+              <FilePath>.\USER\BareConfig\BareConfig.c</FilePath>
             </File>
             <File>
               <FileName>TaskConfig.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\USER\TaskConfig.c</FilePath>
+              <FilePath>.\USER\TaskConfig\TaskConfig.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys_menu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\menu\sys_menu.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1282,11 +1297,6 @@
         <Group>
           <GroupName>Middle</GroupName>
           <Files>
-            <File>
-              <FileName>sys_menu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middlewares\menu\sys_menu.c</FilePath>
-            </File>
             <File>
               <FileName>MyString.c</FileName>
               <FileType>1</FileType>
@@ -1311,6 +1321,16 @@
               <FileName>simuspi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\simu_i2c_spi\simuspi.c</FilePath>
+            </File>
+            <File>
+              <FileName>malloc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\malloc\malloc.c</FilePath>
+            </File>
+            <File>
+              <FileName>TFTLCD.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\TFTLCD\TFTLCD.c</FilePath>
             </File>
           </Files>
         </Group>

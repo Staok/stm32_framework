@@ -28,98 +28,90 @@ void sys_MCU_Init_Seq(void)
 	
 	/*关闭JTAG，启用SWD*/
 	/*TODO：用本框架的GPIO初始化这里的SWD IO，先试验试验如果不初始化有没有什么问题*/
-	GPIO_InitTypeDef GPIO_Initure;
-	GPIO_Initure.Pin = GPIO_PIN_13;
-	GPIO_Initure.Mode = GPIO_MODE_AF_PP;
-	GPIO_Initure.Pull=GPIO_NOPULL;
-	GPIO_Initure.Speed=GPIO_SPEED_FREQ_VERY_HIGH;
-	GPIO_Initure.Alternate = GPIO_AF0_SWJ;
-	HAL_GPIO_Init(GPIOA,&GPIO_Initure); 
-	GPIO_Initure.Pin = GPIO_PIN_14;
-	HAL_GPIO_Init(GPIOA,&GPIO_Initure); 
+	sys_ENswd_DISjtag();
 	
-	// /*设置MCO*/
-	// #if SYSTEM_MCO_PA8_OUT
-		// sys_MCO_Out_Enable();
-	// #endif
+	/*设置MCO*/
+	#if SYSTEM_MCO_PA8_OUT
+		sys_MCO_Out_Enable();
+	#endif
 
-	// /*按照设定初始化串口1、2、3*/
-	// #if SYSTEM_UART1_ENABLE
-		// sys_USART1_ENABLE();
+	/*按照设定初始化串口1、2、3*/
+	#if SYSTEM_UART1_ENABLE
+		sys_USART1_ENABLE();
 		
-		// /*串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出的环形缓存实现接受区，无协议*/
-		// USART1_SetMode(0);
-	// #endif
-	// #if SYSTEM_UART2_ENABLE
-		// sys_USART2_ENABLE();
-	// #endif
-	// #if SYSTEM_UART3_ENABLE
-		// sys_USART3_ENABLE();
-	// #endif
+		/*串口1接受协议：0为只接受以'\r\n'结尾的数据，1为以FIFO先进先出的环形缓存实现接受区，无协议*/
+		USART1_SetMode(0);
+	#endif
+	#if SYSTEM_UART2_ENABLE
+		sys_USART2_ENABLE();
+	#endif
+	#if SYSTEM_UART3_ENABLE
+		sys_USART3_ENABLE();
+	#endif
 	
-	// /*设置RTC*/
-	// #if SYSTEM_RTC_ENABLE
-		// sys_RTC_Enable();
-		// //用户自行更改设置RTC和闹钟的日期和时间，在	sys_RTC_Enable() 里面		
-	// #endif
-	// /*设置CRC*/
-	// #if SYSTEM_CRC_ENABLE
-		// sys_CRC_ENABLE();
-		// if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
-		// {}else{FaultASSERT("AT : CRC init");}
-	// #endif
+	/*设置RTC*/
+	#if SYSTEM_RTC_ENABLE
+		sys_RTC_Enable();
+		//用户自行更改设置RTC和闹钟的日期和时间，在	sys_RTC_Enable() 里面		
+	#endif
+	/*设置CRC*/
+	#if SYSTEM_CRC_ENABLE
+		sys_CRC_ENABLE();
+		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
+		{}else{FaultASSERT("AT : CRC init");}
+	#endif
 	
-	// printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\n");
-	// printf_uart(UART1,"Compile time : %s,%s\r\n",__DATE__,__TIME__);
-	// printf_uart(UART1,"Version : %s\r\n",Version_of_stm32_framework);
-	// printf_uart(UART1,"OK,then...System is starting...\r\n");
+	printf_uart(UART1,"Author : Staok\r\nEmail : superxhy@qq.com\r\nRepo : https://github.com/Staok/stm32_framework\r\n");
+	printf_uart(UART1,"Compile time : %s,%s\r\n",__DATE__,__TIME__);
+	printf_uart(UART1,"Version : %s\r\n",Version_of_stm32_framework);
+	printf_uart(UART1,"OK,then...System is starting...\r\n");
 		
 	
-	// /*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
-	// sysCoreClock = HAL_RCC_GetHCLKFreq(); 
-	// printf_uart(UART1,"sysCoreClock/HCLK : %d\r\n",sysCoreClock);
-	// /*保存STM32内部UID识别码并打印，全球唯一识别码*/
-	// UIDw[0] = HAL_GetUIDw0();UIDw[1] = HAL_GetUIDw1();UIDw[2] = HAL_GetUIDw2(); 
-	// printf_uart(UART1,"UID : %d %d %d\r\n",UIDw[0],UIDw[1],UIDw[2]);
+	/*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
+	sysCoreClock = HAL_RCC_GetHCLKFreq(); 
+	printf_uart(UART1,"sysCoreClock/HCLK : %d\r\n",sysCoreClock);
+	/*保存STM32内部UID识别码并打印，全球唯一识别码*/
+	UIDw[0] = HAL_GetUIDw0();UIDw[1] = HAL_GetUIDw1();UIDw[2] = HAL_GetUIDw2(); 
+	printf_uart(UART1,"UID : %d %d %d\r\n",UIDw[0],UIDw[1],UIDw[2]);
 	
-	// #if SYSTEM_FLASH_IAP_ENABLE
-		// //获取开机次数
-		// STMFLASH_Read( 	(0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
-		// StartUpTimes += 1;
-		// STMFLASH_Write( (0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
-		// printf_uart(UART1,"StartUpTimes : %d\r\n",StartUpTimes);
-	// #endif
+	#if SYSTEM_FLASH_IAP_ENABLE
+		//获取开机次数
+		STMFLASH_Read( 	(0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
+		StartUpTimes += 1;
+		STMFLASH_Write( (0X08000000 + (u32)((STM32_FLASH_SIZE-2)*1024)),	&StartUpTimes,	sizeof(StartUpTimes));
+		printf_uart(UART1,"StartUpTimes : %d\r\n",StartUpTimes);
+	#endif
 	
-	// #if SYSTEM_ADC1_ENABLE
-		// /*说明ADC1的用途*/
-		// sys_ADC1_ENABLE();
-	// #endif
+	#if SYSTEM_ADC1_ENABLE
+		/*说明ADC1的用途*/
+		sys_ADC1_ENABLE();
+	#endif
 	
-	// #if SYSTEM_SPI1_ENABLE
-		// /*说明SPI1的用途*/
-		// sys_SPI1_ENABLE();
-	// #endif
+	#if SYSTEM_SPI1_ENABLE
+		/*说明SPI1的用途*/
+		sys_SPI1_ENABLE();
+	#endif
 	
-	// #if SYSTEM_SPI2_ENABLE
-		// /*说明SPI2的用途*/
-		// sys_SPI2_ENABLE();
-	// #endif
+	#if SYSTEM_SPI2_ENABLE
+		/*说明SPI2的用途*/
+		sys_SPI2_ENABLE();
+	#endif
 	
-	// #if SYSTEM_StdbyWKUP_ENABLE
-		// /*使能待机-低功耗模式，默认长按PA0(WKUP)3秒关开机*/
-		// sys_StdbyWKUP_ENABLE();
-	// #endif
+	#if SYSTEM_StdbyWKUP_ENABLE
+		/*使能待机-低功耗模式，默认长按PA0(WKUP)3秒关开机*/
+		sys_StdbyWKUP_ENABLE();
+	#endif
 	
-	// #if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)) && ((STM32F103xG) || (STM32F103xE))
-		// sys_DAC_ENABLE();
-	// #endif
+	#if (SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE)
+		sys_DAC_ENABLE();
+	#endif
 	
-	// my_mem_init(InrRAM);
+	my_mem_init(InrRAM);
 	
-	// #if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)) && ((STM32F103xG) || (STM32F103xE))
-		// sys_FSMC_SRAM_ENABLE();
-		// my_mem_init(ExRAM1);
-	// #endif
+	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)
+		sys_FSMC_SRAM_ENABLE();
+		my_mem_init(ExRAM1);
+	#endif
 	
 }
 
@@ -133,17 +125,17 @@ void sys_Device_Init_Seq(void)
 	Devices_Init(UserDevices,KEY_Index);
 	Devices_Init(UserDevices,LCD_Index); //使用LCD设备的初始化函数初始化IO
 	
-	// /*LCD初始化*/
-	// #if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)) && ((STM32F103xG) || (STM32F103xE))
-		// LCD_with_FSMC_init_FSMC();
-		// LCD_with_FSMC_init_LCD();
-	// #else
-		// LCD_Init_no_FSMC();
-	// #endif
+	/*LCD初始化*/
+	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)
+		LCD_with_FSMC_init_FSMC();
+		LCD_with_FSMC_init_LCD();
+	#else
+		LCD_Init_no_FSMC();
+	#endif
 	
-	// /*用户应用的Device初始化序列——结束*/
+	/*用户应用的Device初始化序列——结束*/
 	
-	// /*__________启动模板的心跳，开启MCU的精彩一生__________*/
+	/*__________启动模板的心跳，开启MCU的精彩一生__________*/
 	/*初始化并启动TIM4*/
 	#if STSTEM_TIM4_ENABLE
 		sys_TIM4_ENABLE();
@@ -154,40 +146,39 @@ void sys_Device_Init_Seq(void)
 		sys_TIM3PWM_ENABLE();
 	#endif
 	
-	// /*初始化高级定时器1*/
-	// #if STSTEM_TIM1PWM_ENABLE
-		// sys_TIM1PWM_ENABLE();
-	// #endif
+	/*初始化高级定时器1*/
+	#if STSTEM_TIM1PWM_ENABLE
+		sys_TIM1PWM_ENABLE();
+	#endif
 	
-	// /*初始化高级定时器8*/
-	// #if (STSTEM_TIM8PWM_ENABLE) && ((STM32F103xG) || (STM32F103xE))
-		// sys_TIM8PWM_ENABLE();
-	// #endif
+	/*初始化高级定时器8*/
+	#if STSTEM_TIM8PWM_ENABLE
+		sys_TIM8PWM_ENABLE();
+	#endif
 	
-	// /*初始化时基定时器6*/
-	// #if (STSTEM_TIM6_ENABLE) && ((STM32F103xG) || (STM32F103xE))
-		// sys_TIM6_ENABLE();
-	// #endif
+	/*初始化时基定时器6*/
+	#if STSTEM_TIM6_ENABLE
+		sys_TIM6_ENABLE();
+	#endif
 	
-	// /*初始化时基定时器7*/
-	// #if (STSTEM_TIM7_ENABLE) && ((STM32F103xG) || (STM32F103xE))
-		// sys_TIM7_ENABLE();
-	// #endif
+	/*初始化时基定时器7*/
+	#if STSTEM_TIM7_ENABLE
+		sys_TIM7_ENABLE();
+	#endif
 	
-	// /*初始化多功能定时器2*/
-	// #if STSTEM_TIM2_ENABLE
-	// /*说明TIM2的用途*/
-	// sys_TIM2_ENABLE();
-	// #endif
+	/*初始化多功能定时器2*/
+	#if STSTEM_TIM2_ENABLE
+		/*说明TIM2的用途*/
+		sys_TIM2_ENABLE();
+	#endif
 	
-	// /*初始化看门狗*/
-	// #if SYSTEM_IWDG_ENABLE
-		// sys_IWDG_ENABLE();
-	// #endif
-	// buzzer_bibi_once; //响一声表示初始化结束
-	// printf_uart(UART1,"System init over\r\n");
+	/*初始化看门狗*/
+	#if SYSTEM_IWDG_ENABLE
+		sys_IWDG_ENABLE();
+	#endif
+	buzzer_bibi_once; //响一声表示初始化结束
+	printf_uart(UART1,"System init over\r\n");
 }
-
 
 /*____________运行错误提示和打印______________________________*/
 /********************************
@@ -231,30 +222,33 @@ u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms)
 ********************************/
 u8 Stm32_Clock_Init(void)
 {
-	/*HSE外接25Mhz晶振，LSE外接32.768Khz晶振*/
-	/*	PLLCLK = SYSCLK = AHBCLK = HCLK 均为120MHz，APB2外设为60MHz，APB1外设为30Mhz，APB2定时器为120MHz，APB1定时器为60Mhz
+/*
+		时钟分配：
+		HSE外接25Mhz晶振，LSE外接32.768Khz晶振
+		开启HSE（25M）、LSE（32.768K）和LSI（32K），关闭HSI（16M）
+		PLLCLK = SYSCLK = AHBCLK = HCLK 均为120MHz，APB2外设为60MHz，APB1外设为30Mhz，APB2定时器为120MHz，APB1定时器为60Mhz
 		
-		ETH\RNG\FSMC\DCMI\USB FS\USB HS\GPIO\DMA 均在120M
+		ETH\RNG\FSMC\USB FS\USB HS\GPIO\DMA 均在120M
 		RTC 时钟取自 LSE = 32.768K
-		IWDG时钟取自 HSE = 25M
+		IWDG时钟取自 LSI = 32K
+		DCMI 48 Mbyte/s max
 		
 		APB2外设(60M)：SDIO\USART1\USART6\SPI1\ADC123
 		APB2定时器(120M)：TIM1 TIM8 TIM9 TIM10 TIM11
 		APB1外设(30M)：USART2\USART3\UART4\UART5\SPI2、I2S2\SPI3、I2S3\I2C123\CAN12\DAC12
-		APB1定时器(60M)：TIM2 TIM3 TIM4 TIM5 TIM12 TIM13 TIM14(无TIM67)		
-	*/
+		APB1定时器(60M)：TIM2 TIM3 TIM4 TIM5 TIM12 TIM13 TIM14
+*/
 	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
 	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-	RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
 	/** Initializes the RCC Oscillators according to the specified parameters
 	* in the RCC_OscInitTypeDef structure.
 	*/
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
-							  |RCC_OSCILLATORTYPE_LSE;
+							  |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_HSI;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
 	RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-	RCC_OscInitStruct.LSIState = RCC_LSI_OFF;
+	RCC_OscInitStruct.LSIState = RCC_LSE_OFF;
 	RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;	//25M
@@ -279,12 +273,6 @@ u8 Stm32_Clock_Init(void)
 	{
 		return HAL_ERROR;
 	}
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-	PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-	{
-		return HAL_ERROR;
-	}
 	
 	#if SYSTEM_SUPPORT_OS
 		//这里为了兼容FreeRTOS
@@ -303,6 +291,10 @@ u8 Stm32_Clock_Init(void)
 		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
 		HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 	#endif
+	
+	/** Enables the Clock Security System
+	*/
+	HAL_RCC_EnableCSS();
 	
 	return HAL_OK;
 }
@@ -326,7 +318,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		
 		/*如果启用定时器2的正交解码功能，这里定时10ms周期计算正交计数值并计算返回速度 单位 转/秒*/
 		#if (STSTEM_TIM2_ENABLE)&&(STSTEM_TIM2_asPWMorCap == 3)
-			//如果接着速度的变量是x，下句应写成 x = peek_TIM2_Encoder_Speed();
+			//如果接着速度的变量是x，下句应写成 x = peek_TIM2_Encoder_Speed(); 返回的是float类型
 			peek_TIM2_Encoder_Speed();
 		#endif
 		
@@ -337,7 +329,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			Timer_IT_flags._100msec++;
 			
 			#if SYSTEM_IWDG_ENABLE
-				IWDG_Feed();//1s周期的看门狗，来喂狗了
+				IWDG_Feed();//来喂狗了，狗狗乖哦
 			#endif
 			
 		}
@@ -442,9 +434,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		
 		#if (STSTEM_TIM2_asPWMorCap == 3)					//使用正交解码功能，计数溢出次数记录
 			if(__HAL_TIM_IS_TIM_COUNTING_DOWN(&TIM2_Handler))
-			EncoderOverflowCount--;       //向下计数溢出
+				EncoderOverflowCount--;       //向下计数溢出
 			else
-			EncoderOverflowCount++;       //向上计数溢出
+				EncoderOverflowCount++;       //向上计数溢出
 		#endif
     }
 	#endif
@@ -475,8 +467,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 			__HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
 			__HAL_TIM_ENABLE_IT(&TIM7_Handler,TIM_IT_UPDATE);  // 使能更新中断
 			
-			HAL_NVIC_SetPriority(TIM6_IRQn,4,0);    //设置中断优先级，抢占优先级1，响应优先级0。分组为4
-			HAL_NVIC_EnableIRQ(TIM6_IRQn);          //开启ITM6中断   
+			HAL_NVIC_SetPriority(TIM6_DAC_IRQn,4,0);    //设置中断优先级，抢占优先级1，响应优先级0。分组为4
+			HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);          //开启ITM6中断   
 		}
 	#endif
 	
@@ -492,19 +484,19 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 		}
 	#endif
 	
-	#if STSTEM_TIM3_ENABLE
-		if(htim->Instance==TIM3)
-		{
-			__HAL_RCC_TIM3_CLK_ENABLE();            //使能TIM3时钟
-			__HAL_TIM_CLEAR_IT(&TIM3_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
-			
-			#if STSTEM_TIM3PWM_TI_ENABLE
-				__HAL_TIM_ENABLE_IT(&TIM3_Handler,TIM_IT_UPDATE);  // 使能更新中断
-				HAL_NVIC_SetPriority(TIM3_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
-				HAL_NVIC_EnableIRQ(TIM3_IRQn);      //开启ITM3中断
-			#endif
-		}
-	#endif
+	
+	if(htim->Instance==TIM3)
+	{
+		__HAL_RCC_TIM3_CLK_ENABLE();            //使能TIM3时钟
+		__HAL_TIM_CLEAR_IT(&TIM3_Handler, TIM_IT_UPDATE);  // 清除更新中断标志位
+		
+		#if STSTEM_TIM3PWM_TI_ENABLE
+			__HAL_TIM_ENABLE_IT(&TIM3_Handler,TIM_IT_UPDATE);  // 使能更新中断
+			HAL_NVIC_SetPriority(TIM3_IRQn,3,0);    //设置中断优先级，抢占优先级3，子优先级0
+			HAL_NVIC_EnableIRQ(TIM3_IRQn);      //开启ITM3中断
+		#endif
+	}
+	
 	
 	#if STSTEM_TIM2_ENABLE
 		if(htim->Instance==TIM2)
@@ -550,7 +542,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 		TIM4_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器
 		TIM4_Handler.Init.Period=(1000-1);                        	//自动装载值
 		TIM4_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
-		TIM4_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+		TIM4_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 		HAL_TIM_Base_Init(&TIM4_Handler);
 		
 		sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
@@ -584,14 +576,8 @@ void sys_TIM3PWM_ENABLE(void)
 	TIM3_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;//向上计数模式
 	TIM3_Handler.Init.Period=tim3arr;          //自动重装载值
 	TIM3_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
-	TIM3_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	
-	
-	/*如果要开启定时中断，取消这个语句的注释和HAL_TIM_Base_MspInit中的TIM3的IRQ注释*/
-	#if STSTEM_TIM3PWM_TI_ENABLE
-		HAL_TIM_Base_Init(&TIM3_Handler);
-		HAL_TIM_Base_Start_IT(&TIM3_Handler); //使能定时器3和定时器3更新中断：TIM_IT_UPDATE
-	#endif
+	TIM3_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+	HAL_TIM_Base_Init(&TIM3_Handler);
 	
 	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
 	HAL_TIM_ConfigClockSource(&TIM3_Handler, &sClockSourceConfig);
@@ -601,7 +587,13 @@ void sys_TIM3PWM_ENABLE(void)
 	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
 	HAL_TIMEx_MasterConfigSynchronization(&TIM3_Handler, &sMasterConfig);
-    
+	
+    #if STSTEM_TIM3PWM_TI_ENABLE
+		HAL_TIM_Base_Start_IT(&TIM3_Handler); 	//使能定时器3和定时器3更新中断：TIM_IT_UPDATE
+	#else
+		HAL_TIM_Base_Start(&TIM3_Handler);		//不带IT的开启定时器
+	#endif
+	
 	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)
 	{
 		TIM3_CH2Handler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
@@ -610,7 +602,7 @@ void sys_TIM3PWM_ENABLE(void)
 		/*即当计数值小于比较值时输出有效，器件可以工作，即这个比较值越大，器件工作时间越长，即 占空比 越大*/
 		TIM3_CH2Handler.OCPolarity=TIM_OCPOLARITY_LOW;
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH2Handler,TIM_CHANNEL_2);//配置TIM3通道2
-		__HAL_TIM_DISABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_1);
+		__HAL_TIM_ENABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_2);
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_2);//开启PWM通道2
 	}
 	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)
@@ -620,7 +612,7 @@ void sys_TIM3PWM_ENABLE(void)
 		TIM3_CH1Handler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
 		TIM3_CH1Handler.OCFastMode = TIM_OCFAST_DISABLE;
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH1Handler,TIM_CHANNEL_1);//配置TIM3通道1
-		__HAL_TIM_DISABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_1);
+		__HAL_TIM_ENABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_1);
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_1);//开启PWM通道1
 	}
 	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)
@@ -629,7 +621,7 @@ void sys_TIM3PWM_ENABLE(void)
 		TIM3_CH3Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
 		TIM3_CH3Handler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH3Handler,TIM_CHANNEL_3);//配置TIM3通道3
-		__HAL_TIM_DISABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_1);
+		__HAL_TIM_ENABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_3);
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_3);//开启PWM通道3
 	}
 	if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)
@@ -638,7 +630,7 @@ void sys_TIM3PWM_ENABLE(void)
 		TIM3_CH4Handler.Pulse=tim3arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
 		TIM3_CH4Handler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
 		HAL_TIM_PWM_ConfigChannel(&TIM3_Handler,&TIM3_CH4Handler,TIM_CHANNEL_4);//配置TIM3通道4
-		__HAL_TIM_DISABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_1);
+		__HAL_TIM_ENABLE_OCxPRELOAD(&TIM3_Handler, TIM_CHANNEL_4);
 		HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_4);//开启PWM通道4
 	}
 
@@ -665,7 +657,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)	GPIO_Initure.Pin=GPIO_PIN_8;	//如果开启通道3，PC8
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)	GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道4，PC9
 			GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
-			GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
+			GPIO_Initure.Pull=GPIO_NOPULL;          //上拉，所以硬件上最好低电平有效，高电平截止
 			GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
 			GPIO_Initure.Alternate = GPIO_AF2_TIM3;
 			HAL_GPIO_Init(GPIOC,&GPIO_Initure); 
@@ -679,14 +671,14 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0100)	GPIO_Initure.Pin=GPIO_PIN_0;	//如果开启通道3，PB0
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_1000)	GPIO_Initure.Pin=GPIO_PIN_1;	//如果开启通道4，PB1
 			GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
-			GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
+			GPIO_Initure.Pull=GPIO_NOPULL;          //上拉，所以硬件上最好低电平有效，高电平截止
 			GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
 			GPIO_Initure.Alternate = GPIO_AF2_TIM3;
 			HAL_GPIO_Init(GPIOB,&GPIO_Initure); 			
 		}else{									//没有重映射
 			
 			GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
-			GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
+			GPIO_Initure.Pull=GPIO_NOPULL;          //上拉，所以硬件上最好低电平有效，高电平截止
 			GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
 			
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)	
@@ -723,11 +715,12 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 	if(htim->Instance==TIM2)
 	{
 		__HAL_RCC_TIM2_CLK_ENABLE();			//使能定时器2时钟
-		__HAL_AFIO_REMAP_TIM2_ENABLE();			/*TIM2通道引脚完全重映射使能 (CH1/ETR/PA15, CH2/PB3, CH3/PB10, CH4/PB11)*/
+		//__HAL_AFIO_REMAP_TIM2_ENABLE();			/*TIM2通道引脚完全重映射使能 (CH1/ETR/PA15, CH2/PB3, CH3/PB10, CH4/PB11)*/
 		
 		GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
-		GPIO_Initure.Pull=GPIO_PULLUP;          //上拉，所以硬件上最好低电平有效，高电平截止
+		GPIO_Initure.Pull=GPIO_NOPULL;          //上拉，所以硬件上最好低电平有效，高电平截止
 		GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//高速
+		GPIO_Initure.Alternate = GPIO_AF1_TIM2;
 		
 		if((STSTEM_TIM2PWM_CHANNEL_ENABLE) & B0000_0001)	//CH1/ETR/PA15
 		{
@@ -1381,13 +1374,251 @@ void USART3_IRQHandler(void)	//串口3中断服务程序
 
 
 
+
+#if SYSTEM_IWDG_ENABLE
+	IWDG_HandleTypeDef IWDG_Handler; //独立看门狗句柄
+	//初始化独立看门狗
+	//prer:分频数:IWDG_PRESCALER_4~IWDG_PRESCALER_256
+	//rlr:自动重装载值,0~0XFFF.
+	//时间计算(大概):Tout=((4*2^prer)*rlr)/32 (ms)
+	/*以下设置为 320ms周期看门狗 大概...*/
+	void sys_IWDG_ENABLE(void)
+	{
+		IWDG_Handler.Instance=IWDG;
+		IWDG_Handler.Init.Prescaler=IWDG_PRESCALER_256;	//设置IWDG分频系数
+		IWDG_Handler.Init.Reload=40-1;		//重装载值
+		HAL_IWDG_Init(&IWDG_Handler);		//初始化IWDG,默认会开启独立看门狗	
+	}
+	//喂独立看门狗
+	void IWDG_Feed(void)
+	{   
+		HAL_IWDG_Refresh(&IWDG_Handler); 	//喂狗
+	}
+#endif
+
+
+#if SYSTEM_MCO_PA8_OUT
+void sys_MCO_Out_Enable(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+	HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSE, RCC_MCODIV_5);
+	
+	GPIO_InitStruct.Pin = GPIO_PIN_8;
+	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+}
+#endif
+
+#if SYSTEM_CRC_ENABLE
+CRC_HandleTypeDef hcrc;
+void sys_CRC_ENABLE(void)
+{
+	hcrc.Instance = CRC;
+	HAL_CRC_Init(&hcrc);
+}
+void HAL_CRC_MspInit(CRC_HandleTypeDef* hcrc)
+{
+	if(hcrc->Instance==CRC)
+	{
+	/* 外设时钟使能 */
+	__HAL_RCC_CRC_CLK_ENABLE();
+	}
+}
+/* 私有变量 ------------------------------------------------------------------*/
+const uint32_t aDataBuffer[BUFFER_SIZE] =
+  {
+    0x00001021, 0x20423063, 0x408450a5, 0x60c670e7, 0x9129a14a, 0xb16bc18c,
+    0xd1ade1ce, 0xf1ef1231, 0x32732252, 0x52b54294, 0x72f762d6, 0x93398318,
+    0xa35ad3bd, 0xc39cf3ff, 0xe3de2462, 0x34430420, 0x64e674c7, 0x44a45485,
+    0xa56ab54b, 0x85289509, 0xf5cfc5ac, 0xd58d3653, 0x26721611, 0x063076d7,
+    0x569546b4, 0xb75ba77a, 0x97198738, 0xf7dfe7fe, 0xc7bc48c4, 0x58e56886,
+    0x78a70840, 0x18612802, 0xc9ccd9ed, 0xe98ef9af, 0x89489969, 0xa90ab92b,
+    0x4ad47ab7, 0x6a961a71, 0x0a503a33, 0x2a12dbfd, 0xfbbfeb9e, 0x9b798b58,
+    0xbb3bab1a, 0x6ca67c87, 0x5cc52c22, 0x3c030c60, 0x1c41edae, 0xfd8fcdec,
+    0xad2abd0b, 0x8d689d49, 0x7e976eb6, 0x5ed54ef4, 0x2e321e51, 0x0e70ff9f,
+    0xefbedfdd, 0xcFFCbf1b, 0x9f598f78, 0x918881a9, 0xb1caa1eb, 0xd10cc12d,
+    0xe16f1080, 0x00a130c2, 0x20e35004, 0x40257046, 0x83b99398, 0xa3fbb3da,
+    0xc33dd31c, 0xe37ff35e, 0x129022f3, 0x32d24235, 0x52146277, 0x7256b5ea,
+    0x95a88589, 0xf56ee54f, 0xd52cc50d, 0x34e224c3, 0x04817466, 0x64475424,
+    0x4405a7db, 0xb7fa8799, 0xe75ff77e, 0xc71dd73c, 0x26d336f2, 0x069116b0,
+    0x76764615, 0x5634d94c, 0xc96df90e, 0xe92f99c8, 0xb98aa9ab, 0x58444865,
+    0x78066827, 0x18c008e1, 0x28a3cb7d, 0xdb5ceb3f, 0xfb1e8bf9, 0x9bd8abbb,
+    0x4a755a54, 0x6a377a16, 0x0af11ad0, 0x2ab33a92, 0xed0fdd6c, 0xcd4dbdaa,
+    0xad8b9de8, 0x8dc97c26, 0x5c644c45, 0x3ca22c83, 0x1ce00cc1, 0xef1fff3e,
+    0xdf7caf9b, 0xbfba8fd9, 0x9ff86e17, 0x7e364e55, 0x2e933eb2, 0x0ed11ef0
+  };
+/* Expected CRC Value */
+uint32_t uwExpectedCRCValue = 0x379E9F06;
+#endif
+
+
+#if SYSTEM_RTC_ENABLE
+
+u8 const table_week[12]={0,3,3,6,1,4,6,2,5,0,3,5}; //月修正数据表
+//获得现在是星期几
+//功能描述:输入公历日期得到星期(只允许1901-2099年)
+//year,month,day：公历年月日 
+//返回值：星期号																						 
+u8 RTC_Get_Week(u16 year,u8 month,u8 day)
+{	
+	u16 temp2;
+	u8 yearH,yearL;
+	
+	yearH=year/100;	yearL=year%100; 
+	// 如果为21世纪,年份数加100  
+	if (yearH>19)yearL+=100;
+	// 所过闰年数只算1900年之后的  
+	temp2=yearL+yearL/4;
+	temp2=temp2%7; 
+	temp2=temp2+day+table_week[month-1];
+	if (yearL%4==0&&month<3)temp2--;
+	return(temp2%7);
+}
+
+RTC_HandleTypeDef RTC_Handler;		//RTC句柄
+
+/*初始化RTC时钟,同时检测时钟是否工作正常
+BKP->DR1用于保存是否第一次配置的设置*/
+void sys_RTC_Enable(void)
+{
+	RTC_TimeTypeDef sTime = {0};
+	RTC_DateTypeDef sDate = {0};
+	RTC_AlarmTypeDef sAlarm = {0};
+	
+	RTC_Handler.Instance=RTC;
+	RTC_Handler.Init.HourFormat = RTC_HOURFORMAT_24;
+	RTC_Handler.Init.SynchPrediv = 273;			
+	RTC_Handler.Init.AsynchPrediv = 120; 		//这里最大127.两个预分频吧应该是，乘起来等于32768
+	RTC_Handler.Init.OutPut = RTC_OUTPUT_DISABLE;
+	RTC_Handler.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+	RTC_Handler.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+	HAL_RTC_Init(&RTC_Handler);
+	
+	__HAL_RCC_PWR_CLK_ENABLE();	//使能电源时钟PWR
+	HAL_PWR_EnableBkUpAccess();	//取消备份区域写保护
+	
+	if(HAL_RTCEx_BKUPRead(&RTC_Handler,RTC_BKP_DR1)!=0X5050)//是否第一次配置
+	{
+		sTime.Hours		=	0x23;		//直接BCD格式写
+		sTime.Minutes	= 	0x30;
+		sTime.Seconds	= 	0x29;
+		sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+		sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+		HAL_RTC_SetTime(&RTC_Handler, &sTime, RTC_FORMAT_BCD);
+
+		sDate.Month = RTC_MONTH_JANUARY;
+		sDate.Date = 0x1;				//直接BCD格式写
+		sDate.Year = 0x30;
+		sDate.WeekDay = RTC_Get_Week(((u16)BCD2HEX(sDate.Year) + 1970),BCD2HEX(sDate.Month),BCD2HEX(sDate.Date));
+		HAL_RTC_SetDate(&RTC_Handler, &sDate, RTC_FORMAT_BCD);
+		
+		/** Enable the Alarm A
+		*/
+		sAlarm.AlarmTime.Hours	 = 	0x23;	//直接BCD格式写
+		sAlarm.AlarmTime.Minutes = 	0x31;
+		sAlarm.AlarmTime.Seconds = 	0x29;
+		sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+		sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+		sAlarm.AlarmMask = RTC_ALARMMASK_SECONDS;					//可选mask时分秒和所有
+		sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;	//可选日期和星期
+		sAlarm.AlarmDateWeekDay = 0x1;	//不懂..
+		sAlarm.Alarm = RTC_ALARM_A;
+		HAL_RTC_SetAlarm_IT(&RTC_Handler, &sAlarm, RTC_FORMAT_BCD); 
+		HAL_RTC_DeactivateAlarm(&RTC_Handler,RTC_ALARM_A);
+		
+		HAL_RTCEx_BKUPWrite(&RTC_Handler,RTC_BKP_DR1,0X5050);//标记已经初始化过了
+	}
+	HAL_PWR_DisableBkUpAccess();	//备份区域写保护
+	__HAL_RCC_PWR_CLK_DISABLE();	//失能电源时钟PWR
+}
+
+/*RTC底层驱动，时钟配置
+此函数会被HAL_RTC_Init()调用
+hrtc:RTC句柄*/
+void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
+{
+    RCC_OscInitTypeDef RCC_OscInitStruct;
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
+	
+	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_LSE;//LSE配置
+    RCC_OscInitStruct.PLL.PLLState=RCC_PLL_NONE;
+    RCC_OscInitStruct.LSEState=RCC_LSE_ON;                  //RTC使用LSE
+    HAL_RCC_OscConfig(&RCC_OscInitStruct);
+	
+    PeriphClkInitStruct.PeriphClockSelection=RCC_PERIPHCLK_RTC;//外设为RTC
+    PeriphClkInitStruct.RTCClockSelection=RCC_RTCCLKSOURCE_LSE;//RTC时钟源为LSE
+    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+    
+    __HAL_RCC_RTC_ENABLE();//RTC时钟使能
+	
+	HAL_NVIC_SetPriority(RTC_Alarm_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
+}
+/*__________RTC读存_____________*/
+
+//RTC闹钟A中断的回调函数
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+	if(hrtc->Instance == RTC)
+	{
+		//ptintf("RTC_AlarmIRQ!!!");
+	}
+	
+}
+#endif
+
+
+
+
+
 /*_____________系统变量和函数（莫要乱动撒）_______________*/
+void sys_ENswd_DISjtag(void)
+{
+	/*PA13 A14为SWD必要线。PA15 B3 B4为额外用于JTAG的线*/
+	GPIO_InitTypeDef GPIO_Initure;
+	
+	GPIO_Initure.Pin = GPIO_PIN_13;
+	GPIO_Initure.Mode = GPIO_MODE_AF_PP;
+	GPIO_Initure.Pull=GPIO_NOPULL;
+	GPIO_Initure.Speed=GPIO_SPEED_FREQ_VERY_HIGH;
+	GPIO_Initure.Alternate = GPIO_AF0_SWJ;
+	HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	GPIO_Initure.Pin = GPIO_PIN_14;
+	HAL_GPIO_Init(GPIOA,&GPIO_Initure); 
+	
+	GPIO_Initure.Pin = GPIO_PIN_15;
+	GPIO_Initure.Mode = GPIO_MODE_INPUT;
+	GPIO_Initure.Alternate = NULL;
+	HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	GPIO_Initure.Pin = GPIO_PIN_3|GPIO_PIN_4;
+	HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+}
 u16	StartUpTimes;			/*用于保存开机次数，储存在最后一个或倒数第二个页*/
 uint32_t UIDw[3]; 			/*保存STM32内部UID识别码，全球唯一识别码*/
 uint32_t sysCoreClock; 		/*获取HCLK频率，外设时钟均来自此再分频*/
 
 u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
+
+unsigned char BCD2HEX(unsigned char bcd_data) //BCD转为HEX子程序 
+{
+    unsigned char temp; 
+    temp=(bcd_data/16*10 + bcd_data%16); 
+    return temp; 
+} 
+ 
+unsigned char HEX2BCD(unsigned char hex_data) //HEX转为BCD子程序 
+{ 
+    unsigned char temp; 
+    temp=(hex_data/10*16 + hex_data%10); 
+    return temp; 
+}
 
 /*字符串转整形，stm32不支持标准的atoi,这里自己实现*/
 int myatoi(const char *str)

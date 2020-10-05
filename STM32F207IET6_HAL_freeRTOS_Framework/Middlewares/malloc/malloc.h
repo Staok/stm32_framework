@@ -1,12 +1,13 @@
 #ifndef __MALLOC_H
 #define __MALLOC_H
-#include "sys.h"
+#include "PeriphConfigCore.h"
 
 /*此文件借鉴 ALIENTEK战舰STM32开发板V3 内存管理 的源代码*/
 /*后来又发现，硬石的YSFx系列开发板历程里的内存管理源代码和这里的几乎一模一样，而且都说自己是作者...*/
 
 /*______________________用户配置___________________________*/
 #define RAM_Num 	2	//定义支持的SRAM块数
+/*如果增添了第三块内存，在下面要照葫芦画瓢增加相应参数信息*/
 
 /*______________________用户配置___________________________*/
 //定义内存池标志
@@ -14,22 +15,21 @@
 #define ExRAM1   	1		//外部内存池1
 #define ExRAM2   	2		//外部内存池2（保留项，暂时没用到）
 
-/*______________________用户配置___________________________*/
+/*______________________用户配置：InrRAM___________________________*/
 //InrRAM内存参数设定，InrRAM完全处于内部SRAM里面
 #define InrRAM_BLOCK_SIZE			32  	  							//内存块大小为32字节（一般不用动，保持默认就好）
-#if ((STM32F103xG) || (STM32F103xE))
-	#define InrRAM_MAX_SIZE			40*1024  								//最大管理内存 40K （注意FreeRTOS的内存分配大小，灵活调整）
-#else
-	#define InrRAM_MAX_SIZE			5*1024  								//最大管理内存 5K （注意FreeRTOS的内存分配大小，灵活调整）
-#endif
-#define InrRAM_ALLOC_TABLE_SIZE	(InrRAM_MAX_SIZE/InrRAM_BLOCK_SIZE) 	//内存表大小
+#define InrRAM_MAX_SIZE			50*1024  								//最大管理内存 50K （注意FreeRTOS的内存分配大小，灵活调整）
 
-/*______________________用户配置___________________________*/
+#define InrRAM_ALLOC_TABLE_SIZE	(InrRAM_MAX_SIZE/InrRAM_BLOCK_SIZE) 	//内存表大小（这里就莫要乱动啦）
+
+/*______________________用户配置：ExRAM1___________________________*/
 //ExRAM1内存参数设定，ExRAM1的内存池处于外部SRAM里面（对于1M空间的外部RAM，这里保持默认就好）
 #define ExRAM1_BLOCK_SIZE			32  	  							//内存块大小为32字节（一般不用动，保持默认就好）
 #define ExRAM1_MAX_SIZE			960*1024  								//最大管理内存960K（对于1M空间的外部RAM，这里保持默认就好）
 #define ExRAM1_ALLOC_TABLE_SIZE	(ExRAM1_MAX_SIZE/ExRAM1_BLOCK_SIZE) 	//内存表大小，在ExRAM1_MAX_SIZE为960K情况下，这个占30K
-		 
+/*如果增添了第三块内存，然后要去.c文件修改要修改的部分*/
+
+
  /*________________________以下默认的不用动________________________*/
 //内存管理控制器
 struct _m_malloc_dev

@@ -78,19 +78,18 @@
 #endif
 
 //断言
-#define vAssertCalled(char,int) //printf("Error:%s,%d\r\n",char,int)
+#define vAssertCalled(char,int) //printf("Error:%s,%d\r\n",char,int);
 #define configASSERT(x) if((x)==0) vAssertCalled(__FILE__,__LINE__)
 
 /***************************************************************************************************************/
 /*                                        FreeRTOS基础配置配置选项                                              */
 /***************************************************************************************************************/
-#define SYSTEM_SUPPORT_OS						0						//注意：还要在sys.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则FreeRTOS跑不起来！*/
 #define configCHECK_FOR_STACK_OVERFLOW			0                       //大于0时启用堆栈溢出检测功能，如果使用此功能
                                                                         //用户必须提供一个栈溢出钩子函数，如果使用的话
                                                                         //此值可以为1或者2表示用哪种方法监测，1快速但会有遗漏，2略慢但是更全面
 #define configUSE_TICKLESS_IDLE					0                       //1启用低功耗tickless模式
 
-#define configMINIMAL_STACK_SIZE				((unsigned short)10)   //空闲任务使用的堆栈大小，实际占用的字节数为设定数的四倍
+#define configMINIMAL_STACK_SIZE				((unsigned short)15)   //空闲任务使用的堆栈大小，实际占用的字节数为设定数的四倍
 
 /***************************************************************************************************************/
 /*                                        从这里以下基本不动，除非你知道你在干什么                              */
@@ -125,17 +124,12 @@
 /*                                FreeRTOS与内存申请有关配置选项                                                */
 /***************************************************************************************************************/
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       //支持动态内存申请
-#define configTOTAL_HEAP_SIZE					((size_t)(10*1024))     //系统所有总的堆大小
+#define configTOTAL_HEAP_SIZE					((size_t)(30*1024))     //系统所有总的堆大小
 //->等待设置<-
 /*
-FLASH               RAM
-16K                 6K
-32K                 10K
-64K(md)             20K
-128K(md)            20K
-256K(hd)            48K或者64K
-384K                64K
-512K                64K
+STN32F207IET6：内部容量
+				FLASH               RAM
+				512K                128K
 */
 /***************************************************************************************************************/
 /*                                FreeRTOS与钩子函数有关的配置选项                                              */
@@ -198,13 +192,6 @@ FLASH               RAM
 //->等待设置<-
 #define configKERNEL_INTERRUPT_PRIORITY 		( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
-/***************************************************************************************************************/
-/*                                FreeRTOS与中断服务函数有关的配置选项                                          */
-/***************************************************************************************************************/
-#if SYSTEM_SUPPORT_OS
-	#define xPortPendSVHandler 	PendSV_Handler
-	#define vPortSVCHandler 	SVC_Handler
-#endif
 
 #endif /* FREERTOS_CONFIG_H */
 

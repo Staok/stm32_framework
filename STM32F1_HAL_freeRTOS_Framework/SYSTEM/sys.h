@@ -696,7 +696,7 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 										/*×¢£º¿´ÃÅ¹·ºÍµÍ¹¦ºÄ´ý»úÄ£Ê½²»ÄÜÍ¬Ê±¿ªÆô£¬ÒòÎª¿´ÃÅ¹·²»ÄÜ¹Ø±Õ£¬¿´ÃÅ¹·¸´Î»»á»½ÐÑµÍ¹¦ºÄ×´Ì¬*/
 /*µ±ÆôÓÃ SYSTEM_StdbyWKUP_ENABLE ºó£¬PA0×÷ÎªWKUP°´¼ü£¬Ä¬ÈÏ³¤°´3Ãë½øÈë´ý»ú×´Ì¬£¬ÔÙ´Î°´ÏÂÔò»Ö¸´£¬½øÈë´ý»úÄ£Ê½º¯ÊýÔÚPA0µÄÍâ²¿ÖÐ¶ÏÀï*/
 //¶ÔÓÚPA0£¬°´ÏÂÎª¸ßµçÆ½£¬°´ÏÂ3sºóËÉ¿ª£¬ÑÓÊ±Ò»Ãë£¨¸øÊ±¼ä×ö±£´æÊý¾ÝµÈ¹Ø»úÇ°µÄ×¼±¸£©ºó½øÈë´ý»ú×´Ì¬£¨¹Ø»ú£©£¬ÔÙ´Î°´ÏÂ¿ª»ú
-/*WKUP IO²»ÓÃÍâ½ÓÏÂÀ­µç×è£¬ÔÚÅäÖÃÊ±STM32ÄÚ²¿ÒÑ¾­ÉÏÀ­*/
+/*WKUP IO²»ÓÃÍâ½ÓÏÂÀ­µç×è£¬ÔÚÅäÖÃÊ±STM32ÄÚ²¿ÒÑ¾­ÏÂÀ­*/
 
 /*²»Í¬ÈÝÁ¿µÄFLASH×éÖ¯·½Ê½£º
 Ð¡ÈÝÁ¿£º32¸ö	1K×Ö½Ú/Ò³

@@ -1,6 +1,29 @@
 #ifndef __TASKCONFIG_H
 #define __TASKCONFIG_H
 
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "PeriphConfigCore.h"
+#include "PeriphConfig.h"
+
+
+/*_________________________以下部分固定的不用动_____________________________________*/
+struct TaskStructure{
+    TaskFunction_t  Task_Function;
+    const char*     Task_Name;
+    uint16_t        Task_STK_Size;
+    void*           Task_Para;
+    UBaseType_t     Task_Prio;
+    TaskHandle_t Task_Handle;
+};
+
+extern struct TaskStructure Define_Task[];
+BaseType_t xTaskCreate_t(uint8_t taskIndex);
+
+void Task_Begin(void);
+void start_task(void *pvParameters);
+
 #endif
 
 

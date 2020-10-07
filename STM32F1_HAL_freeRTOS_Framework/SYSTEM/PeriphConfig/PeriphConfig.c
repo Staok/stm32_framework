@@ -6,22 +6,40 @@ ______________________________【PIN MAP】_______________________________________
 注：以下这些外设的IO在其初始化函数内已经初始化好，不用再单独初始化
 						[IO]										[描述]
 外设：	* PA8												MCO输出，默认时钟源为HSE
+		
 		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
+		
 		  CH1/PB4	CH2/PB5		CH3/PB0		CH4/PB1			TIM3部分重映射PWM口
 		  CH1/PC6	CH2/PC7		CH3/PC8		CH4/PC9			TIM3完全重映射PWM口
+		  
 		* TX/PA9	RX/PA10		TX/PB6		RX/PB7			USART1默认引脚和重映射引脚
 		  TX/PA2	RX/PA3		TX/PD5		RX/PD6			USART2默认引脚和重映射引脚
 		  TX/PB10	RX/PB11		TX/PD8		RX/PD9			USART3默认引脚和重映射引脚
+		  
 		* CS/PA4	CLK/PA5		MISO/PA6	MOSI/PA7		SPI1默认引脚
 		  CS/PB12	CLK/PB13	MISO/PB14 	MOSI/PB15		SPI2默认引脚
+		  
 		* 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15	ADC1各个通道引脚
 		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
+		  
 		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
+		
+		* CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM8的PWM通道
+		  PC6/PA7		PC7/PB0			PC8/PB1			PC9		PA6
+		  
+		  				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM1的PWM通道
+		* 默认			PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12
+		  部分重映射	PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6
+		  完全重映射	PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15
+		
 		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
+		
 		* PA4		PA5										DAC_OUT1  DAC_OUT2（hd容量系类外设）
+		
 		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
 		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
-		  * 												FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
+		  
+		* 												FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
 		  D2	D3	NOE	NWE	NE1/NCE2	D13	D14 D15 	A16 	A17 	A18 	D0 		D1
 		  PD0	PD1	PD4	PD5	PD7			PD8	PD9	PD10	PD11	PD12	PD13	PD14	PD15
 		  

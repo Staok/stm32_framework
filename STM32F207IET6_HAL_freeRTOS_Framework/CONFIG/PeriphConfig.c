@@ -1103,6 +1103,346 @@ void TIM7_IRQHandler(void)
 
 
 
+/*__________________________________低功耗StandbyMode__________________________________________*/
+#if SYSTEM_StdbyWKUP_ENABLE
+
+void sys_StdbyWKUP_ENABLE(void)
+{
+	#if !SYSTEM_SUPPORT_OS
+    GPIO_InitTypeDef GPIO_Initure;
+    __HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+	
+    GPIO_Initure.Pin=GPIO_PIN_0;            //PA0
+    GPIO_Initure.Mode=GPIO_MODE_IT_RISING;  //中断,上升沿
+    GPIO_Initure.Pull=GPIO_PULLDOWN;        //下拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//快速
+    HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	/*PA0外部中断函数在 HAL_GPIO_EXTI_Callback 里*/
+    
+//    //检查是否是正常开机
+//    if(Check_WKUP()==0)
+//    {
+//        Sys_Enter_Standby();//不是开机，进入待机模式
+//    }
+
+    HAL_NVIC_SetPriority(EXTI0_IRQn,2,0);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+	
+	#else
+	
+    GPIO_InitTypeDef GPIO_Initure;
+    __HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+	
+    GPIO_Initure.Pin=GPIO_PIN_0;            //PA0
+    GPIO_Initure.Mode=GPIO_MODE_INPUT;  //输入检测
+    GPIO_Initure.Pull=GPIO_PULLDOWN;        //下拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;//快速
+    HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	#endif
+}
+
+
+//系统进入待机模式
+void Sys_Enter_Standby(void)
+{
+	while(WKUP_KD == 1){;} //WKUP按键松开后，下面会延时1s，用于准备和处理关机前的事务
+	HAL_Delay(500);
+	while(WKUP_KD == 1){;}
+	HAL_Delay(500);
+    //__HAL_RCC_APB2_FORCE_RESET();       //复位所有IO口 
+	__HAL_RCC_PWR_CLK_ENABLE();         //使能PWR时钟
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);                  //清除Wake_UP标志
+    HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);           //设置WKUP用于唤醒
+    HAL_PWR_EnterSTANDBYMode();                         //进入待机模式     
+}
+
+//检测WKUP脚的信号
+//返回值1:连续按下3s以上
+//      0:错误的触发	
+u8 Check_WKUP(void) 
+{
+	u8 t=0;	//记录按下的时间
+	while(1)
+	{
+		if(WKUP_KD)
+		{
+			t++;			//已经按下了 
+			HAL_Delay(30);
+			if(t>=100)		//按下超过3秒钟
+			{
+				return 1; 	//按下3s以上了
+			}
+		}else 
+		{ 
+			return 0; //按下不足3秒
+		}
+	}
+}
+
+void sys_CheckWKUP_4RTOS(void)
+{
+	static u8 t=0;	//记录按下的时间
+	if(WKUP_KD)
+	{
+		t++;			//已经按下了 
+		HAL_Delay(30);
+		if(t>=100)		//按下超过3秒钟
+		{
+			Sys_Enter_Standby();//按下3s以上了，进入待机模式
+		}
+	}else 
+	{} //按下不足3秒
+}
+
+#endif
+
+
+
+/*________________________________________用户ADC1配置_________________________________________________________*/
+#if SYSTEM_ADC1_ENABLE
+
+
+void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime)
+{
+    ADC_ChannelConfTypeDef ADC1_ChanConf;      
+    ADC1_ChanConf.Channel      = Channel;                      		//通道
+    ADC1_ChanConf.Rank         = Rank;                          	//第几个序列
+    ADC1_ChanConf.SamplingTime = SamplingTime;                  	//采样时间 
+    HAL_ADC_ConfigChannel(AdcHandle,&ADC1_ChanConf);              	//通道配置
+}
+
+ADC_HandleTypeDef ADC1_Handler;		//ADC句柄
+void sys_ADC1_ENABLE(void)
+{
+	u8 i;
+	i = 1;
+	
+	#if SYSTEM_ADC1_useScan
+		/*先初始化DMA，再初始化ADC*/
+		ADC_DMA_Cfg();
+		//HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,12);	//开始DMA，指定接收数组，最后一个参数为数据长度（要传多少次）
+	#endif
+	
+    ADC1_Handler.Instance=ADC1;
+	ADC1_Handler.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2; //也不知道这时钟是多少
+    ADC1_Handler.Init.DataAlign=ADC_DATAALIGN_RIGHT;             //右对齐
+	ADC1_Handler.Init.Resolution = ADC_RESOLUTION_12B;
+	
+	if(!SYSTEM_ADC1_useScan)
+	{
+		ADC1_Handler.Init.ScanConvMode=DISABLE;                  //非扫描模式
+		ADC1_Handler.Init.ContinuousConvMode=DISABLE,
+		ADC1_Handler.Init.DMAContinuousRequests = DISABLE;
+		ADC1_Handler.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+	}else{
+		ADC1_Handler.Init.ScanConvMode=ENABLE;					 //扫描模式
+		
+		if(SYSTEM_ADC1_useCircular)
+		{	ADC1_Handler.Init.ContinuousConvMode=ENABLE;               //连续转换 开启：本次转换玩规则通道内全部通道后又自动启动下一次转换；不开启：触发一次转换一次；
+			ADC1_Handler.Init.DMAContinuousRequests = ENABLE;
+			ADC1_Handler.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+		}
+		else{
+			ADC1_Handler.Init.ContinuousConvMode=DISABLE;
+			ADC1_Handler.Init.DMAContinuousRequests = DISABLE;
+			ADC1_Handler.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+		}
+	}
+	
+	if(SYSTEM_ADC1_useScan)
+		ADC1_Handler.Init.NbrOfConversion=SYSTEM_ADC1_useChanlNum;   	//n个转换在规则序列中
+	else ADC1_Handler.Init.NbrOfConversion=1;							//只转换规则序列1
+	
+    ADC1_Handler.Init.DiscontinuousConvMode=DISABLE;             //禁止不连续采样模式
+    ADC1_Handler.Init.NbrOfDiscConversion=0;                     //不连续采样通道数为0
+	ADC1_Handler.Init.ExternalTrigConv=ADC_SOFTWARE_START;  	 //软件触发
+	ADC1_Handler.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    HAL_ADC_Init(&ADC1_Handler);                                 //初始化 
+	
+	//HAL_ADCEx_Calibration_Start(&ADC1_Handler);					 //校准ADC
+	
+	if(SYSTEM_ADC1_useScan)		//如果启用扫描，则把所有通道都加入到规则组里
+	{               
+		if((SYSTEM_ADC1_useChanl) & B1in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_0, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B2in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_1, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B3in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_2, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B4in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_3, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B5in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_4, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B6in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_5, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B7in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_6, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B8in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_7, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B9in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_8, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B10in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_9, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B11in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_10, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B12in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_11, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B13in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_12, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B14in16)	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_13, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		if((SYSTEM_ADC1_useChanl) & B15in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_14, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		//if((SYSTEM_ADC1_useChanl) & 0x10) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_15, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+		
+		if((SYSTEM_ADC1_useChanl) & B16in16) 	ADC_RegularChannelConfig(&ADC1_Handler, ADC_CHANNEL_TEMPSENSOR, (uint32_t)(i++), ADC_SAMPLETIME_56CYCLES);
+	}
+}
+
+//此函数会被HAL_ADC_Init()调用
+//hadc:ADC句柄
+void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
+{
+/*	
+	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
+	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
+*/
+	if(hadc->Instance == ADC1)
+	{
+		GPIO_InitTypeDef GPIO_Initure;
+		__HAL_RCC_ADC1_CLK_ENABLE();            //使能ADC1时钟
+		__HAL_RCC_GPIOA_CLK_ENABLE();			//开启GPIOA时钟
+		__HAL_RCC_GPIOB_CLK_ENABLE();
+		
+		GPIO_Initure.Mode=GPIO_MODE_ANALOG;     //模拟
+		GPIO_Initure.Pull=GPIO_NOPULL;          //不带上下拉
+		               
+		if((SYSTEM_ADC1_useChanl) & B1in16) {
+			GPIO_Initure.Pin=GPIO_PIN_0; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B2in16) {
+			GPIO_Initure.Pin=GPIO_PIN_1; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B3in16) {
+			GPIO_Initure.Pin=GPIO_PIN_2; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B4in16) {
+			GPIO_Initure.Pin=GPIO_PIN_3; 
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+			}
+		if((SYSTEM_ADC1_useChanl) & B5in16) {GPIO_Initure.Pin=GPIO_PIN_4; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B6in16) {GPIO_Initure.Pin=GPIO_PIN_5; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B7in16) {GPIO_Initure.Pin=GPIO_PIN_6; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B8in16) {GPIO_Initure.Pin=GPIO_PIN_7; HAL_GPIO_Init(GPIOA,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B9in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOB,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B10in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOB,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B11in16) {GPIO_Initure.Pin=GPIO_PIN_0; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B12in16) {GPIO_Initure.Pin=GPIO_PIN_1; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B13in16) {GPIO_Initure.Pin=GPIO_PIN_2; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B14in16) {GPIO_Initure.Pin=GPIO_PIN_3; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		if((SYSTEM_ADC1_useChanl) & B15in16) {GPIO_Initure.Pin=GPIO_PIN_4; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}
+		//if((SYSTEM_ADC1_useChanl) & B166in16) {GPIO_Initure.Pin=GPIO_PIN_5; HAL_GPIO_Init(GPIOC,&GPIO_Initure);}  留作内部温度通道，第16个ADC1通道不可用
+	}
+}
+
+
+u16 adValue[SYSTEM_ADC1_useChanlNum];		  /*DMA1把ADC转换结果传送的目标位置*/
+u8 adValueDone = 0;			/*DMA把ADC1的值传送到adValue完成标志*/
+
+//获得ADC值
+//ch: 通道值 0~16，取值范围为：ADC_CHANNEL_0~ADC_CHANNEL_16
+//返回值:转换结果
+u16 Get_Adc(u32 ch)   
+{
+	ADC_ChannelConfTypeDef ADC1_ChanConf;
+	if (!SYSTEM_ADC1_useScan)
+	{	
+		ADC1_ChanConf.Channel=ch;                                   //通道
+		ADC1_ChanConf.Rank=1;                                       //第1个序列，序列1
+		ADC1_ChanConf.SamplingTime=ADC_SAMPLETIME_480CYCLES;      	//采样时间               
+		HAL_ADC_ConfigChannel(&ADC1_Handler,&ADC1_ChanConf);        //通道配置
+		
+		HAL_ADC_Start(&ADC1_Handler);                               //开启ADC
+		HAL_ADC_PollForConversion(&ADC1_Handler,2);                 //死等
+		return (u16)HAL_ADC_GetValue(&ADC1_Handler);	        	//返回最近一次ADC1规则组的转换结果
+	}else
+	{
+		return 2333;
+	}
+}
+
+u32 Get_Adc_Average(u32 ch,u8 times)
+{
+	u32 temp_val = 0;
+	u8 t;
+	
+	for(t=0;t < times;t++)
+	{
+		temp_val += Get_Adc(ch);
+		HAL_Delay(1);
+	}
+	return (temp_val/times);
+}
+
+/*把AD采集温度通道的原始值，转化为温度值*/
+float Get_Temprate(u32 adcx)
+{
+ 	float temperate;
+	temperate = ((float)adcx)*(3.3/4096.0);				//电压值
+	temperate = (1.43-temperate)/0.0043 + 25.0;				//转换为温度值 	 
+	return temperate;
+}
+
+#if SYSTEM_ADC1_useScan
+DMA_HandleTypeDef  ADC1rxDMA_Handler; //DMA句柄
+
+//DMA1的各通道配置
+//这里的传输形式是固定的,这点要根据不同的情况来修改
+//从存储器->外设模式/8位数据宽度/存储器增量模式
+void ADC_DMA_Cfg(void)
+{
+	__HAL_RCC_DMA2_CLK_ENABLE();
+
+    ADC1rxDMA_Handler.Instance = DMA2_Stream0;                                 //DMA Stream0
+	ADC1rxDMA_Handler.Init.Channel = DMA_CHANNEL_0;
+    ADC1rxDMA_Handler.Init.Direction=DMA_PERIPH_TO_MEMORY;                     //外设到存储器
+    ADC1rxDMA_Handler.Init.PeriphInc=DMA_PINC_DISABLE;                        //外设非增量模式
+    ADC1rxDMA_Handler.Init.MemInc=DMA_MINC_ENABLE;                             //存储器增量模式
+    ADC1rxDMA_Handler.Init.PeriphDataAlignment=DMA_PDATAALIGN_HALFWORD;        //外设数据长度:16位
+    ADC1rxDMA_Handler.Init.MemDataAlignment=DMA_MDATAALIGN_HALFWORD;          //存储器数据长度:16位
+	
+	if(SYSTEM_ADC1_useCircular)
+		ADC1rxDMA_Handler.Init.Mode=DMA_CIRCULAR;                                 	//如果ADC选择连续模式，这里是循环，如果不开启连续模式，这里是正常模式
+	else ADC1rxDMA_Handler.Init.Mode=DMA_NORMAL;
+   
+	ADC1rxDMA_Handler.Init.Priority=DMA_PRIORITY_MEDIUM;                       //优先级
+
+    //ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;
+	ADC1rxDMA_Handler.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    
+	HAL_DMA_DeInit(&ADC1rxDMA_Handler);                                      //DMA复位
+    HAL_DMA_Init(&ADC1rxDMA_Handler);                                        //DMA初始化 
+        
+		/*			数据源   数据源句柄中的DMA变量	  使用的DMA句柄*/
+	__HAL_LINKDMA(&ADC1_Handler,DMA_Handle,ADC1rxDMA_Handler);               //将DMA与ADC联系起来(发送DMA)
+	/*把DMA句柄ADC1rxDMA_Handler赋给ADC1_Handler的DMA_Handle*/
+        
+    HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 2, 0);                          //DMA中断优先级 必须开，勿动！
+    HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);                                  //使能DMA中断
+}
+
+//DMA2 Stream0中断服务函数，完成传送一次时的中断，不用，因为要等AD全部规则通道转换完后再产生一次中断
+void DMA2_Stream0_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(&ADC1rxDMA_Handler); /*清除中断标志，并判断是否完成全部转换，勿动！*/
+}
+
+//HAL_DMA_IRQHandler的回调函数，ADC转换完成所有规则组通道后的中断函数
+/*HAL_ADC_Start_DMA这个函数把HAL_ADC_ConvCpltCallback设为ADC1rxDMA_Handler这个DMA句柄的回调函数了，
+自动的，所以只需开DMA的中断，不需要开ADC中断，当所有通道都转换好后，DMA中断就会回调这个函数*/
+/*TODO：试验一下，把ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;这句话注释掉，应该不影响效果，
+因为HAL_ADC_Start_DMA这个函数必须要最后调用，所以DMA的回调函数被更新了！*/
+/*总之，把ADC1rxDMA_Handler.XferCpltCallback = HAL_DMA_IRQHandler;注释掉，剩下的部分就是最标准的写法，大概*/
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	adValueDone = 1; /*标志本次规则组通道全部转换完成，勿动！*/
+}
+
+#endif
+
+#endif
+
+
 /*_________________________________________________DAC_________________________________________________________*/
 #if ((SYSTEM_DAC_OUT1_ENABLE) || (SYSTEM_DAC_OUT2_ENABLE))
 

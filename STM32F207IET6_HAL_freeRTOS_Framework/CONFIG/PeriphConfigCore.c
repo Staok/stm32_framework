@@ -289,7 +289,9 @@ u8 Stm32_Clock_Init(void)
 		HAL_NVIC_EnableIRQ(SysTick_IRQn);
 	#else
 		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
+		
 		HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+		HAL_NVIC_EnableIRQ(SysTick_IRQn);
 	#endif
 	
 	/** Enables the Clock Security System
@@ -932,7 +934,7 @@ void TIM3_IRQHandler(void)
 
 UART_HandleTypeDef UART1_Handler,UART2_Handler,UART3_Handler; //UART句柄
 u8 aRxBuffer1[RXBUFFERSIZE],aRxBuffer2[RXBUFFERSIZE],aRxBuffer3[RXBUFFERSIZE];//HAL库使用的串口接收缓冲
-//QueueHandle_t Uart1_fifo;	/*串口1的模式1数据接受fifo句柄*/
+//QueueHandle_t Uart1_fifo;	/*串口1的模式1数据接收fifo句柄*/
 
 /*printf函数和printf_uart会调用此函数发送单个字节，需填入串口发送，只用printf_uart就行了*/
 void _putchar(char character)
@@ -972,7 +974,6 @@ void sys_USART1_ENABLE(void)
 	HAL_UART_Init(&UART1_Handler);					    		//HAL_UART_Init()会使能UART1
 	
 	HAL_UART_Receive_IT(&UART1_Handler, (u8 *)aRxBuffer1, RXBUFFERSIZE);//该函数会开启接收中断：标志位UART_IT_RXNE，并且设置接收缓冲以及接收缓冲接收最大数据量
-	
 	
 //	Uart1_fifo = xQueueCreate(USART1_RX_FIFO_MaxNum,sizeof( char ));
 //	

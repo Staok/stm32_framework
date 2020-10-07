@@ -1,4 +1,143 @@
+#include "TaskConfig.h"
 
+/*__________创建任务函数，封装，固定的不要动_____________*/
+BaseType_t xTaskCreate_t(uint8_t taskIndex)
+{
+	return (xTaskCreate( 	Define_Task[taskIndex].Task_Function,
+                            Define_Task[taskIndex].Task_Name,
+                            Define_Task[taskIndex].Task_STK_Size,
+                            Define_Task[taskIndex].Task_Para,
+                            Define_Task[taskIndex].Task_Prio,
+                            &Define_Task[taskIndex].Task_Handle));//任务句柄，创建任务这里取地址
+}
+
+/*********************************************************************************************/
+/*                      以下为要修改的部分                                                   */
+/********************************************************************************************/
+
+//STEP 1:总任务数量（用户任务数量 + 1）
+#define task_Num	3 
+
+//STEP 2:任务索引枚举，公共变量，与Define_Task里面同样顺序的向下写
+enum taskIndex_enum{
+	start_t = 0,	/*固定的不要删*/
+	
+	led0_t,
+	Stdby_t
+}taskIndex;
+
+//STEP 3:任务函数的声明
+void led0_task(void *pvParameters);
+void Stdby_task(void *pvParameters);
+
+//STEP 4:设置任务要素
+struct TaskStructure Define_Task[task_Num] = {
+	/*任务函数      	任务名称      	分配堆栈      传入参数   任务优先级*/
+    {start_task,		"start_task",		128,		NULL,		2	},	//创建用户任务的任务，固定的不要删
+    {led0_task,			"led0_task",		50,			NULL,		3	},
+    {Stdby_task,		"Stdby_task",		200,		NULL,		3	}
+};  
+/*注；堆栈实际占用字节数为定义数的四倍，即定义数的单位为字*/
+
+//struct TaskStructure Define_Task0 = {
+//    .Task_Function = start_task,
+//    .Task_Name = "start_task",
+//};
+
+/*__________创建开始任务，这部分固定的不用动_____________*/
+void Task_Begin(void)
+{
+	BaseType_t is_error;
+	//创建开始任务	
+	is_error = xTaskCreate_t(start_t);
+	/*上面函数为对下面一条语句的封装，为了简化*/
+//    is_error = xTaskCreate( Define_Task[start_t].Task_Function,
+//                            Define_Task[start_t].Task_Name,
+//                            Define_Task[start_t].Task_STK_Size,
+//                            Define_Task[start_t].Task_Para,
+//                            Define_Task[start_t].Task_Prio,
+//                            &Define_Task[start_t].Task_Handle);
+	
+	if(is_error == pdPASS)
+    {
+        vTaskStartScheduler();          //开启任务调度
+    }else{
+		FaultASSERT("AT : Creating start_t failed,sys stoped");
+        for(;;){;}
+    }
+}
+
+/*__________开始初始化任务函数_____________*/
+void start_task(void *pvParameters)
+{
+	uint8_t TaskCount;
+    taskENTER_CRITICAL();           //进入临界区
+	
+	//STEP 4.5:设置通讯要素
+	//进行消息队列和任务通知等相关的初始化，用户按需要修改
+	
+	
+	
+	
+	//进行任务相关的初始化，以下部分固定的不用动
+	for(TaskCount = 1;TaskCount < task_Num;TaskCount++)
+	{
+		xTaskCreate_t(TaskCount);
+	}
+    
+    vTaskDelete(Define_Task[start_t].Task_Handle); 
+    //删除开始任务，内存也被释放掉，删除任务这里放任务句柄，不取地址
+	
+    taskEXIT_CRITICAL();            //退出临界区
+}
+
+/*__________STEP 5:用户应用任务_____________*/
+/*如若运行出现问题，先把任务分配的内存往高了整！*/
+void led0_task(void *pvParameters)
+{
+	/*本任务所用的变量的定义，第一次运行需要设置的内容，或者本任务只需要运行一次的内容*/
+	
+	//float staok = 666.0;
+	TickType_t PreviousWakeTime = xTaskGetTickCount(); 
+	
+	//进入本任务的主循环
+    for(;;)
+    {
+        //staok += 0.1;
+        vTaskDelayUntil(&PreviousWakeTime,pdMS_TO_TICKS(300));
+		//vTaskDelay(300);
+		//HAL_Delay(300);
+		TestLED_Ctrl = !TestLED_Ctrl;
+    }
+	
+	/*不能从任务函数中退出，除非提前删除任务，否则会调用configASSERT()引起错误*/
+}   
+
+
+void Stdby_task(void *pvParameters)
+{
+    for(;;)
+    {
+		//vTaskDelay(300);
+		
+		#if SYSTEM_StdbyWKUP_ENABLE
+			sys_CheckWKUP_4RTOS();  //对于PA0，按下为高电平，按下3s后松开，延时一秒后进入待机状态（关机），再次按下开机
+		#endif
+		
+		/*串口回显*/
+//		u16 num4uart1;
+//		char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
+//		if(buf4uart1 != NULL)
+//		{
+//			if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == HAL_OK)
+//			{
+//				printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
+//			}
+//		}
+//		myfree(InrRAM,buf4uart1);
+
+	}
+}
 
 /*
 _____________大部分API罗列_____________

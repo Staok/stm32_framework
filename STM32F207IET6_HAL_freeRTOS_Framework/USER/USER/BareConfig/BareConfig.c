@@ -24,7 +24,6 @@ void Bare_Begin(void)
 		{
 			Timer_IT_flags._10msec_flag = FALSE;
 			
-			
 		}
 		
 		

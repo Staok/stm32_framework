@@ -9,9 +9,6 @@
 
 int main(void)
 {
-	/*选择是否用FreeRTOS和写初始化函数均在sys.c里*/
-	/*FreeRTOS任务编写在TaskConfig.c里*/
-	/*裸机程序任务编写在BareConfig.c里*/
 	HAL_Init();                    		/*初始化HAL库*/
 	sys_MCU_Init_Seq();					/*MCU外设初始化序列，所有初始化写到这里面——————！按需要进行修改！*/
 	HAL_Delay(66);
@@ -26,6 +23,18 @@ int main(void)
 		#endif
 	}
 }
+
+/*
+使用说明：
+	外设剪裁和配置在PeriphconfigCore.h里
+	
+	初始化函数均在PeriphconfigCore.c里
+	所有外设API均在PeriphconfigCore.h，新文件使用时请调用
+	所有GPIO的API均在Periphconfig.h，新文件使用时请调用
+	
+	FreeRTOS任务编写在TaskConfig.c里
+	裸机程序任务编写在BareConfig.c里
+*/
 
 
 

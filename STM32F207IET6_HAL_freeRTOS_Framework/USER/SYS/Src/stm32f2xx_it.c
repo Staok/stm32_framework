@@ -144,7 +144,7 @@ void SysTick_Handler(void)
 {
   HAL_IncTick();
   #if SYSTEM_SUPPORT_OS
-	// extern void xPortSysTickHandler(void);
+	 extern void xPortSysTickHandler(void);
 	if(xTaskGetSchedulerState()!=taskSCHEDULER_NOT_STARTED)//系统已经运行
 	{
 		xPortSysTickHandler();	

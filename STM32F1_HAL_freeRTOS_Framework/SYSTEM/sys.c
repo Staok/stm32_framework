@@ -814,7 +814,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		}else 		/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时拿走，如果缓存满了则新入数据丢失*/
 		{
 			/*这里不好使，当数据量很大的时候MCU就卡死了，以后换成一个别的协议解析比如modbus等等*/
-//			BaseType_t YieldRequired;
+//			BaseType_t YieldRequired = pdFALSE;
 //			if(uxQueueSpacesAvailable(Uart1_fifo) > 0)
 //			{
 //				xQueueSendFromISR(Uart1_fifo,&aRxBuffer1[0],&YieldRequired);
@@ -822,6 +822,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //				xQueueOverwriteFromISR(Uart1_fifo,&aRxBuffer1[0],&YieldRequired);
 //			}
 //			if(YieldRequired == pdTRUE) portYIELD_FROM_ISR(YieldRequired);
+//			portEND_SWITCHING_ISR( YieldRequired );
 		}
 	}else if(huart->Instance==USART2)//如果是串口2
 	{

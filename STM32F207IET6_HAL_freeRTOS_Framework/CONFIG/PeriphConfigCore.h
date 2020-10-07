@@ -11,8 +11,9 @@
 注：以下这些外设的IO在其初始化函数内已经初始化好，不用再单独初始化
 						[IO]										[描述]
 外设：	* PA8												MCO输出，默认时钟源为HSE
-
+		
 		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
+		
 		  CH1/PB4	CH2/PB5		CH3/PB0		CH4/PB1			TIM3部分重映射PWM口
 		  CH1/PC6	CH2/PC7		CH3/PC8		CH4/PC9			TIM3完全重映射PWM口
 		  
@@ -28,6 +29,14 @@
 		  
 		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
 		
+		* CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM8的PWM通道
+		  PC6/PA7		PC7/PB0			PC8/PB1			PC9		PA6
+		  
+		  				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM1的PWM通道
+		* 默认			PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12
+		  部分重映射	PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6
+		  完全重映射	PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15
+		
 		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
 		
 		* PA4		PA5										DAC_OUT1  DAC_OUT2（hd容量系类外设）
@@ -35,7 +44,7 @@
 		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
 		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
 		  
-		* 													FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
+		* 												FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
 		  D2	D3	NOE	NWE	NE1/NCE2	D13	D14 D15 	A16 	A17 	A18 	D0 		D1
 		  PD0	PD1	PD4	PD5	PD7			PD8	PD9	PD10	PD11	PD12	PD13	PD14	PD15
 		  
@@ -48,10 +57,19 @@
 		  NE2/NCE3	NCE4_1/NE3	NCE4_2	NE4		A24		A25
 		  PG9		PG10		PG11	PG12	PG13	PG14
 		  
-		* ...TODO:TIM1/8等、DCMI、USB、CAN等外设的IO还没有列出
+		* ...TODO:DCMI、USB、CAN等外设的IO还没有列出
 
 
 用户：	*
+*/
+
+/*_______________________________复用资源介绍___________________________________________
+
+GPIO的AF复用功能完整表在 “stm32f207ie.pdf” 的 59页 开始
+
+DMAx的数据流和通道分配完整表在 “寄存器手册-cd00225773-stm32f205xx-stm32f207xx-stm32f215xx-and-stm32f217xx-advanced-armbased-32bit-mcus-stmicroelectronics”
+			的 180页 开始
+
 */
 
 /*_______________________________外设资源介绍___________________________________________
@@ -204,19 +222,20 @@ unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 /*
  *FreeRTOS启用
  */
-#define SYSTEM_SUPPORT_OS		0				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
+#define SYSTEM_SUPPORT_OS		1				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
 													FreeRTOS版本：v10.3.1
-													默认用于任务的RAM堆栈大小为5KB，按需修改！
-												注意：还要在FreeRTOSConfig.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则系统不会调用FreeRTOS的任务切换SVC中断函数，跑不起来！*/
+													默认用于任务的RAM堆栈大小为30KB，按需修改！*/
 	#if SYSTEM_SUPPORT_OS
 		#include "FreeRTOS.h"	//FreeRTOS使用,这里不要乱动	  
 		#include "task.h"
 		#include "queue.h"
 		#include "TaskConfig.h"
+		#define xPortPendSVHandler 	PendSV_Handler //FreeRTOS与中断服务函数有关的配置选项，莫要乱动撒
+		#define vPortSVCHandler 	SVC_Handler
 	#else
 		#include "BareConfig.h"	
 	#endif
-
+	
 #define SYSTEM_IWDG_ENABLE		0			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/
 											/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
 #define SYSTEM_MCO_PA8_OUT		0			/*设置PA8为MCO输出，默认时钟源为HSE（25M），五倍分频（最大分频）*/
@@ -394,6 +413,73 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 */
 
 
+/*对于ADC和DAC，如果Vref+连接到3.0V基准，则要修改程序！*/
+/*hd系列外设，DAC两个输出通道 PA4和PA5，默认初始化为12位右对齐，速度最快为250K左右，输出范围 0~Vref+，默认Vref+为3.3V，否则自行更改转换计算*/
+/*可选输出 噪声波形 和 三角波波形 ，默认不适用外部触发，可选触发源在初始化函数中修改（有定时器中断和外部中断线9）*/
+#define SYSTEM_DAC_OUT1_ENABLE	0
+#define SYSTEM_DAC_OUT2_ENABLE	0
+/*可用API:
+	设置通道1输出电压,vol:0~3.30V
+		void DAC_Set_Ch1_Vol(float vol)
+	设置通道2输出电压,vol:0~3.30V
+		void DAC_Set_Ch2_Vol(float vol)
+*/
+
+/*	对于ADC和DAC，如果Vref+连接到3.0V基准，则要修改程序！
+	ADC：STN32的是12位逐次逼近型，分ADC1、2和3，其中ADC1和ADC2的引脚一样（除了内部通道）；
+	最大速率1MHz，1us（在AD时钟14MHz（最高），采样时间为1.5个周期得到），总转换时间为 (采样时间 + 12.5个周期)，采样时间长则采样精度高；
+	参考电压 Vref-必须连到VSSA，Vref+可连到 2.4V~VDDA，ADC输入电压必须小于Vref+，默认Vref+为3.3V，否则自行更改转换计算
+	ADC1本质就是一个AD转换器加16路选择器，所以ADC1同一时刻采样值只能是一个，如果用在规则组中扫描模式，无法得知当前结果是哪一路的，一个AD模块一个值
+	ADC1的通道与引脚映射：
+	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
+	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
+*/
+#define SYSTEM_ADC1_ENABLE		1			/*启否ADC1*/
+	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里，并使用DMA2 Stream0的通道0把转换结果放到目标位置
+												如果不启用，则为软件触发的单次转换*/
+		#define SYSTEM_ADC1_useCircular	1	/*只在扫描模式下有效；开启则自动循环ADC转换，只需要判断标志位和读数即可，不需要软件手动触发开启一次ADC转换*/
+	#define SYSTEM_ADC1_useChanlNum	4		/*定义共用多少路通道*/
+	#define SYSTEM_ADC1_useChanl	B1in16|B4in16|B5in16|InrTemp /*定义共用哪些通道，可写B1in16~B15in16（分别代表通道0~14），和InrTemp(内部温度通道)
+														（第16个ADC1通道留作内部温度标志所以不可用）*/
+													/*如果只用采集内部温度，而不用其他通道，应设置：SYSTEM_ADC1_useChanlNum为1  SYSTEM_ADC1_useChanl单设为InrTemp*/
+		#define InrTemp B16in16
+		extern u16 adValue[SYSTEM_ADC1_useChanlNum];/*扫描模式下DMA1把ADC转换结果传送的目标位置*/
+		extern u8 adValueDone; 						/*扫描模式下转换完成标志*/
+/*可用的API：返回的都是原始ADC值
+		凡是启用 SYSTEM_ADC1_useScan 扫描模式，即触发一次，自动扫描所有规则组里的通道————适合快速
+					自动用DMA2 Stream0的通道0发送到adValue[]，并置位adValueDone
+			读取顺序：
+				调用 HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum); 一次则开启一次规则组全部通道的转换
+					调用1次则把规则组所有通道转换一遍，然后判断标志位adValueDone等着在adValue[]取数就行了
+				如果 SYSTEM_ADC1_useCircular 打开：只需要执行一次！一次！ HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum); 即可
+				
+				判断 adValueDone 是否为1，是则从 adValue[x] 读值即可，如果启用 内部温度 通道，其值保存在adValue[SYSTEM_ADC1_useChanlNum-1]
+				读取完后对 adValueDone 清零
+				停止转换为 HAL_ADC_Stop_DMA(&ADC1_Handler);
+				例子：
+					char ADC_buf[20];
+					if(adValueDone)
+					{
+						adValueDone = 0;
+						//HAL_ADC_Stop_DMA(&ADC1_Handler);
+						sprintf(ADC_buf,"adValue:%d %d %d",adValue[0],adValue[1],adValue[2]);
+						LCD_ShowString(10,180,16,(u8*)ADC_buf,0);
+					}
+		凡是没有启动 SYSTEM_ADC1_useScan 一次触发一个通道并手动取数————适合慢速
+			读取顺序：
+				调用 u32 Get_Adc_Average(u32 ch,u8 times); 返回值为本次ADC值
+				其中 ch 通道 形参选择想转换的通道，可选ADC_CHANNEL_0~15，可以为ADC_CHANNEL_TEMPSENSOR，其中result[0]保存本次本通道的转换结果
+				例子：
+					adValue[0] = (u16)Get_Adc_Average(ADC_CHANNEL_0,10);
+					adValue[1] = (u16)Get_Adc_Average(ADC_CHANNEL_3,10);
+					adValue[2] = (u16)Get_Adc_Average(ADC_CHANNEL_4,10);
+					sprintf(ADC_buf,"adValue:%d %d %d",adValue[0],adValue[1],adValue[2]);
+					LCD_ShowString(10,180,16,(u8*)ADC_buf,0);
+				
+		注意：采集温度通道返回的是ADC的原始值，用 float Get_Temprate(u32 adcx) 把原始值转换为实际温度值(float类型)
+*/
+
+
 /*开启硬件SPI，x8/xB系列有两个SPI，最高18M位每秒
 默认：尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射，默认一次发送八位bits数据，SS引脚用户单独定义！
 		master模式，MSB First，SS低电平选中器件
@@ -436,18 +522,26 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 		void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI2由APB1(30M)分频得来
 */
 
-/*对于ADC和DAC，如果Vref+连接到3.0V基准，则要修改程序！*/
 
-/*hd系列外设，DAC两个输出通道 PA4和PA5，默认初始化为12位右对齐，速度最快为250K左右，输出范围 0~Vref+，默认Vref+为3.3V，否则自行更改转换计算*/
-/*可选输出 噪声波形 和 三角波波形 ，默认不适用外部触发，可选触发源在初始化函数中修改（有定时器中断和外部中断线9）*/
-#define SYSTEM_DAC_OUT1_ENABLE	0
-#define SYSTEM_DAC_OUT2_ENABLE	0
-/*可用API:
-	设置通道1输出电压,vol:0~3.30V
-		void DAC_Set_Ch1_Vol(float vol)
-	设置通道2输出电压,vol:0~3.30V
-		void DAC_Set_Ch2_Vol(float vol)
+/*低功耗模式：
+睡眠： WFI操作进入，任意中断恢复，CPU时钟关，其他外设时钟维持																		（不可用）
+停止：HSI、HSE时钟关，电压调节器开关需设置，任一外部中断唤醒，典型电流值为20uA														（不可用）
+待机：HSI、HSE时钟关，电压调节器关，SRAM和寄存器内容丢失，仅电源控制寄存器和备份区域不受影响
+		唤醒条件：WKUP按键上升沿，RTC警告事件，复位按键，看门狗复位（！），典型电流值为2uA，为三个模式中最低 	类似于开关机		（可用）
+		WKUP 在PA0
 */
+#define SYSTEM_StdbyWKUP_ENABLE	0		/*使用待机-低功耗模式（占用0线外部中断）*/
+										/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
+/*当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复，进入待机模式函数在PA0的外部中断里*/
+//对于PA0，按下为高电平，按下3s后松开，延时一秒（给时间做保存数据等关机前的准备）后进入待机状态（关机），再次按下开机
+/*WKUP IO不用外接下拉电阻，在配置时STM32内部已经下拉*/
+/*使用说明：
+	当启用FreeRTOS时，是循环检测PA0是否为高电平持续3s，需要在任务里放一个检测函数：sys_CheckWKUP_4RTOS()，已经放了
+	当使用裸机时，PA0被设置为上升沿外部中断，在外部中断中执行检测高电平是否持续3s，外部中断线0中已经放了
+	需要在Sys_Enter_Standby()函数里放一些关机前的准备工作事务
+*/
+
+
 
 /*hd系列外设，FSMC*/
 /*FSMC为16位数据线，分为四个256MB的块（28跟地址线）（地址从0x6000 0000开始，第二个块开始在0x7000 0000，以此类推），每一块分为四个64MB的区（BANK1~4）*/
@@ -491,9 +585,9 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 */
 /*
   如果实际使用了大容量系列和100脚以上系列的片子但是没有LTDC，推荐用FSMC同时管理LCD和SRAM*/
-#define SYSTEM_FSMC_ENABLE	1				//是否启用FSMC
-	#define SYSTEM_FSMC_use4LCD		1		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
-	#define SYSTEM_FSMC_use4SRAM	1		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
+#define SYSTEM_FSMC_ENABLE	0				//是否启用FSMC
+	#define SYSTEM_FSMC_use4LCD		0		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
+	#define SYSTEM_FSMC_use4SRAM	0		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
 /*
 用于LCD的部分：
 	  可用API详看TFTLCD.h
@@ -719,8 +813,8 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 /*_______________________________ADC1___________________________________*/
 
 #if SYSTEM_ADC1_ENABLE
-	void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
-	u16 Get_Adc(u32 ch);
+	//void ADC_RegularChannelConfig(ADC_HandleTypeDef *AdcHandle, uint32_t Channel, uint32_t Rank, uint32_t SamplingTime);
+	//u16 Get_Adc(u32 ch);
 	#if SYSTEM_ADC1_useScan
 		extern DMA_HandleTypeDef  ADC1rxDMA_Handler;
 		void ADC_DMA_Cfg(void);

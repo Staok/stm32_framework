@@ -521,17 +521,21 @@ void _putchar(char character)
 	switch(uart2sent)/*uart2sent全局变量，用于判断发送到哪一个串口*/
 	{
 		case UART1:/*发往串口1*/
-			HAL_UART_Transmit(&UART1_Handler, (uint8_t *)&character, 1, 0x12C); //超时时间为0x12C，为300ms
-			break;
+			HAL_UART_Transmit(&UART1_Handler, (uint8_t *)&character, 1, 0xA); 	//超时时间为0xA，为10ms
+			while(__HAL_UART_GET_FLAG(&UART1_Handler,UART_FLAG_TC)!=SET){}		//等待发送完成
+				return ; 
 		case UART2:/*发往串口2*/
 			HAL_UART_Transmit(&UART2_Handler, (uint8_t *)&character, 1, 0x12C);
-			break;
+			while(__HAL_UART_GET_FLAG(&UART2_Handler,UART_FLAG_TC)!=SET){};
+				return ;
 		case UART3:/*发往串口3*/
 			HAL_UART_Transmit(&UART3_Handler, (uint8_t *)&character, 1, 0x12C);
-			break;
+			while(__HAL_UART_GET_FLAG(&UART3_Handler,UART_FLAG_TC)!=SET){};
+				return ;
 		default:/*默认发往串口1*/
 			HAL_UART_Transmit(&UART1_Handler, (uint8_t *)&character, 1, 0x12C);
-			break;
+			while(__HAL_UART_GET_FLAG(&UART1_Handler,UART_FLAG_TC)!=SET){};
+				return ;
 	}
 }
 
@@ -1039,7 +1043,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
     if(htim->Instance==TIM3)
 	{
 		__HAL_RCC_TIM3_CLK_ENABLE();			//使能定时器3时钟
-		
+		__HAL_RCC_AFIO_CLK_ENABLE();
 		if(STSTEM_TIM3PWM_REMAP_ENABLE)	//如果全部重映射
 		{
 			__HAL_AFIO_REMAP_TIM3_ENABLE();			//TIM3通道引脚全部重映射使能，具体怎么映射看库函数注释或sys.h里
@@ -1092,10 +1096,11 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
-	
+	#if (STSTEM_TIM2_ENABLE) && (STSTEM_TIM2_asPWMorCap == 0)
 	if(htim->Instance==TIM2)
 	{
 		__HAL_RCC_TIM2_CLK_ENABLE();			//使能定时器2时钟
+		__HAL_RCC_AFIO_CLK_ENABLE();
 		__HAL_AFIO_REMAP_TIM2_ENABLE();			/*TIM2通道引脚完全重映射使能 (CH1/ETR/PA15, CH2/PB3, CH3/PB10, CH4/PB11)*/
 		
 		GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
@@ -1127,10 +1132,13 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
 		}
 	}
+	#endif
 	
+	#if STSTEM_TIM1PWM_ENABLE
 	if(htim->Instance==TIM1)
 	{
 		__HAL_RCC_TIM1_CLK_ENABLE();			//使能定时器1时钟
+		__HAL_RCC_AFIO_CLK_ENABLE();
 		
 		GPIO_Initure.Mode=GPIO_MODE_AF_PP;
 		GPIO_Initure.Pull=GPIO_NOPULL;
@@ -1272,6 +1280,64 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
+	#endif
+	
+	#if STSTEM_TIM8PWM_ENABLE
+	if(htim->Instance==TIM8)
+	{
+		/*引脚：
+						CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN（刹车信号输入）
+						PC6/PA7			PC7/PB0			PC8/PB1			PC9		PA6
+		*/
+		__HAL_RCC_TIM8_CLK_ENABLE();			//使能定时器8时钟
+		__HAL_RCC_AFIO_CLK_ENABLE();
+		
+		GPIO_Initure.Mode=GPIO_MODE_AF_PP;
+		GPIO_Initure.Pull=GPIO_NOPULL;
+		GPIO_Initure.Speed=GPIO_SPEED_FREQ_HIGH;
+		
+		if(STSTEM_TIM8PWM_useBreak)
+		{
+			__HAL_RCC_GPIOA_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_6;
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+		}
+		
+		if(STSTEM_TIM8PWM_CHANNEL_ENABLE & B0000_0001)
+		{
+			__HAL_RCC_GPIOA_CLK_ENABLE();
+			__HAL_RCC_GPIOC_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_6;
+			HAL_GPIO_Init(GPIOC,&GPIO_Initure);
+			GPIO_Initure.Pin=GPIO_PIN_7;
+			HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+		}
+		if(STSTEM_TIM8PWM_CHANNEL_ENABLE & B0000_0010)
+		{
+			__HAL_RCC_GPIOB_CLK_ENABLE();
+			__HAL_RCC_GPIOC_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_0;
+			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+			GPIO_Initure.Pin=GPIO_PIN_7;
+			HAL_GPIO_Init(GPIOC,&GPIO_Initure);
+		}
+		if(STSTEM_TIM8PWM_CHANNEL_ENABLE & B0000_0100)
+		{
+			__HAL_RCC_GPIOB_CLK_ENABLE();
+			__HAL_RCC_GPIOC_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_8;
+			HAL_GPIO_Init(GPIOC,&GPIO_Initure);
+			GPIO_Initure.Pin=GPIO_PIN_1;
+			HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+		}
+		if(STSTEM_TIM8PWM_CHANNEL_ENABLE & B0000_1000)
+		{
+			__HAL_RCC_GPIOC_CLK_ENABLE();
+			GPIO_Initure.Pin=GPIO_PIN_9;
+			HAL_GPIO_Init(GPIOC,&GPIO_Initure);
+		}
+	}
+	#endif
 }
 
 //设置TIM3通道的占空比

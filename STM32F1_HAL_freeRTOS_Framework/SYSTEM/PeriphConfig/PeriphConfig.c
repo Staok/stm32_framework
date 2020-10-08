@@ -1002,12 +1002,12 @@ void sys_TIM8PWM_ENABLE(void)
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
   TIM_OC_InitTypeDef sConfigOC;
   
-  TIM1_Handler.Instance = TIM8;
-  TIM1_Handler.Init.Prescaler = (72-1);
-  TIM1_Handler.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
-  TIM1_Handler.Init.Period = tim8arr;							//重装载值，16位
-  TIM1_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
-  TIM1_Handler.Init.RepetitionCounter = 0;
+  TIM8_Handler.Instance = TIM8;
+  TIM8_Handler.Init.Prescaler = (72-1);
+  TIM8_Handler.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
+  TIM8_Handler.Init.Period = tim8arr;							//重装载值，16位
+  TIM8_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
+  TIM8_Handler.Init.RepetitionCounter = 0;
   HAL_TIM_Base_Init(&TIM8_Handler);
 
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;	//时钟源来自内部（不启用外部ETR引脚作为时钟源）
@@ -1050,13 +1050,13 @@ void sys_TIM8PWM_ENABLE(void)
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_SET;
   HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_1);
 
-  sConfigOC.Pulse = tim1arr/2;
+  sConfigOC.Pulse = tim8arr/2;
   HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_2);
 
-  sConfigOC.Pulse = tim1arr/2;
+  sConfigOC.Pulse = tim8arr/2;
   HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_3);
 
-  sConfigOC.Pulse = tim1arr/2;
+  sConfigOC.Pulse = tim8arr/2;
   HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_4);
 }
 

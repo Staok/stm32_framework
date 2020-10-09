@@ -161,8 +161,7 @@ STM32F
 
 #define SYSTEM_SUPPORT_OS		0				/*¶¨ÒåÊÇ·ñÊ¹ÓÃFreeRTOS£¬²»ÊÇ0¾ÍÊÇ1¡ª¡ª¡ª¡ª¡ª¡ª£¡°´ÐèÒª½øÐÐÐÞ¸Ä£¡
 													FreeRTOS°æ±¾£ºv10.3.1
-													Ä¬ÈÏÓÃÓÚÈÎÎñµÄRAM¶ÑÕ»´óÐ¡Îª5KB£¬°´ÐèÐÞ¸Ä£¡
-												×¢Òâ£º»¹ÒªÔÚFreeRTOSConfig.hÀïÃæµÄSYSTEM_SUPPORT_OSºê¶¨ÒåÓë´Ë´¦±£³ÖÒ»ÖÂ£¬·ñÔòÏµÍ³²»»áµ÷ÓÃFreeRTOSµÄÈÎÎñÇÐ»»SVCÖÐ¶Ïº¯Êý£¬ÅÜ²»ÆðÀ´£¡*/
+													Ä¬ÈÏÓÃÓÚÈÎÎñµÄRAM¶ÑÕ»´óÐ¡Îª5KB£¬°´ÐèÐÞ¸Ä£¡*/
 
 #define SYSTEM_SUPPORT_Menu		1				/*Ä£°å¹Ì¶¨´îÅä£¡Ìá¹©Ò»¸ö²Ëµ¥Ä£°å£¬°ÑÏµÍ³µÄÊäÈë¡¢Êä³ö¡¢Ö´ÐÐ¹¦ÄÜµÄ±êÖ¾Î»¿ØÖÆÈ«²¿´ò°ü£¡*/
 /*
@@ -207,6 +206,9 @@ u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*Ìá¹©»ñÈ¡ÏµÍ³ÔËÐÐÊ±¼äµÄº¯
 	#include "task.h"
 	#include "queue.h"
 	#include "TaskConfig.h"
+	
+	#define xPortPendSVHandler 	PendSV_Handler //ÄªÒªÂÒ¶¯Èö
+	#define vPortSVCHandler 	SVC_Handler
 #else
 	#include "BareConfig.h"
 	
@@ -539,7 +541,7 @@ PWM¾ÍÊÇËÄ¸öÍ¨µÀÓÐËÄ¸ö¶ÀÁ¢µÄ±È½ÏÖµ£¬Ã¿¸ö±È½ÏÖµÓëÕâ¸öCNT¼ÆÊýÖµ±È½Ï£¬´Ó¶ø²úÉúËÄÂ·¶À
 			×¢Òâ£º²É¼¯ÎÂ¶ÈÍ¨µÀ·µ»ØµÄÊÇADCµÄÔ­Ê¼Öµ£¬ÓÃ float Get_Temprate(u32 adcx) °ÑÔ­Ê¼Öµ×ª»»ÎªÊµ¼ÊÎÂ¶ÈÖµ(floatÀàÐÍ)
 	*/
 		
-#define SYSTEM_IWDG_ENABLE		0			/*¿ªÆô¶ÀÁ¢¿´ÃÅ¹·£¬Ä¬ÈÏ1SµÄÎ¹¹·ÖÜÆÚ£¬Ä¬ÈÏÔÚTIM4¶¨Ê±ÖÐ¶ÏÀïÎ¹¹·£¬ÓÃIWDG±Ø¿ªTIM4*/
+#define SYSTEM_IWDG_ENABLE		1			/*¿ªÆô¶ÀÁ¢¿´ÃÅ¹·£¬Ä¬ÈÏ1SµÄÎ¹¹·ÖÜÆÚ£¬Ä¬ÈÏÔÚTIM4¶¨Ê±ÖÐ¶ÏÀïÎ¹¹·£¬ÓÃIWDG±Ø¿ªTIM4*/
 											/*×¢£º¿´ÃÅ¹·ºÍµÍ¹¦ºÄ´ý»úÄ£Ê½²»ÄÜÍ¬Ê±¿ªÆô£¬ÒòÎª¿´ÃÅ¹·²»ÄÜ¹Ø±Õ£¬¿´ÃÅ¹·¸´Î»»á»½ÐÑµÍ¹¦ºÄ×´Ì¬*/
 
 /*DMAÓÃ·¨¼òµ¥ÁÐ¾Ù*/
@@ -608,9 +610,9 @@ DMAÅäÖÃµÄÒ»°ã¹ý³Ì£º£¨ÒÔ´¢´æÆ÷´«Êäµ½UART1µÄTXÎªÀý×Ó£¬USART1µÄTXÁ¬½ÓÔÚDMA1µÄÍ¨µÀ4É
 #define SYSTEM_UART1_BOUND			115200	/*´®¿Ú1²¨ÌØÂÊ*/
 
 /*×¢£º´®¿Ú2ÔÚÄ¿Ç°²»ÄÜÓÃ£¬Ã»ÓÐ·´Ó¦£¬HAL¿âÎÊÌâ*/
-#define SYSTEM_UART2_ENABLE			0		/*Ê¹ÄÜ´®¿Ú2	       TX/PA2, RX/PA3		*/
-#define SYSTEM_UART2_REMAP_ENABLE	0		/*´®¿Ú2Òý½ÅÖØÓ³Éä£ºTX/PD5, RX/PD6£¬¿ÉÒÔÉèÖÃ£¬µ«¶ÔÓÚC8T6ÎÞ´ËÒý½Å*/
-#define SYSTEM_UART2_BOUND			115200	/*´®¿Ú2²¨ÌØÂÊ*/
+//#define SYSTEM_UART2_ENABLE			0		/*Ê¹ÄÜ´®¿Ú2	       TX/PA2, RX/PA3		*/
+//#define SYSTEM_UART2_REMAP_ENABLE	0		/*´®¿Ú2Òý½ÅÖØÓ³Éä£ºTX/PD5, RX/PD6£¬¿ÉÒÔÉèÖÃ£¬µ«¶ÔÓÚC8T6ÎÞ´ËÒý½Å*/
+//#define SYSTEM_UART2_BOUND			115200	/*´®¿Ú2²¨ÌØÂÊ*/
 
 #define SYSTEM_UART3_ENABLE			0		/*Ê¹ÄÜ´®¿Ú3	       TX/PB10, RX/PB11		*/
 #define SYSTEM_UART3_REMAP_ENABLE	0		/*´®¿Ú3Òý½ÅÖØÓ³Éä£ºTX/PD8,  RX/PD9£¬¿ÉÒÔÉèÖÃ£¬µ«¶ÔÓÚC8T6ÎÞ´ËÒý½Å*/
@@ -774,7 +776,7 @@ PC12		SDIO_CK
 PD2			SDIO_CMD
 */
 /*±¸×¢£º¿ÉÓÃ¿ª·¢ÓÃDMA¶ÁÐ´SD¿¨£¬ÕâÑù¸üÊ¡Ê±¼ä£¬¶ÁÐ´µÄÊ±ºò¾Í²»ÓÃ¹ØÖÐ¶ÏÁË*/
-#define SYSTEM_SDIO_SD_ENABLE	1
+#define SYSTEM_SDIO_SD_ENABLE	0
 /*µ×²ãAPI£º£¨²»ÍÆ¼öÖ±½Ó¶ÁÐ´£¡ÒªÓÃÎÄ¼þÏµÍ³FATFS°´ÕÕÎÄ¼þ¶ÁÐ´£¬²¢ÇÒSDIOµÄSD³õÊ¼»¯¾ÍÔÚFATFS³õÊ¼»¯Àï£©
 	Ò»¸ö¿éµÄ´óÐ¡£ºSDCardInfo.LogBlockSize
 	SD¿¨¿éµÄÊýÁ¿£ºSDCardInfo.LogBlockNbr

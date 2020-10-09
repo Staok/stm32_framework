@@ -84,7 +84,6 @@
 /***************************************************************************************************************/
 /*                                        FreeRTOS基础配置配置选项                                              */
 /***************************************************************************************************************/
-#define SYSTEM_SUPPORT_OS						0						//注意：还要在sys.h里面的SYSTEM_SUPPORT_OS宏定义与此处保持一致，否则FreeRTOS跑不起来！*/
 #define configCHECK_FOR_STACK_OVERFLOW			0                       //大于0时启用堆栈溢出检测功能，如果使用此功能
                                                                         //用户必须提供一个栈溢出钩子函数，如果使用的话
                                                                         //此值可以为1或者2表示用哪种方法监测，1快速但会有遗漏，2略慢但是更全面
@@ -198,13 +197,6 @@ FLASH               RAM
 //->等待设置<-
 #define configKERNEL_INTERRUPT_PRIORITY 		( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY 	( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
-/***************************************************************************************************************/
-/*                                FreeRTOS与中断服务函数有关的配置选项                                          */
-/***************************************************************************************************************/
-#if SYSTEM_SUPPORT_OS
-	#define xPortPendSVHandler 	PendSV_Handler
-	#define vPortSVCHandler 	SVC_Handler
-#endif
 
 #endif /* FREERTOS_CONFIG_H */
 

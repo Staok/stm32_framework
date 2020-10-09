@@ -169,12 +169,12 @@ unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 		#define TIM3PWM_BuzzerCh				TIM3PWM_Channel_4	//选择用于蜂鸣器的PWM通道
 		#define STSTEM_TIM3PWM_TI_ENABLE		0	/*是否开启定时器3的定时中断，除非急需用，否则一般不开*/
 		
-		#define tim3prsc STSTEM_TIM3PWM_Period_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为1000，这里是选择预分频系数）*/
-			#define STSTEM_TIM3PWM_Period_2K	(30-1)
-			#define STSTEM_TIM3PWM_Period_5K	(12-1)
-			#define STSTEM_TIM3PWM_Period_10K	(6-1)
-			#define STSTEM_TIM3PWM_Period_20K	(3-1)
-			#define STSTEM_TIM3PWM_Period_60K	(1-1)
+		#define tim3prsc STSTEM_TIM3PWM_prsc_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为1000，这里是选择预分频系数）*/
+			#define STSTEM_TIM3PWM_prsc_2K	(30-1)
+			#define STSTEM_TIM3PWM_prsc_5K	(12-1)
+			#define STSTEM_TIM3PWM_prsc_10K	(6-1)
+			#define STSTEM_TIM3PWM_prsc_20K	(3-1)
+			#define STSTEM_TIM3PWM_prsc_60K	(1-1)
 			#define tim3arr 1000-1
 		/*可用API：
 					HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_2);		开启TIM3的PWM通道2
@@ -267,6 +267,16 @@ API:
 */
 #define SYSTEM_RTC_ENABLE		0
 
+/*硬件产生32位随机数 RNG*/
+#define SYSTEM_RNG_ENABLE		1
+	extern u8 GenerateRNG_Ready;	//RNG产生好标志位
+	extern u32 randomNum32bit; 		//存32位RNG容器
+/*可用API：
+	调用一次 HAL_RNG_GenerateRandomNumber_IT(&RNG_Handle); 来触发产生随机数
+	查询 GenerateRNG_Ready，当其位1时，可从 randomNum32bit 取32位随机数
+	随后把 GenerateRNG_Ready 清零
+*/
+
 
 /*配置使用CRC循环冗余校验
 这个CRC计算模块使用常见的、在以太网中使用的计算多项式：
@@ -322,6 +332,100 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 					myfree(InrRAM,buf4uart1);
 			关于两个协议0、1的接收细节，已经在sys_USART1_RX_Fetch()内实现，一般不用看
 */
+
+
+
+/*使用CAN1，默认不使用中断
+默认引脚：默认上拉
+    PB8     ------> CAN1_RX
+    PB9     ------> CAN1_TX
+	可以按照 stm32f207ie.pdf 手册的 59页 开始自行选择引脚，可选的还挺多的
+默认帧：
+	固定格式:ID为0X12,标准帧,数据帧
+*/
+#define SYSTEM_CAN1_ENABLE			1
+/*可用API：
+	发送： u8 CAN1_Send_Msg(u8* msg,u8 len); —————— msg:数据指针,最大为8个字节；len:数据长度(最大为8)，返回HAL_ERROR失败，返回HAL_OK成功
+	接收： u8 CAN1_Receive_Msg(u8 *buf);	 —————— buf:数据缓存区;返回值:0,无数据被收到,其他则为接收的数据长度;	
+*/
+
+
+
+/*高级定时器1，专门用于产生PWM信号：三路互补PWM输出、死区控制、刹车信号输入*/
+/*引脚：
+				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN（刹车信号输入）
+默认			PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12
+部分重映射		PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6
+完全重映射		PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15
+*/
+/*默认并推荐不开启定时中断；引脚默认没有上下拉；初始化后默认没有打开相应通道的PWM输出，需要手动开启输出*/
+/*定时器工作在向上计数时，PWM信号边缘对齐；定时器工作在向上和向下计数模式时，PWM信号中心对齐*/
+#define STSTEM_TIM1PWM_ENABLE		0				/*是否启用并初始化TIM1的三路互补PWM（前三个通道）和一路PWM（通道4）*/
+			#define STSTEM_TIM1PWM_useBreak	1		/*是否启用BKIN刹车信号控制输入，默认低电平有效*/
+													/*选择每一个通道的有效电平和空闲电平（可能是刹车时的电平），默认死区3us，可修改*/
+			#define STSTEM_TIM1PWM_REMAP_PARTIAL  0	/*定时器1部分引脚重映射，Partial remap，	引脚如上边所示*/
+			#define STSTEM_TIM1PWM_REMAP_ENABLE	  0	/*定时器1全部引脚重映射，Full remap，		引脚如上边所示*/
+			/*输出通道选择，共四个通道，可以相与打开多个通道，互补通道默认成对打开*/
+			#define STSTEM_TIM1PWM_CHANNEL_ENABLE (B0000_0001|B0000_0010|B0000_0100|B0000_1000)		/*必须加括号括起来*/
+			#define tim1prsc STSTEM_TIM1PWM_prsc_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为2000，这里是选择预分频系数）*/
+				#define STSTEM_TIM1PWM_prsc_2K	(30-1)
+				#define STSTEM_TIM1PWM_prsc_5K	(12-1)
+				#define STSTEM_TIM1PWM_prsc_10K	(6-1)
+				#define STSTEM_TIM1PWM_prsc_20K	(3-1)
+				#define STSTEM_TIM1PWM_prsc_60K	(1-1)
+				#define tim1arr 2000-1
+/*可用API：
+		启动通道1~4的PWM输出
+		HAL_TIM_PWM_Start(&TIM1_Handler,TIM_CHANNEL_1);
+		
+		启动互补通道1~3的PWM输出
+		HAL_TIMEx_PWMN_Start(&TIM1_Handler,TIM_CHANNEL_1);
+		
+		关闭通道的PWM输出（通道选择同上）
+		HAL_TIM_PWM_Stop(&TIM1_Handler,TIM_CHANNEL_1);
+		HAL_TIMEx_PWMN_Stop(&TIM1_Handler,TIM_CHANNEL_1);
+		
+		设置TIM1的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+		TIM1_set_Channel_Pulse(TIM1PWM_Channel_2,88.8);
+*/
+
+/*hd系列外设，其他与上同理*/
+/*高级定时器8，专门用于产生PWM信号：三路互补PWM输出、死区控制、刹车信号输入*/
+/*引脚：
+				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN（刹车信号输入）
+				PC6/PA7			PC7/PB0			PC8/PB1			PC9		PA6
+*/
+/*默认并推荐不开启定时中断；引脚默认没有上下拉；初始化后默认没有打开相应通道的PWM输出，需要手动开启输出*/
+/*定时器工作在向上计数时，PWM信号边缘对齐；定时器工作在向上和向下计数模式时，PWM信号中心对齐*/
+/*没有重映射功能*/
+#define STSTEM_TIM8PWM_ENABLE		0				/*是否启用并初始化TIM8的三路互补PWM（前三个通道）和一路PWM（通道4）*/
+			#define STSTEM_TIM8PWM_useBreak	1		/*是否启用BKIN刹车信号控制输入，默认低电平有效*/
+													/*选择每一个通道的有效电平和空闲电平（可能是刹车时的电平），默认死区3us，可修改*/
+			/*输出通道选择，共四个通道，可以相与打开多个通道，互补通道默认成对打开*/
+			#define STSTEM_TIM8PWM_CHANNEL_ENABLE (B0000_0001|B0000_0010|B0000_0100|B0000_1000)		/*必须加括号括起来*/
+			#define tim8prsc STSTEM_TIM8PWM_prsc_5K		/*选择定时器输出频率，以下六条语句基本不动（重装值为2000，这里是选择预分频系数）*/
+				#define STSTEM_TIM8PWM_prsc_2K	(30-1)
+				#define STSTEM_TIM8PWM_prsc_5K	(12-1)
+				#define STSTEM_TIM8PWM_prsc_10K	(6-1)
+				#define STSTEM_TIM8PWM_prsc_20K	(3-1)
+				#define STSTEM_TIM8PWM_prsc_60K	(1-1)
+				#define tim8arr 2000-1
+/*可用API：
+		启动通道1~4的PWM输出
+		HAL_TIM_PWM_Start(&TIM8_Handler,TIM_CHANNEL_1);
+		
+		启动互补通道1~3的PWM输出
+		HAL_TIMEx_PWMN_Start(&TIM8_Handler,TIM_CHANNEL_1);
+		
+		关闭通道的PWM输出（通道选择同上）
+		HAL_TIM_PWM_Stop(&TIM8_Handler,TIM_CHANNEL_1);
+		HAL_TIMEx_PWMN_Stop(&TIM8_Handler,TIM_CHANNEL_1);
+		
+		设置TIM1的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+		TIM8_set_Channel_Pulse(TIM8PWM_Channel_2,88.8);
+*/
+
+
 
 /*通过用定时器2：16位，四个独立通道可用于：输入捕获、输入比较、PWM、单脉冲，多种途径触发DMA中断*/
 #define STSTEM_TIM2_ENABLE		0			/*通用定时器2，功能自定，默认分频系数为72，初始化函数在PeriphCconfig.c里面定义*/
@@ -380,7 +484,7 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 			
 
 /*hd系列外设，基本定时器6、7，只能用于定时中断，提供更多的同步功能*/
-#define STSTEM_TIM6_ENABLE		1
+#define STSTEM_TIM6_ENABLE		0
 	#define tim6arr STSTEM_TIM6_Period_5K			/*选择定时器6输出频率（预分频系数为60，这里选择重装值）*/
 		#define STSTEM_TIM6_Period_1K	(1000-1)
 		#define STSTEM_TIM6_Period_2K	(500-1)
@@ -390,7 +494,7 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 		#define STSTEM_TIM6_Period_50K	(20-1)
 		#define STSTEM_TIM6_Period_100K	(10-1)
 		#define STSTEM_TIM6_Period_200K	(5-1)
-#define STSTEM_TIM7_ENABLE		1
+#define STSTEM_TIM7_ENABLE		0
 	#define tim7arr STSTEM_TIM6_Period_5K			/*选择定时器7输出频率（预分频系数为60，这里选择重装值）*/
 		#define STSTEM_TIM7_Period_1K	(1000-1)
 		#define STSTEM_TIM7_Period_2K	(500-1)
@@ -417,7 +521,11 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 /*hd系列外设，DAC两个输出通道 PA4和PA5，默认初始化为12位右对齐，速度最快为250K左右，输出范围 0~Vref+，默认Vref+为3.3V，否则自行更改转换计算*/
 /*可选输出 噪声波形 和 三角波波形 ，默认不适用外部触发，可选触发源在初始化函数中修改（有定时器中断和外部中断线9）*/
 #define SYSTEM_DAC_OUT1_ENABLE	0
+	#define SYSTEM_DAC_OUT1_TriangleWave_ENABLE	1
+	#define SYSTEM_DAC_OUT1_NoiseWave_ENABLE	0
 #define SYSTEM_DAC_OUT2_ENABLE	0
+	#define SYSTEM_DAC_OUT2_TriangleWave_ENABLE	0
+	#define SYSTEM_DAC_OUT2_NoiseWave_ENABLE	1
 /*可用API:
 	设置通道1输出电压,vol:0~3.30V
 		void DAC_Set_Ch1_Vol(float vol)
@@ -434,7 +542,7 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
 	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
 */
-#define SYSTEM_ADC1_ENABLE		1			/*启否ADC1*/
+#define SYSTEM_ADC1_ENABLE		0			/*启否ADC1*/
 	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里，并使用DMA2 Stream0的通道0把转换结果放到目标位置
 												如果不启用，则为软件触发的单次转换*/
 		#define SYSTEM_ADC1_useCircular	1	/*只在扫描模式下有效；开启则自动循环ADC转换，只需要判断标志位和读数即可，不需要软件手动触发开启一次ADC转换*/
@@ -612,6 +720,116 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 */
 
 
+/*不同容量的FLASH组织方式：
+大容量：256个	2K字节/页*/
+#define SYSTEM_FLASH_IAP_ENABLE	1			/*启用对内部FLASH储存空间编程*/
+	#define STM32_FLASH_WREN	1			/*启用写功能，否则只读不写*/
+	#define FLASH_SAVE_FATFS_SIZE	112		/*内部FLASH给FATFS划分的大小，单位KB*/
+	/*以下不用动了*/
+	#define STM32F207IE_FLASH_SIZE 	512 		/*所选STM32的FLASH容量大小(单位为KB)*/
+	#define STM32_FLASH_BASE 0x08000000 		//STM32 FLASH的起始地址
+		//设置FLASH 保存地址(必须为页的首地址，且必须为2的倍数！且其值要大于代码所占用FLASH的大小+0X08000000)
+	#define FLASH_SAVE_FATFS_ADDR 	(STM32_FLASH_BASE + (u32)((STM32F207IE_FLASH_SIZE - FLASH_SAVE_FATFS_SIZE)*1024))   //最后112KB留给FATFS作为文件系统（如果使用FATFS的话）
+	#define FLASH_SAVE_ADDR  		(STM32_FLASH_BASE + (u32)((STM32F207IE_FLASH_SIZE - FLASH_SAVE_FATFS_SIZE-2)*1024)) //留2KB作为参数保存
+/*可用API：（下载程序时不要擦除 整个芯片FLASH，只擦除有程序的扇区）
+	注：当启用本功能后，在系统初始化序列中将加入读存开机次数的一个用例，一个u16的变量会储存在最后一个或倒数第二个页
+	例：	const u8 TEXT_Buffer[]={"STM32F103 FLASH TEST"};	//用于存入的数据
+			u8 datatemp[sizeof(TEXT_Buffer)];					//用于接读出的数据
+	写：（一次写入长度最多为一个页的字节数，对于中小容量的为1KB，对于大容量的为2KB！），最后一个参数是以字节为单位！
+		u8 STMFLASH_Write(	FLASH_SAVE_ADDR,	&TEXT_Buffer,	sizeof(TEXT_Buffer));  //返回HAL_OK 正确，返回HAL_ERROR错误
+	读：   STMFLASH_Read(	FLASH_SAVE_ADDR,	&datatemp,		sizeof(TEXT_Buffer));
+*/
+
+
+/*hd系列外设，六根线（四位数据线，时钟线和命令线），SDIO最高传输速度12M字节每秒，目前只支持用于SD卡*/
+/*支持的四种卡：SD2.0 高容量卡（SDHC，最大32G），SD2.0 标准容量卡（SDSC，最大 2G），SD1.x 卡和 MMC 卡）*/
+/*
+初始化后获取到的卡信息存在：
+	1、SD卡信息结构体	HAL_SD_CardInfoTypeDef  SDCardInfo;
+			成员：
+				uint32_t CardType;             			卡类型：						Specifies the card Type
+																CARD_SDSC					SD Standard Capacity
+																CARD_SDHC_SDXC				SD High Capacity <32Go, SD Extended Capacity <2To
+																CARD_SECURED
+				uint32_t CardVersion;                 	卡版本：CARD_V1_X、CARD_V2_X	Specifies the card version
+				uint32_t Class;                        	卡级别							Specifies the class of the card class 
+				uint32_t RelCardAdd;                  	卡相对地址						Specifies the Relative Card Address
+				uint32_t BlockNbr;                     	块数量（存储器内部的事）		Specifies the Card Capacity in blocks
+				uint32_t BlockSize;                   	块大小（存储器内部的事）		Specifies one block size in bytes
+				uint32_t LogBlockNbr;                 	逻辑块数量						Specifies the Card logical Capacity in blocks
+				uint32_t LogBlockSize;                	逻辑块大小（扇区数目）			Specifies logical block size in bytes
+				注：我们只需要关注逻辑块和逻辑块大小即可，其他是SD卡内部的事情，逻辑块和逻辑扇区一回事，一个逻辑块为了保证兼容都是512字节大小
+					BLOCK SIZE ： 8 即每个BLOCK有8个扇区（这个是存储器内部的事，用户不关心）
+					也就是我们只关心：
+						SECTOR SIZE ：一般为512字节
+						SECTOR COUNT：等于总容量字节数/512
+	
+	2、SD卡制造CID		HAL_SD_CardCIDTypeDef SDCard_CID;
+			成员：
+				__IO uint8_t  ManufacturerID;  制造商ID		Manufacturer ID
+				__IO uint16_t OEM_AppliID;     OEM/Application ID
+				__IO uint32_t ProdName1;       Product Name part1
+				__IO uint8_t  ProdName2;       Product Name part2
+				__IO uint8_t  ProdRev;         Product Revision
+				__IO uint32_t ProdSN;          Product Serial Number
+				__IO uint8_t  Reserved1;       Reserved1
+				__IO uint16_t ManufactDate;    Manufacturing Date
+				__IO uint8_t  CID_CRC;         CID CRC
+				__IO uint8_t  Reserved2;       Always 1
+*/
+/*
+引脚：
+PC8			SDIO_D0
+PC9			SDIO/D1
+PC10		SDIO_D2
+PC11		SDIO_D3
+PC12		SDIO_CK
+PD2			SDIO_CMD
+*/
+/*备注：可用开发用DMA读写SD卡，这样更省时间，读写的时候就不用关中断了，更新：但是DMA的话还有中断处理，数据量大的话易前后混淆，增加程序复杂度，算啦*/
+#define SYSTEM_SDIO_SD_ENABLE	1
+/*底层API：（不推荐直接读写！要用文件系统FATFS按照文件读写，并且SDIO的SD初始化就在FATFS初始化里）
+	一个块的大小：SDCardInfo.LogBlockSize
+	SD卡块的数量：SDCardInfo.LogBlockNbr
+	u8 SD_ReadDisk(buf,secaddr,seccnt);			//读取从第secaddr块开始的seccnt个块的内容，返回地址到buf（大概率一个块为512KB，buf必须先准备好足够空间）
+												//返回 HAL_OK （值为0） 为成功，其他为失败
+														
+	u8 SD_WriteDisk(buf,secaddr,seccnt);		//把buf内的内容从secaddr块开始写入，连续写seccnt个块
+												//返回 HAL_OK （值为0） 为成功，其他为失败
+	
+	void show_sdcard_info(void);				//通过串口1打印SD卡相关信息
+	
+	计算SD卡容（单位为字节）：
+		uint64_t CardCap = (uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);	 //计算SD卡容量（单位为字节）
+		CardCap>>20 //此为转换为MB单位
+*/
+
+/*使用FATFS文件系统管理SD卡，FATSF支持FAT12/FAT16/FAT32/exFAT，官网（含API说明）：http://elm-chan.org/fsw/ff/00index_e.html*/
+/*配置相关：在 ffconf.h 文件里
+	注意：	默认没有支持相对路径，如需可在FATFS配置文件内打开
+			默认配置支持4个文件设备，默认使用UTF-8编码
+	配置：	定义有哪些设备，比如DEV_ExFLASH（外部FLASH，MMC/NAND/SPI FLASH等）、DEV_SD、DEV_InrFlash（内部FLASH）、DEV_USB等等
+			在diskio.c里面定义读写以上这些设备的底层函数：（底层函数，应用层不应调用）
+				DSTATUS disk_initialize (BYTE pdrv);
+				DSTATUS disk_status (BYTE pdrv);	//由于存储设备自己实现的读写函数内部含有忙判断，所以这个获取设备状态函数不用
+				DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);
+				DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);
+				DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+	配置：	在ffsystem.c里面已经用自实现的内存分配和释放函数，默认用STM32内部的RAM，如要使用外部RAM可去手动改为 ExRAM1
+	配置：	FATFS的配置文件里有一个没有完全配置好：ffconf.h里在最后的RTOS支持
+*/
+#define SYSTEM_FATFS_ENABLE	0 //TODO:FATFS初始化还没有放到系统初始化序列，等原子的API移植好了，这个宏用于控制是否初始化和相关API的编译控制
+/*初始化步骤：
+	要做的：在初始化系列里加上FATFS初始化SD卡
+			先为每个文件设备句柄申请空间
+			挂载
+			
+			更多文件操作可用参考原子FATFS历程里的 fattester.c 和 exfuns.c 里面的获取剩余空间、识别文件类型、得到文件夹大小、文件和文件夹复制等有用的API等等
+			
+			FATFS可用API：参考原子的，罗列下来API，参考官方文档等
+*/
+
+
 
 /*_____________系统变量和函数（莫要乱动撒）_______________*/
 void sys_ENswd_DISjtag(void);
@@ -713,6 +931,11 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 	
 #endif
 
+/*_______________________________CAN1___________________________________*/
+#if SYSTEM_CAN1_ENABLE
+	u8 CAN1_Receive_Msg(u8 *buf);
+	u8 CAN1_Send_Msg(u8* msg,u8 len);
+#endif
 /*_______________________________MCO___________________________________*/
 #if SYSTEM_MCO_PA8_OUT
 	void sys_MCO_Out_Enable(void);				/*MCO在PA8上输出启动，默认时钟源HSE*/
@@ -732,6 +955,11 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 	extern uint32_t uwExpectedCRCValue;
 	void sys_CRC_ENABLE(void);
 	void HAL_CRC_MspInit(CRC_HandleTypeDef* hcrc);
+#endif
+/*_______________________________HASH_RNG___________________________________*/
+#if SYSTEM_RNG_ENABLE
+	extern RNG_HandleTypeDef RNG_Handle;
+	void sys_RNG_ENABLE(void); 
 #endif
 /*_______________________________RTC___________________________________*/
 #if SYSTEM_RTC_ENABLE
@@ -784,7 +1012,7 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 		void TIM1_set_Channel_Pulse(u8 channel,float percent);
 #endif
 
-/*_______________________________TIM1PWM___________________________________*/
+/*_______________________________TIM8PWM___________________________________*/
 
 #if STSTEM_TIM8PWM_ENABLE
 		extern TIM_HandleTypeDef TIM8_Handler;
@@ -864,14 +1092,10 @@ void sys_SPI2_SS_io_Init(void);
 /*____________________________FLASH编程___________________________________*/
 
 #if SYSTEM_FLASH_IAP_ENABLE
-	void STMFLASH_Read(		u32 ReadAddr,	u16 *pBuffer,	u16 NumToRead);		//可用API
-	void STMFLASH_Write(	u32 WriteAddr,	u16 *pBuffer,	u16 NumToWrite);	//可用API
+	u8 STMFLASH_Read(u32 ReadAddr,u8 *pBuffer,u32 NumToRead);					//可用API
 	#if STM32_FLASH_WREN	//如果使能了写   
-		extern void FLASH_PageErase(uint32_t PageAddress);
-		void STMFLASH_Write_NoCheck(u32 WriteAddr,u16 *pBuffer,u16 NumToWrite);
+		u8 STMFLASH_Write(u32 WriteAddr,u8 *pBuffer,u32 NumToWrite);			//可用API
 	#endif
-
-	u16 STMFLASH_ReadHalfWord(u32 faddr);
 #endif
 
 /*_____________________________________DAC________________________________________*/

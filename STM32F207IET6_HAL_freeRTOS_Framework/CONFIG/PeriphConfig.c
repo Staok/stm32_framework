@@ -236,6 +236,373 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 /*_________________________________________以下外设的声明代码均放在了PeriphConfigCore.h的最下面_________________________________________________________*/
+#if SYSTEM_CAN1_ENABLE
+
+
+CAN_TxHeaderTypeDef	TxHeader;      //发送
+CAN_RxHeaderTypeDef	RxHeader;      //接收
+
+CAN_HandleTypeDef CAN1_Handler;
+
+/* CAN1 init function */
+void MX_CAN1_Init(void)
+{
+
+  CAN1_Handler.Instance = CAN1;
+  CAN1_Handler.Init.Prescaler = 3; 					//1~1024，分频自APB1 30MHZ
+  CAN1_Handler.Init.Mode = CAN_MODE_NORMAL;			//无需动
+  CAN1_Handler.Init.SyncJumpWidth = CAN_SJW_2TQ;	//CAN_SJW_1TQ ~ CAN_SJW_4TQ
+  CAN1_Handler.Init.TimeSeg1 = CAN_BS1_10TQ;		//CAN_BS1_1TQ ~ CAN_BS1_16TQ
+  CAN1_Handler.Init.TimeSeg2 = CAN_BS2_8TQ;			//CAN_BS2_1TQ ~ CAN_BS2_8TQ
+	//CAN1工作在 500Kbps
+	
+  CAN1_Handler.Init.TimeTriggeredMode = DISABLE;	//非时间触发通信模式
+  CAN1_Handler.Init.AutoBusOff = DISABLE;			//软件自动离线管理
+  CAN1_Handler.Init.AutoWakeUp = DISABLE;			//睡眠模式通过软件唤醒
+  CAN1_Handler.Init.AutoRetransmission = ENABLE;	//报文自动传送
+  CAN1_Handler.Init.ReceiveFifoLocked = DISABLE;	//报文不锁定,新的覆盖旧的
+  CAN1_Handler.Init.TransmitFifoPriority = DISABLE;//优先级由报文标识符决定
+  
+  HAL_CAN_Init(&CAN1_Handler);
+  
+}
+void CAN_Config(void);
+void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(canHandle->Instance==CAN1)
+  {
+  /* USER CODE BEGIN CAN1_MspInit 0 */
+
+  /* USER CODE END CAN1_MspInit 0 */
+    /* CAN1 clock enable */
+    __HAL_RCC_CAN1_CLK_ENABLE();
+
+    __HAL_RCC_GPIOI_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    /**CAN1 GPIO Configuration
+    PB8     ------> CAN1_RX
+    PB9     ------> CAN1_TX
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* CAN1 interrupt Init */
+//    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 2, 0);
+//    HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+//    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 2, 0);
+//    HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+	
+	CAN_Config();
+  }
+}
+
+//void CAN1_RX0_IRQHandler(void)
+//{
+//  HAL_CAN_IRQHandler(&CAN1_Handler);
+//}
+//void CAN1_RX1_IRQHandler(void)
+//{
+//  HAL_CAN_IRQHandler(&CAN1_Handler);
+//}
+
+void CAN_Config(void)
+{
+  CAN_FilterTypeDef  sFilterConfig;
+
+  /*配置CAN过滤器*/
+  sFilterConfig.FilterBank = 0;                     //过滤器0
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x0000;              //32位ID
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x0000;          //32位MASK
+  sFilterConfig.FilterMaskIdLow = 0x0000;
+  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;//过滤器0关联到FIFO0
+  sFilterConfig.FilterActivation = ENABLE;          //激活滤波器0
+  sFilterConfig.SlaveStartFilterBank = 14;
+  
+  //过滤器配置
+  if (HAL_CAN_ConfigFilter(&CAN1_Handler, &sFilterConfig) != HAL_OK)
+  {
+	  FaultASSERT("AT: HAL_CAN_ConfigFilter");
+  }
+
+  //启动CAN外围设备
+  if (HAL_CAN_Start(&CAN1_Handler) != HAL_OK)
+  {
+    FaultASSERT("AT: HAL_CAN_Start");
+  }
+
+  //激活可以RX通知
+  if (HAL_CAN_ActivateNotification(&CAN1_Handler, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  {
+    FaultASSERT("AT: HAL_CAN_ActivateNotification");
+  }
+  
+  /*配置传输过程*/
+  TxHeader.StdId = 0x321;
+  TxHeader.ExtId = 0x01;
+  TxHeader.RTR = CAN_RTR_DATA;
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.DLC = 2;
+  TxHeader.TransmitGlobalTime = DISABLE;
+}
+//can发送一组数据(固定格式:ID为0X12,标准帧,数据帧)	
+//len:数据长度(最大为8)				     
+//msg:数据指针,最大为8个字节.
+//返回值:0,成功;
+//		 其他,失败;
+u8 CAN1_Send_Msg(u8* msg,u8 len)
+{	
+    u8 i=0;
+	u32 TxMailbox;
+	u8 message[8];
+    TxHeader.StdId=0X12;        //标准标识符
+    TxHeader.ExtId=0x12;        //扩展标识符(29位)
+    TxHeader.IDE=CAN_ID_STD;    //使用标准帧
+    TxHeader.RTR=CAN_RTR_DATA;  //数据帧
+    TxHeader.DLC=len;                
+    for(i=0;i<len;i++)
+    {
+		message[i]=msg[i];
+	}
+    if(HAL_CAN_AddTxMessage(&CAN1_Handler, &TxHeader, message, &TxMailbox) != HAL_OK)//发送
+	{
+		return HAL_ERROR;
+	}
+	while(HAL_CAN_GetTxMailboxesFreeLevel(&CAN1_Handler) != 3) {}
+    return HAL_OK;
+}
+
+//can口接收数据查询
+//buf:数据缓存区;	 
+//返回值:0,无数据被收到;
+//		 其他,接收的数据长度;
+u8 CAN1_Receive_Msg(u8 *buf)
+{
+ 	u32 i;
+	u8	RxData[8];
+
+	if(HAL_CAN_GetRxFifoFillLevel(&CAN1_Handler, CAN_RX_FIFO0) != 1)
+	{
+		return 0xF1;
+	}
+
+	if(HAL_CAN_GetRxMessage(&CAN1_Handler, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+	{
+		return 0xF2;
+	}
+    for(i=0;i<RxHeader.DLC;i++)
+    buf[i]=RxData[i];
+	return RxHeader.DLC;
+}
+
+#endif
+/*________________________________________用户定时器1PWM配置_________________________________________________________*/
+#if STSTEM_TIM1PWM_ENABLE
+TIM_HandleTypeDef TIM1_Handler;
+
+void sys_TIM1PWM_ENABLE(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+  
+  TIM1_Handler.Instance = TIM1;
+  TIM1_Handler.Init.Prescaler = tim1prsc;
+  TIM1_Handler.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1; //中心对齐
+  TIM1_Handler.Init.Period = tim1arr;							  //重装载值，16位
+  TIM1_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
+  TIM1_Handler.Init.RepetitionCounter = 0;
+  TIM1_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  HAL_TIM_Base_Init(&TIM1_Handler);
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;	//时钟源来自内部（不启用外部ETR引脚作为时钟源）
+  HAL_TIM_ConfigClockSource(&TIM1_Handler, &sClockSourceConfig);
+
+  HAL_TIM_PWM_Init(&TIM1_Handler);
+  
+   /*如果要用主从定时器，参考https://my.oschina.net/u/4315748/blog/3220499*/
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;			//不输出信号给其他外设
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;	//不使用定时器主从功能，即不用TIM1的定时中断作为其他定时器的计数源
+  HAL_TIMEx_MasterConfigSynchronization(&TIM1_Handler, &sMasterConfig);
+  
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;		//默认disable（）
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;		//默认disable
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_3;				//锁定参数级别，如果死区等参数不再变的话就把LOCK调到最高级
+  /*死区时间设计：DeadTime的8个bits定义如下：DT为死区时间，Tdts为1/72M~13.9ns
+	DTG[7:5]=0xx	=>	DT = DTG[7:0] x Tdtg,        Tdtg  = Tdts; 		最大1.764us
+	DTG[7:5]=10x	=>	DT = (64+DTG[5:0]) x Tdtg,   Tdtg  = 2 x Tdts;	最大3.5288us
+	DTG[7:5]=110	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 8 x Tdts; 	最大7us
+	DTG[7:5]=111	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 16 x Tdts;	最大14us（此时值为0xff）
+																		要3us则设为0xab
+	*/
+  sBreakDeadTimeConfig.DeadTime = 0xab;							//死区时间设置 0x00~0xff
+  #if STSTEM_TIM1PWM_useBreak
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_ENABLE;			//使能或失能TIMx刹车输入
+  #else
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  #endif
+  sBreakDeadTimeConfig.BreakFilter = 0xa;						//刹车输入滤波，0x0~0xF
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_LOW;	//刹车输入脚极性
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;	//默认
+  HAL_TIMEx_ConfigBreakDeadTime(&TIM1_Handler, &sBreakDeadTimeConfig);
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;							//向上计数时，PWM1模式就是计数小于占空比值（TIMx_CNT<TIMx_CCR1），IO变为有效极性，否则相反
+  sConfigOC.Pulse = tim1arr/2;									//占空比值（捕获比较值，16位）
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;					//可选此通道的有效极性为高还是低
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_LOW;					//可选互补通道的有效极性
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;					//disable就好
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;				//空闲电平极性选择（没有启用时的电平，谨慎修改）（也有可能是刹车时的电平）
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_SET;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_1);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM1_Handler, TIM_CHANNEL_1);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_2);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM1_Handler, TIM_CHANNEL_2);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_3);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM1_Handler, TIM_CHANNEL_3);
+
+  sConfigOC.Pulse = tim1arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM1_Handler, &sConfigOC, TIM_CHANNEL_4);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM1_Handler, TIM_CHANNEL_4);
+}
+
+
+void TIM1_set_Channel_Pulse(u8 channel,float percent)
+{
+	float compare;
+	if(percent < 0) percent = 0;
+	if(percent > 100) percent = 100.0;
+	percent /= 100.0;
+	compare = ((float)tim1arr) * percent;
+	switch(channel)
+	{
+		case TIM1PWM_Channel_1: TIM1->CCR1=(u32)compare;break;
+		case TIM1PWM_Channel_2: TIM1->CCR2=(u32)compare;break;
+		case TIM1PWM_Channel_3: TIM1->CCR3=(u32)compare;break;
+		case TIM1PWM_Channel_4: TIM1->CCR4=(u32)compare;break;
+		default:break;
+	}
+}
+
+
+#endif
+
+/*________________________________________用户定时器8PWM配置_________________________________________________________*/
+#if STSTEM_TIM8PWM_ENABLE
+TIM_HandleTypeDef TIM8_Handler;
+
+void sys_TIM8PWM_ENABLE(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+  
+  TIM8_Handler.Instance = TIM8;
+  TIM8_Handler.Init.Prescaler = tim8prsc;
+  TIM8_Handler.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
+  TIM8_Handler.Init.Period = tim8arr;							//重装载值，16位
+  TIM8_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;
+  TIM8_Handler.Init.RepetitionCounter = 0;
+  TIM8_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  HAL_TIM_Base_Init(&TIM8_Handler);
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;	//时钟源来自内部（不启用外部ETR引脚作为时钟源）
+  HAL_TIM_ConfigClockSource(&TIM8_Handler, &sClockSourceConfig);
+
+  HAL_TIM_PWM_Init(&TIM8_Handler);
+  
+   /*如果要用主从定时器，参考https://my.oschina.net/u/4315748/blog/3220499*/
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;			//不输出信号给其他外设
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;	//不使用定时器主从功能，即不用TIM1的定时中断作为其他定时器的计数源
+  HAL_TIMEx_MasterConfigSynchronization(&TIM8_Handler, &sMasterConfig);
+  
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;		//默认disable（）
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;		//默认disable
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_3;				//锁定参数级别，如果死区等参数不再变的话就把LOCK调到最高级
+  /*死区时间设计：DeadTime的8个bits定义如下：DT为死区时间，Tdts为1/72M~13.9ns
+	DTG[7:5]=0xx	=>	DT = DTG[7:0] x Tdtg,        Tdtg  = Tdts; 		最大1.764us
+	DTG[7:5]=10x	=>	DT = (64+DTG[5:0]) x Tdtg,   Tdtg  = 2 x Tdts;	最大3.5288us
+	DTG[7:5]=110	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 8 x Tdts; 	最大7us
+	DTG[7:5]=111	=>	DT = (32+DTG[4:0]) x Tdtg,   Tdtg  = 16 x Tdts;	最大14us（此时值为0xff）
+																		要3us则设为0xab
+	*/
+  sBreakDeadTimeConfig.DeadTime = 0xab;							//死区时间设置 0x00~0xff
+  #if STSTEM_TIM8PWM_useBreak
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_ENABLE;			//使能或失能TIMx刹车输入
+  #else
+	sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  #endif
+  sBreakDeadTimeConfig.BreakFilter = 0xa;						//刹车输入滤波，0x0~0xF
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_LOW;	//刹车输入脚极性
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;	//默认
+  HAL_TIMEx_ConfigBreakDeadTime(&TIM8_Handler, &sBreakDeadTimeConfig);
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;							//向上计数时，PWM1模式就是计数小于占空比值（TIMx_CNT<TIMx_CCR1），IO变为有效极性，否则相反
+  sConfigOC.Pulse = tim8arr/2;									//占空比值（捕获比较值，16位）
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;					//可选此通道的有效极性为高还是低
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_LOW;					//可选互补通道的有效极性
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;					//disable就好
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;				//空闲电平极性选择（没有启用时的电平，谨慎修改）（也有可能是刹车时的电平）
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_SET;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_1);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM8_Handler, TIM_CHANNEL_1);
+
+  sConfigOC.Pulse = tim8arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_2);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM8_Handler, TIM_CHANNEL_2);
+
+  sConfigOC.Pulse = tim8arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_3);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM8_Handler, TIM_CHANNEL_3);
+
+  sConfigOC.Pulse = tim8arr/2;
+  HAL_TIM_PWM_ConfigChannel(&TIM8_Handler, &sConfigOC, TIM_CHANNEL_4);
+  __HAL_TIM_ENABLE_OCxPRELOAD(&TIM8_Handler, TIM_CHANNEL_4);
+}
+
+
+void TIM8_set_Channel_Pulse(u8 channel,float percent)
+{
+	float compare;
+	if(percent < 0) percent = 0;
+	if(percent > 100) percent = 100.0;
+	percent /= 100.0;
+	compare = ((float)tim8arr) * percent;
+	switch(channel)
+	{
+		case TIM8PWM_Channel_1: TIM8->CCR1=(u32)compare;break;
+		case TIM8PWM_Channel_2: TIM8->CCR2=(u32)compare;break;
+		case TIM8PWM_Channel_3: TIM8->CCR3=(u32)compare;break;
+		case TIM8PWM_Channel_4: TIM8->CCR4=(u32)compare;break;
+		default:break;
+	}
+}
+
+
+#endif
+
 
 /*___________________________________________用户SPI1、2配置_______________________________________________*/
 #if ((SYSTEM_SPI1_ENABLE)||(SYSTEM_SPI2_ENABLE))
@@ -1457,7 +1824,7 @@ void sys_DAC_ENABLE(void)
 	HAL_DAC_Init(&DAC1_Handler);                 			//初始化DAC
     
 		/*通道1配置*/
-		DACCH1_Config.DAC_Trigger=DAC_TRIGGER_NONE;             		//不使用触发功能
+		DACCH1_Config.DAC_Trigger=DAC_TRIGGER_SOFTWARE;             		//触发功能
 							/*可选：
 								DAC_TRIGGER_T6_TRGO
 								DAC_TRIGGER_T7_TRGO
@@ -1468,17 +1835,34 @@ void sys_DAC_ENABLE(void)
 								DAC_TRIGGER_SOFTWARE*/
 		DACCH1_Config.DAC_OutputBuffer=DAC_OUTPUTBUFFER_ENABLE;		//DAC1输出缓冲
 		/*通道2配置*/
-		DACCH2_Config.DAC_Trigger=DAC_TRIGGER_NONE;             	//不使用触发功能
+		DACCH2_Config.DAC_Trigger=DAC_TRIGGER_SOFTWARE;             	//触发功能
 		DACCH2_Config.DAC_OutputBuffer=DAC_OUTPUTBUFFER_ENABLE;		//DAC1输出缓冲
 		
 		if(SYSTEM_DAC_OUT1_ENABLE)
-			HAL_DAC_ConfigChannel(&DAC1_Handler,&DACCH1_Config,DAC_CHANNEL_1);//DAC通道1配置
+		{	HAL_DAC_ConfigChannel(&DAC1_Handler,&DACCH1_Config,DAC_CHANNEL_1);//DAC通道1配置
 			HAL_DAC_Start(&DAC1_Handler,DAC_CHANNEL_1);  			//开启DAC通道1
+		}
+		
 		if(SYSTEM_DAC_OUT2_ENABLE)
-			HAL_DAC_ConfigChannel(&DAC1_Handler,&DACCH2_Config,DAC_CHANNEL_2);//DAC通道2配置
+		{	HAL_DAC_ConfigChannel(&DAC1_Handler,&DACCH2_Config,DAC_CHANNEL_2);//DAC通道2配置
 			HAL_DAC_Start(&DAC1_Handler,DAC_CHANNEL_2);  			//开启DAC通道2
+		}
     
-    
+	#if SYSTEM_DAC_OUT1_TriangleWave_ENABLE
+		HAL_DACEx_TriangleWaveGenerate(&DAC1_Handler, DAC_CHANNEL_1, DAC_TRIANGLEAMPLITUDE_1);
+			//可选DAC_TRIANGLEAMPLITUDE_1 ~ DAC_TRIANGLEAMPLITUDE_4095 TODO:不知道这个参数干什么的，有待实验
+	#elif SYSTEM_DAC_OUT1_NoiseWave_ENABLE
+		HAL_DACEx_NoiseWaveGenerate(&DAC1_Handler, DAC_CHANNEL_1,DAC_LFSRUNMASK_BITS1_0);
+			//可选DAC_LFSRUNMASK_BITS1_0 ~ DAC_LFSRUNMASK_BITS11_0 TODO:不知道这个参数干什么的，有待实验
+	#endif
+	
+	#if SYSTEM_DAC_OUT2_TriangleWave_ENABLE
+		HAL_DACEx_TriangleWaveGenerate(&DAC1_Handler, DAC_CHANNEL_2, DAC_TRIANGLEAMPLITUDE_1);
+			//可选DAC_TRIANGLEAMPLITUDE_1 ~ DAC_TRIANGLEAMPLITUDE_4095 
+	#elif SYSTEM_DAC_OUT2_NoiseWave_ENABLE
+		HAL_DACEx_NoiseWaveGenerate(&DAC1_Handler, DAC_CHANNEL_2,DAC_LFSRUNMASK_BITS1_0);
+			//可选DAC_LFSRUNMASK_BITS1_0 ~ DAC_LFSRUNMASK_BITS11_0 
+	#endif
 }
 
 //DAC底层驱动，时钟配置，引脚 配置
@@ -1718,6 +2102,220 @@ void LCD_with_FSMC_init_FSMC(void)
 }
 
 #endif
+
+/*________________________________________用户FLASH编程_________________________________________________________*/
+#if SYSTEM_FLASH_IAP_ENABLE
+
+#if STM32_FLASH_WREN	//如果使能了写   
+
+//从指定地址开始写入指定长度的数据
+//WriteAddr:起始地址(此地址必须为2的倍数!!)
+//pBuffer:数据指针
+//NumToWrite:字节数
+u8 STMFLASH_Write(u32 WriteAddr,u8 *pBuffer,u32 NumToWrite)
+{
+	u32 i;	//万年不变的i
+	u8 readbuf,stat = HAL_ERROR;
+	
+	if((WriteAddr < STM32_FLASH_BASE) || (WriteAddr >= (STM32_FLASH_BASE + 1024*STM32F207IE_FLASH_SIZE))) return HAL_ERROR;//非法地址
+	if((WriteAddr + NumToWrite) > (STM32_FLASH_BASE + 1024 * STM32F207IE_FLASH_SIZE)) return HAL_ERROR;//非法地址
+	
+	HAL_FLASH_Unlock();		//解锁
+	for(i = 0;i < NumToWrite;i++,WriteAddr++)
+	{
+		STMFLASH_Read(WriteAddr,&readbuf,1);
+		
+		if(readbuf != pBuffer[i])
+			stat = HAL_FLASH_Program(FLASH_TYPEPROGRAM_BYTE, WriteAddr, pBuffer[i]);
+	}
+	HAL_FLASH_Lock();		//上锁
+	
+	return stat;
+}
+#endif
+
+//读取指定地址的字节
+//faddr:读地址 
+//返回值:对应数据.
+//u16 STMFLASH_ReadHalfWord(u32 faddr)
+//{
+//	return *(vu8*)faddr; 
+//}
+
+//从指定地址开始读出指定长度的数据
+//ReadAddr:起始地址
+//pBuffer:数据指针
+//NumToRead:字节数
+u8 STMFLASH_Read(u32 ReadAddr,u8 *pBuffer,u32 NumToRead)   	
+{
+	u32 i;
+	if((ReadAddr < STM32_FLASH_BASE) || (ReadAddr >= (STM32_FLASH_BASE + 1024 * STM32F207IE_FLASH_SIZE)))return HAL_ERROR;//非法地址
+	if((ReadAddr + NumToRead) > (STM32_FLASH_BASE + 1024 * STM32F207IE_FLASH_SIZE)) return HAL_ERROR;//非法地址
+	
+	for(i = 0;i < NumToRead;i++,ReadAddr++)
+	{
+		//pBuffer[i]=STMFLASH_ReadHalfWord(ReadAddr); //读取1个字节
+		pBuffer[i] = *(vu8*)ReadAddr;
+	}
+	return HAL_OK;
+}
+
+
+
+#endif
+
+
+/*____________________SDIO SD_____________________________________________*/
+#if SYSTEM_SDIO_SD_ENABLE
+
+SD_HandleTypeDef        SDCARD_Handler;     		//SD卡句柄
+HAL_SD_CardInfoTypeDef  SDCardInfo;                 //SD卡信息
+HAL_SD_CardCIDTypeDef	SDCard_CID;					//SD卡CID信息
+
+
+//SD卡初始化
+//返回值:0 初始化正确；其他值，初始化错误
+u8 SD_Init(void)
+{
+    u8 SD_Error;
+    
+    //初始化时的时钟不能大于400KHZ 
+    SDCARD_Handler.Instance=SDIO;
+    SDCARD_Handler.Init.ClockEdge=SDIO_CLOCK_EDGE_RISING;          		//上升沿     
+    SDCARD_Handler.Init.ClockBypass=SDIO_CLOCK_BYPASS_DISABLE;     		//不使用bypass模式，直接用HCLK进行分频得到SDIO_CK
+    SDCARD_Handler.Init.ClockPowerSave=SDIO_CLOCK_POWER_SAVE_DISABLE;   //空闲时不关闭时钟电源
+    SDCARD_Handler.Init.BusWide=SDIO_BUS_WIDE_1B;                       //1位数据线，在下面会再设置成4位宽
+    SDCARD_Handler.Init.HardwareFlowControl=SDIO_HARDWARE_FLOW_CONTROL_ENABLE;//开启硬件流控
+    SDCARD_Handler.Init.ClockDiv=SDIO_TRANSFER_CLK_DIV;            		//SD传输时钟频率最大25MHZ
+	
+    SD_Error=HAL_SD_Init(&SDCARD_Handler);
+    if(SD_Error!=HAL_OK) return HAL_ERROR;
+	
+    SD_Error=HAL_SD_ConfigWideBusOperation(&SDCARD_Handler,SDIO_BUS_WIDE_4B);//使能宽总线模式
+    if(SD_Error!=HAL_OK) return HAL_ERROR;
+    return HAL_OK;
+}
+
+
+//SDMMC底层驱动，时钟使能，引脚配置，DMA配置
+//此函数会被HAL_SD_Init()调用
+//hsd:SD卡句柄
+void HAL_SD_MspInit(SD_HandleTypeDef *hsd)
+{
+    //DMA_HandleTypeDef TxDMAHandler,RxDMAHandler;
+    GPIO_InitTypeDef GPIO_Initure;
+    
+    __HAL_RCC_SDIO_CLK_ENABLE();    //使能SDIO时钟
+    //__HAL_RCC_DMA2_CLK_ENABLE();    //使能DMA2时钟 
+    __HAL_RCC_GPIOC_CLK_ENABLE();   //使能GPIOC时钟
+    __HAL_RCC_GPIOD_CLK_ENABLE();   //使能GPIOD时钟
+    
+    //PC8,9,10,11,12
+    GPIO_Initure.Pin=GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_Initure.Mode=GPIO_MODE_AF_PP;      //推挽复用
+    GPIO_Initure.Pull=GPIO_PULLUP;          //上拉
+    GPIO_Initure.Speed=GPIO_SPEED_FREQ_VERY_HIGH;//高速
+	GPIO_Initure.Alternate = GPIO_AF12_SDIO;
+    HAL_GPIO_Init(GPIOC,&GPIO_Initure);     //初始化
+    
+    //PD2
+    GPIO_Initure.Pin=GPIO_PIN_2;            
+    HAL_GPIO_Init(GPIOD,&GPIO_Initure);     //初始化
+}
+
+/*
+//得到卡信息
+//cardinfo:卡信息存储区
+	HAL_SD_GetCardInfo(&SDCARD_Handler,&SDCardInfo);
+*/
+
+//读SD卡
+//buf:读数据缓存区
+//sector:扇区地址
+//cnt:扇区个数	
+//返回值:错误状态;0,正常;其他,错误代码;
+u8 SD_ReadDisk(u8* buf,u32 sector,u32 cnt)
+{
+    u8 sta = HAL_OK;
+	u32 timeout=SD_TIMEOUT;
+	long long lsector=sector;
+    INTX_DISABLE();//关闭总中断(POLLING模式,严禁中断打断SDIO读写操作!!!)
+	sta=HAL_SD_ReadBlocks(&SDCARD_Handler, (uint8_t*)buf,lsector,cnt,SD_TIMEOUT);//多个sector的读操作
+	
+	//等待SD卡读完
+	while(HAL_SD_GetCardState(&SDCARD_Handler) != HAL_SD_CARD_READY)
+    {
+		if(timeout-- == 0)
+		{	
+			sta = HAL_BUSY;
+		}
+    }
+    INTX_ENABLE();//开启总中断
+    return sta;
+}
+
+//写SD卡
+//buf:写数据缓存区
+//sector:扇区地址
+//cnt:扇区个数	
+//返回值:错误状态;0,正常;其他,错误代码;	
+u8 SD_WriteDisk(u8 *buf,u32 sector,u32 cnt)
+{   
+    u8 sta = HAL_OK;
+	u32 timeout=SD_TIMEOUT;
+	long long lsector=sector;
+    INTX_DISABLE();//关闭总中断(POLLING模式,严禁中断打断SDIO读写操作!!!)
+	sta=HAL_SD_WriteBlocks(&SDCARD_Handler,(uint8_t*)buf,lsector,cnt,SD_TIMEOUT);//多个sector的写操作
+
+	//等待SD卡读完
+	while(HAL_SD_GetCardState(&SDCARD_Handler) != HAL_SD_CARD_READY)
+    {
+		if(timeout-- == 0)
+		{	
+			sta = HAL_BUSY;
+		}
+    }  
+	INTX_ENABLE();//开启总中断
+    return sta;
+}
+
+
+//通过串口打印SD卡相关信息
+void show_sdcard_info(void)
+{
+	uint64_t CardCap;	//SD卡容量
+
+	HAL_SD_GetCardCID(&SDCARD_Handler,&SDCard_CID);		//获取CID
+	HAL_SD_GetCardInfo(&SDCARD_Handler,&SDCardInfo); 	//获取SD卡信息                  
+	switch(SDCardInfo.CardType)
+	{
+		case CARD_SDSC:
+			if(SDCardInfo.CardVersion == CARD_V1_X)
+				printf_uart(UART1,"Card Type:SDSC V1\r\n");
+			else if(SDCardInfo.CardVersion == CARD_V2_X)
+				printf_uart(UART1,"Card Type:SDSC V2\r\n");
+
+			break;
+		
+		case CARD_SDHC_SDXC:
+			printf_uart(UART1,"Card Type:SDHC\r\n");
+			break;
+		
+		default:break;
+	}	
+	CardCap=(uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);				//计算SD卡容量
+  	printf_uart(UART1,"Card ManufacturerID:%d\r\n",SDCard_CID.ManufacturerID);					//制造商ID
+ 	printf_uart(UART1,"Card RCA:%d\r\n",SDCardInfo.RelCardAdd);									//卡相对地址
+	printf_uart(UART1,"LogBlockNbr:%d \r\n",(u32)(SDCardInfo.LogBlockNbr));						//显示逻辑块数量
+	printf_uart(UART1,"LogBlockSize:%d \r\n",(u32)(SDCardInfo.LogBlockSize));					//显示逻辑块大小
+	printf_uart(UART1,"Card Capacity:%d MB\r\n",(u32)(CardCap>>20));							//显示容量（右移20位，以MB显示）
+ 	printf_uart(UART1,"Card BlockSize:%d\r\n\r\n",SDCardInfo.BlockSize);						//显示块大小
+}
+
+#endif
+
+
+
 
 
 

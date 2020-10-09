@@ -24,7 +24,7 @@ System init over!
 
 （加粗体为暂时尚未实现的外设或者组件）
 
--   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **LTDC LCD** \ **DCMI** \ FSMC \ DMA \ RNG \ **DSP** \ FPU \ **USB(HCD PCD)** \ CAN \ **Ethernet**）
+-   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ **DSP** \ FPU \ **USB(HCD PCD)** \ CAN \ **Ethernet**）
 -   不会支持的外设：LTDC LCD \ IRDA \ CRYP \ HASH \ AES
 -   FreeRTOS
 -   **LittlevGL或者STemWin**

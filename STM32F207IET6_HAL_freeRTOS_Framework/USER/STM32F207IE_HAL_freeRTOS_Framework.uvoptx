@@ -29,7 +29,7 @@
       <CLKADS>120000000</CLKADS>
       <OPTTT>
         <gFlags>1</gFlags>
-        <BeepAtEnd>1</BeepAtEnd>
+        <BeepAtEnd>0</BeepAtEnd>
         <RunSim>0</RunSim>
         <RunTarget>1</RunTarget>
         <RunAbUc>0</RunAbUc>

@@ -13,8 +13,9 @@ void sys_MCU_Init_Seq(void)
 	/*	PLLCLK = SYSCLK = AHBCLK = HCLK 均为120MHz，APB2外设为60MHz，APB1外设为30Mhz，APB2定时器为120MHz，APB1定时器为60Mhz
 		
 		ETH\RNG\FSMC\USB FS\USB HS\GPIO\DMA 均在120M
-		RTC 时钟取自 LSE = 32.768K
-		IWDG时钟取自 HSE = 25M
+		RTC 时钟取自 LSE = 32.768K 	（默认不开，使能RTC时会开）
+		IWDG时钟取自 LSI = 32K 		（默认开）
+					 HSI = 16M		（默认不开）
 		DCMI 48 Mbyte/s max
 		
 		APB2外设(60M)：SDIO\USART1\USART6\SPI1\ADC123
@@ -236,8 +237,9 @@ u8 Stm32_Clock_Init(void)
 		PLLCLK = SYSCLK = AHBCLK = HCLK 均为120MHz，APB2外设为60MHz，APB1外设为30Mhz，APB2定时器为120MHz，APB1定时器为60Mhz
 		
 		ETH\RNG\FSMC\USB FS\USB HS\GPIO\DMA 均在120M
-		RTC 时钟取自 LSE = 32.768K
-		IWDG时钟取自 LSI = 32K
+		RTC 时钟取自 LSE = 32.768K 	（默认不开，使能RTC时会开）
+		IWDG时钟取自 LSI = 32K 		（默认开）
+					 HSI = 16M		（默认不开）
 		DCMI 48 Mbyte/s max
 		
 		APB2外设(60M)：SDIO\USART1\USART6\SPI1\ADC123
@@ -254,8 +256,8 @@ u8 Stm32_Clock_Init(void)
 	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE
 							  |RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_HSI;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-	RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-	RCC_OscInitStruct.LSIState = RCC_LSE_OFF;
+	RCC_OscInitStruct.LSEState = RCC_LSE_OFF;
+	RCC_OscInitStruct.LSIState = RCC_LSI_ON;
 	RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;	//25M

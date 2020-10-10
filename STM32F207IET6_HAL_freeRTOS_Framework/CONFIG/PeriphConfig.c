@@ -106,6 +106,8 @@ void deviceIO_Init(Devices_Init_Struct* Devices , enum devicesIndex_enum device2
 			__HAL_RCC_GPIOD_CLK_ENABLE();
 		else if(Devices[dIndex].deviceIO_Struct[iIndex].GPIOx == GPIOE)
 			__HAL_RCC_GPIOE_CLK_ENABLE();
+		else if(Devices[dIndex].deviceIO_Struct[iIndex].GPIOx == GPIOF)
+			__HAL_RCC_GPIOF_CLK_ENABLE();
 		
 		//ÃÓ»ÎIO≈‰÷√
 		HAL_GPIO_Init(Devices[dIndex].deviceIO_Struct[iIndex].GPIOx, \

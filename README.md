@@ -3,10 +3,6 @@ Welcome to the stm32_framework !
 
 一个计划实现STM32F1和F4工程模板的项目，包含高级封装的HAL库外设驱动、Menu、FreeRTOS、STemWin、LWIP、USB、FATFS、DSP等，以及包含加密、BPNN、最小二乘等诸多便利的组件和算法，并具有良好的易用性。
 
-目前只有F1，当F1完成后，F4就快了...吧。
-
-喜讯，STM32F207IET6的模板要来了~
-
 ```
 Author : Staok
 Email : superxhy@qq.com
@@ -16,16 +12,30 @@ System is starting...
 System init over!
 ```
 
-
+喜欢的话，点个小star鸭~
 
 ------
+
+## 进展
+
+### STM32F1xx：
+
+不是目前主要完善的对象，已经完成的大部分外设驱动并且调好
+
+### STM32F207IE：
+
+不是目前主要完善的对象，已经完成的大部分外设驱动有很多bugs，不要用
+
+### STM32F4xx：
+
+目前主要完善的对象，已经完成大部分外设驱动，剩下的高级外设如：IAP、DCMI、DSP、ETH和USB会主要在此平台完成，前两个平台F1和F2会有延迟
 
 ## 计划组件
 
 （加粗体为暂时尚未实现的外设或者组件）
 
 -   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ **DSP** \ FPU \ **USB(HCD PCD)** \ CAN \ **Ethernet**）
--   不会支持的外设：LTDC LCD \ IRDA \ CRYP \ HASH \ AES
+-   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 -   FreeRTOS
 -   **LittlevGL或者STemWin**
 -   **LWIP**
@@ -50,7 +60,7 @@ System init over!
 -   **所有基础外设均在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里通过宏定义配置，每一个宏定义旁边均有使用说明的注释**，有详细注释，不看不会用
 -   外设驱动代码分别在sys.c和periphconfig.c两个文件里，其所有的外设API声明均在sys.h里，所有的独立GPIO的API均在periphconfig.h里，用户程序调用外设控制API时，按需调用这两个文件即可
 -   MCU外设配置的统一函数为void sys_MCU_Init_Seq(void)，一般无需改动；外接器件初始化统一函数为void sys_Device_Init_Seq(void)，需要自行按需修改
--   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h的上面
+-   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里的上面
 
 ### 裸跑或者FreeRTOS选择
 

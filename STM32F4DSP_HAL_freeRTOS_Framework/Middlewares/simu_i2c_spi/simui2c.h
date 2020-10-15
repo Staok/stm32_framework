@@ -25,16 +25,20 @@ typedef struct _SimuI2C{				//I2C硬件管理块
 	void (*PinSetSCL)(unsigned char);		//SCL引脚输出函数
 	void (*PinSetSDA)(unsigned char);		//SDA引脚输出函数
 	unsigned char (*PinGetSDA)();			//SDA引脚读取函数
-	void (*Delayus)(unsigned int);		//us延时函数
-}SimuI2C;								
+	void (*Delayus)(unsigned int);			//us延时函数
+}SimuI2C;	
+
+
+/*用户SimuI2C变量*/
+extern SimuI2C SimuI2C_Handle;
 
 //###########################【API】###########################
 void SimuI2C_Init(SimuI2C *SimuI2C_Struct);					//初始化
 void SimuI2C_Start(SimuI2C *SimuI2C_Struct);			 	//产生IIC起始信号
 void SimuI2C_Stop(SimuI2C *SimuI2C_Struct);			   		//产生IIC停止信号
 unsigned char SimuI2C_WaitAck(SimuI2C *SimuI2C_Struct);		//等待应答信号到来
-void SimuI2C_Ack(SimuI2C *SimuI2C_Struct);					//产生ACK应答
-void SimuI2C_NAck(SimuI2C *SimuI2C_Struct);					//不产生ACK应答
+void SimuI2C_Ack(SimuI2C *SimuI2C_Struct);					//产生ACK应答	——用于当从机
+void SimuI2C_NAck(SimuI2C *SimuI2C_Struct);					//不产生ACK应答 ——用于当从机
 void SimuI2C_WriteByte(SimuI2C *SimuI2C_Struct,unsigned char data);			//IIC发送一个字节
 unsigned char SimuI2C_ReadByte(SimuI2C *SimuI2C_Struct,unsigned char ack);	//IIC读一个字节
 

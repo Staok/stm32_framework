@@ -1,14 +1,13 @@
 #include "PeriphConfig.h"
 
 
-
 /*_____________________________________\\\                               ///____________________________________________*
  *_________________________________________________用户GPIO配置_________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
 /*STEP 1:去.h文件里定义都有什么器件*/
 
 /*STEP 2:定义一共有多少个器件*/
-#define devicesNum	3
+#define devicesNum	4
 
 /*STEP 3:定义每个器件所用到的IO和其配置（只是定义，但可以分别选择初始化或者不初始化）*/
 /*参数说明：参数必须在以下列举中选
@@ -23,18 +22,19 @@
 	EXTI优先级：0~15
 	启否EXTI：	TRUE或者FALSE
 */
+/*指示灯IO定义*/
 GPIO_Init_Struct TestLED_IO_Struct[] = 
 {	/*	PIN				MODE			  上下拉		翻转速度		  		GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
 	{{GPIO_PIN_9, 	GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOF,  GPIO_PIN_SET,		15,		  FALSE},
 	{{GPIO_PIN_10, 	GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOF,  GPIO_PIN_SET,		15,		  FALSE}
 };
-//用于菜单的外部输入按键
+/*用于菜单的外部输入按键定义*/
 GPIO_Init_Struct KEY_IO_Struct[] =
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},
-	{{GPIO_PIN_2, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE}
+	{{GPIO_PIN_1, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE},	//key_Up
+	{{GPIO_PIN_2, GPIO_MODE_IT_FALLING, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOA,  GPIO_PIN_SET,		2,		  TRUE}		//key_Down
 };
-
+/*LCD IO驱动时的IO定义*/
 GPIO_Init_Struct LCD_IO_Struct[] = 
 {	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
 	{{GPIO_PIN_3, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		15,		  FALSE},
@@ -53,6 +53,13 @@ GPIO_Init_Struct LCD_IO_Struct[] =
 	{{GPIO_PIN_15, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		15,		  FALSE},
 };
 
+/*I2C的IO定义*/
+GPIO_Init_Struct simuI2C_IO_Struct[] =
+{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
+	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOE,  GPIO_PIN_SET,		2,		  TRUE},	//MPU6050 SCL
+	{{GPIO_PIN_4, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOE,  GPIO_PIN_SET,		2,		  TRUE} 	//MPU6050 SDA
+};
+
 /*STEP 3.5:在这里和去.h文件里填写用于外部中断的IO的中断标志位*/
 //当IO使用外部中断时，用一个标志位记录中断是否发生，把长时间的处理函数放到中断外面！
 u8 key_Up_Interrupted 		= 	FALSE; 
@@ -66,10 +73,10 @@ u8 key_Down_Interrupted 	= 	FALSE;
 Devices_Init_Struct UserDevices[devicesNum] = 
 {
 	{	
-		.deviceIO_Struct 	= 	TestLED_IO_Struct	,		//器件IO配置结构体
-		.deviceIndex 		= 	TestLED_Index		,		//器件enum格式索引
-		.deviceName 		= 	"TestLED"			,		//器件名称
-		.device_IOnum 		= 	2							//器件有多少个IO口
+		.deviceIO_Struct 	= 	TestLED_IO_Struct	,	//器件IO配置结构体
+		.deviceIndex 		= 	TestLED_Index		,	//器件enum格式索引
+		.deviceName 		= 	"TestLED"			,	//器件名称
+		.device_IOnum 		= 	2						//器件有多少个IO口
 	},
 	{
 		.deviceIO_Struct 	= 	KEY_IO_Struct	,
@@ -78,10 +85,16 @@ Devices_Init_Struct UserDevices[devicesNum] =
 		.device_IOnum 		= 	2
 	},
 	{	
-		.deviceIO_Struct 	= 	LCD_IO_Struct	,		//器件IO配置结构体
-		.deviceIndex 		= 	LCD_Index		,		//器件enum格式索引
-		.deviceName 		= 	"LCD"			,		//器件名称
-		.device_IOnum 		= 	13						//器件有多少个IO口
+		.deviceIO_Struct 	= 	LCD_IO_Struct	,
+		.deviceIndex 		= 	LCD_Index		,
+		.deviceName 		= 	"LCD"			,
+		.device_IOnum 		= 	13				
+	},
+	{	
+		.deviceIO_Struct 	= 	simuI2C_IO_Struct	,
+		.deviceIndex 		= 	simuI2C_Index		,
+		.deviceName 		= 	"MPU6050"			,
+		.device_IOnum 		= 	2					
 	}
 };
 
@@ -226,11 +239,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			#endif
             break;
 		case GPIO_PIN_1:
-			/*当配置GPIOA的引脚1为菜单按键的上按键时*/
 			key_Up_Interrupted = TRUE;
 			break;
         case GPIO_PIN_2:
-			/*当配置GPIOA的引脚2为菜单按键的下按键时*/
 			key_Down_Interrupted = TRUE;
             break;
         case GPIO_PIN_3:
@@ -1522,8 +1533,33 @@ void Sys_Enter_Standby(void)
 	HAL_Delay(500);
 	while(WKUP_KD == 1){;}
 	HAL_Delay(500);
-    //__HAL_RCC_APB2_FORCE_RESET();       //复位所有IO口 
-	__HAL_RCC_PWR_CLK_ENABLE();         //使能PWR时钟
+	
+    __HAL_RCC_APB2_FORCE_RESET();       //复位所有IO口 
+	
+		#if SYSTEM_RTC_ENABLE
+		__HAL_RCC_PWR_CLK_ENABLE();         //使能PWR时钟
+		__HAL_RCC_BACKUPRESET_FORCE();      //复位备份区域
+		HAL_PWR_EnableBkUpAccess();         //后备区域访问使能  
+		
+		//STM32F4,当开启了RTC相关中断后,必须先关闭RTC中断,再清中断标志位,然后重新设置
+		//RTC中断,再进入待机模式才可以正常唤醒,否则会有问题.	
+		__HAL_PWR_CLEAR_FLAG(PWR_FLAG_SB);
+		__HAL_RTC_WRITEPROTECTION_DISABLE(&RTC_Handler);//关闭RTC写保护
+		
+		//关闭RTC相关中断，可能RTC打开了
+		__HAL_RTC_WAKEUPTIMER_DISABLE_IT(&RTC_Handler,RTC_IT_WUT);
+		__HAL_RTC_TIMESTAMP_DISABLE_IT(&RTC_Handler,RTC_IT_TS);
+		__HAL_RTC_ALARM_DISABLE_IT(&RTC_Handler,RTC_IT_ALRA|RTC_IT_ALRB);
+		
+		//清除RTC相关中断标志位
+		__HAL_RTC_ALARM_CLEAR_FLAG(&RTC_Handler,RTC_FLAG_ALRAF|RTC_FLAG_ALRBF);
+		__HAL_RTC_TIMESTAMP_CLEAR_FLAG(&RTC_Handler,RTC_FLAG_TSF); 
+		__HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&RTC_Handler,RTC_FLAG_WUTF);
+		
+		__HAL_RCC_BACKUPRESET_RELEASE();                    //备份区域复位结束
+		__HAL_RTC_WRITEPROTECTION_ENABLE(&RTC_Handler);     //使能RTC写保护
+	#endif
+	
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);                  //清除Wake_UP标志
     HAL_PWR_EnableWakeUpPin(PWR_WAKEUP_PIN1);           //设置WKUP用于唤醒
     HAL_PWR_EnterSTANDBYMode();                         //进入待机模式     
@@ -1749,8 +1785,8 @@ u32 Get_Adc_Average(u32 ch,u8 times)
 float Get_Temprate(u32 adcx)
 {
  	float temperate;
-	temperate = ((float)adcx)*(3.3/4096.0);				//电压值
-	temperate = (1.43-temperate)/0.0043 + 25.0;				//转换为温度值 	 
+	temperate = ((float)adcx)*(3.3f/4096.0f);				//电压值
+	temperate=(temperate-0.76f)/0.0025f + 25.0f;			//转换为温度值 	 
 	return temperate;
 }
 
@@ -1930,31 +1966,69 @@ SRAM_HandleTypeDef SRAM_Handler;    //SRAM句柄
 void sys_FSMC_SRAM_ENABLE(void)
 {	
 	FSMC_NORSRAM_TimingTypeDef FSMC_ReadWriteTim;
+	GPIO_InitTypeDef GPIO_Initure;
 	
+//	XmRamInit();
+//	HAL_Delay(1);
+		
+		__HAL_RCC_FSMC_CLK_ENABLE();                //使能FSMC时钟
+		__HAL_RCC_GPIOD_CLK_ENABLE();               //使能GPIOD时钟
+		__HAL_RCC_GPIOE_CLK_ENABLE();               //使能GPIOE时钟
+		__HAL_RCC_GPIOF_CLK_ENABLE();               //使能GPIOF时钟
+		__HAL_RCC_GPIOG_CLK_ENABLE();               //使能GPIOG时钟
+		
+		//PD0,1,4,5,8~15
+		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_8|\
+						 GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|\
+						 GPIO_PIN_14|GPIO_PIN_15;  
+		GPIO_Initure.Mode=GPIO_MODE_AF_PP;          //推挽复用
+		GPIO_Initure.Pull=GPIO_PULLUP;              //
+		GPIO_Initure.Speed=GPIO_SPEED_HIGH;    //高速 
+		GPIO_Initure.Alternate = GPIO_AF12_FSMC;
+		HAL_GPIO_Init(GPIOD,&GPIO_Initure);     	
+		
+		//PE0,1,7~15
+		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|\
+						 GPIO_PIN_10| GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|\
+						 GPIO_PIN_15;    
+		HAL_GPIO_Init(GPIOE,&GPIO_Initure);    
+		
+		//PF0~5,12~15
+		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|\
+						 GPIO_PIN_5|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;              
+		HAL_GPIO_Init(GPIOF,&GPIO_Initure);     
+		
+		//PG0~5,10
+		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_10;              
+		HAL_GPIO_Init(GPIOG,&GPIO_Initure);  
+		
+		
 	SRAM_Handler.Instance=FSMC_NORSRAM_DEVICE;                
 	SRAM_Handler.Extended=FSMC_NORSRAM_EXTENDED_DEVICE;    
-    
+	
 	SRAM_Handler.Init.NSBank=FSMC_NORSRAM_BANK3;     					//使用NE3
 	SRAM_Handler.Init.DataAddressMux=FSMC_DATA_ADDRESS_MUX_DISABLE; 	//地址/数据线不复用
 	SRAM_Handler.Init.MemoryType=FSMC_MEMORY_TYPE_SRAM;   				//SRAM
 	SRAM_Handler.Init.MemoryDataWidth=FSMC_NORSRAM_MEM_BUS_WIDTH_16; 	//16位数据宽度
 	SRAM_Handler.Init.BurstAccessMode=FSMC_BURST_ACCESS_MODE_DISABLE; 	//是否使能突发访问,仅对同步突发存储器有效,此处未用到
 	SRAM_Handler.Init.WaitSignalPolarity=FSMC_WAIT_SIGNAL_POLARITY_LOW;	//等待信号的极性,仅在突发模式访问下有用
-	SRAM_Handler.Init.WrapMode = FSMC_WRAP_MODE_DISABLE; 
+	//SRAM_Handler.Init.WrapMode = FSMC_WRAP_MODE_DISABLE; 
 	SRAM_Handler.Init.WaitSignalActive=FSMC_WAIT_TIMING_BEFORE_WS;   	//存储器是在等待周期之前的一个时钟周期还是等待周期期间使能NWAIT
 	SRAM_Handler.Init.WriteOperation=FSMC_WRITE_OPERATION_ENABLE;    	//存储器写使能
 	SRAM_Handler.Init.WaitSignal=FSMC_WAIT_SIGNAL_DISABLE;           	//等待使能位,此处未用到
 	SRAM_Handler.Init.ExtendedMode=FSMC_EXTENDED_MODE_DISABLE;        	//读写使用相同的时序
 	SRAM_Handler.Init.AsynchronousWait=FSMC_ASYNCHRONOUS_WAIT_DISABLE;	//是否使能同步传输模式下的等待信号,此处未用到
 	SRAM_Handler.Init.WriteBurst=FSMC_WRITE_BURST_DISABLE;           	//禁止突发写
+	SRAM_Handler.Init.ContinuousClock=FSMC_CONTINUOUS_CLOCK_SYNC_ASYNC;
   
 	//FMC读时序控制寄存器
-	FSMC_ReadWriteTim.AddressSetupTime=0x00;       	//地址建立时间（ADDSET）为1个HCLK 1/72M=13.8ns
-	FSMC_ReadWriteTim.AddressHoldTime=0x00;			//地址保持时间（ADDHLD）模式A未用到
-	FSMC_ReadWriteTim.DataSetupTime=0x01;			//数据保存时间为3个HCLK	=4*13.8=55ns
+	FSMC_ReadWriteTim.AddressSetupTime=0x0f;       	//地址建立时间（ADDSET） 多少个HCLK
+	FSMC_ReadWriteTim.AddressHoldTime=0x0f;			//地址保持时间（ADDHLD）模式A未用到
+	FSMC_ReadWriteTim.DataSetupTime=0x0f;			//数据保存时间
 	FSMC_ReadWriteTim.BusTurnAroundDuration=0X00;
 	FSMC_ReadWriteTim.AccessMode=FSMC_ACCESS_MODE_A;//模式A
 	HAL_SRAM_Init(&SRAM_Handler,&FSMC_ReadWriteTim,&FSMC_ReadWriteTim);	
+	
 }
 
 //在指定地址(WriteAddr+Bank1_SRAM3_ADDR)开始,连续写入n个字节.
@@ -1986,16 +2060,15 @@ void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n)
 
 #endif
 
-#if SYSTEM_FSMC_ENABLE
+#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD))
 
-//SRAM底层驱动，时钟使能，引脚分配
-//此函数会被HAL_SRAM_Init()调用
-//hsram:SRAM句柄
-void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
-{	
-	/*如果是用于TFT的FSMC*/
-	if(&TFTSRAM_Handler == hsram)
-	{
+SRAM_HandleTypeDef TFTSRAM_Handler;    //SRAM句柄(用于控制LCD)
+
+void LCD_with_FSMC_init_FSMC(void)
+{
+	FSMC_NORSRAM_TimingTypeDef FSMC_ReadWriteTim;
+	FSMC_NORSRAM_TimingTypeDef FSMC_WriteTim;
+	
 		GPIO_InitTypeDef GPIO_Initure;
 		
 		__HAL_RCC_FSMC_CLK_ENABLE();			//使能FSMC时钟
@@ -2020,58 +2093,7 @@ void HAL_SRAM_MspInit(SRAM_HandleTypeDef *hsram)
 		//初始化PG0,12
 		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_12;
 		HAL_GPIO_Init(GPIOG,&GPIO_Initure);
-	}
-	
-	/*如果是用于SRAM的FSMC*/
-	if(&SRAM_Handler == hsram)
-	{
-		GPIO_InitTypeDef GPIO_Initure;
 		
-		__HAL_RCC_FSMC_CLK_ENABLE();                //使能FSMC时钟
-		__HAL_RCC_GPIOD_CLK_ENABLE();               //使能GPIOD时钟
-		__HAL_RCC_GPIOE_CLK_ENABLE();               //使能GPIOE时钟
-		__HAL_RCC_GPIOF_CLK_ENABLE();               //使能GPIOF时钟
-		__HAL_RCC_GPIOG_CLK_ENABLE();               //使能GPIOG时钟
-		
-		//PD0,1,4,5,8~15
-		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_8|\
-						 GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|\
-						 GPIO_PIN_14|GPIO_PIN_15;  
-		GPIO_Initure.Mode=GPIO_MODE_AF_PP;          //推挽复用
-		GPIO_Initure.Pull=GPIO_NOPULL;              //
-		GPIO_Initure.Speed=GPIO_SPEED_FREQ_VERY_HIGH;    //高速 
-		GPIO_Initure.Alternate = GPIO_AF12_FSMC;
-		HAL_GPIO_Init(GPIOD,&GPIO_Initure);     	
-		
-		//PE0,1,7~15
-		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9|\
-						 GPIO_PIN_10| GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|\
-						 GPIO_PIN_15;    
-		HAL_GPIO_Init(GPIOE,&GPIO_Initure);    
-		
-		//PF0~5,12~15
-		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|\
-						 GPIO_PIN_5|GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;              
-		HAL_GPIO_Init(GPIOF,&GPIO_Initure);     
-		
-		//PG0~5,10
-		GPIO_Initure.Pin=GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_10;              
-		HAL_GPIO_Init(GPIOG,&GPIO_Initure);  
-	}
-
-}
-
-#endif
-
-#if ((SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD))
-
-SRAM_HandleTypeDef TFTSRAM_Handler;    //SRAM句柄(用于控制LCD)
-
-void LCD_with_FSMC_init_FSMC(void)
-{
-	FSMC_NORSRAM_TimingTypeDef FSMC_ReadWriteTim;
-	FSMC_NORSRAM_TimingTypeDef FSMC_WriteTim;
-	
 	TFTSRAM_Handler.Instance=FSMC_NORSRAM_DEVICE;                
 	TFTSRAM_Handler.Extended=FSMC_NORSRAM_EXTENDED_DEVICE;    
     

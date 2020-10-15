@@ -15,6 +15,10 @@ void Bare_Begin(void)
 		char* Head_buf = {"For Test!"};
 		DrawPageHead((u8*)Head_buf);
 	#endif
+	
+	#if (SYSTEM_ADC1_ENABLE) && (SYSTEM_ADC1_useScan) && (SYSTEM_ADC1_useCircular)
+		HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum);
+	#endif
 	BACK_COLOR = BLACK;
 	for(;;)
 	{
@@ -24,8 +28,21 @@ void Bare_Begin(void)
 		{
 			Timer_IT_flags._10msec_flag = FALSE;
 			
+			#if SYSTEM_RNG_ENABLE
+				HAL_RNG_GenerateRandomNumber_IT(&RNG_Handle);
+			#endif
 		}
 		
+		#if SYSTEM_RNG_ENABLE
+			char RNG_buf[20];
+			if(GenerateRNG_Ready)
+			{
+				GenerateRNG_Ready = 0;
+				sprintf(RNG_buf,"RNG:%d",randomNum32bit);
+				POINT_COLOR = RED;
+				LCD_ShowString(5,lcddev.height - 80,16,(u8*)RNG_buf);
+			}
+		#endif
 		
 		/*____________________________________100ms周期执行：可以为按键检测和处理等________________________________________*/
 		if(Timer_IT_flags._100msec_flag == TRUE)
@@ -46,6 +63,12 @@ void Bare_Begin(void)
 //			}
 //			myfree(InrRAM,buf4uart1);
 			
+			
+			/*读入器件信息*/
+			keyProcess();	//菜单框架里的输入接管和获取函数
+			
+			/*刷新界面信息*/
+			menuProcess();	//菜单框架里的按照输入执行功能函数
 			
 		}
 		/*____________________________________300ms周期执行：通常为运行时错误自检以及处理，刷屏等__________________________________________*/
@@ -73,15 +96,23 @@ void Bare_Begin(void)
 			
 			/*300ms周期要做的事情*/
 			
-			/*读入器件信息*/
-			
-			/*刷新界面信息*/
-			
-			keyProcess();	//菜单框架里的输入接管和获取函数
-			menuProcess();	//菜单框架里的按照输入执行功能函数
-			
 			//TestLED_Ctrl = !TestLED_Ctrl;
 			TestLED2_Ctrl = !TestLED2_Ctrl;	
+			
+			/*显示ADC值*/
+			#if SYSTEM_ADC1_ENABLE
+				char ADC_buf[20];
+				if(adValueDone)
+				{
+					adValueDone = 0;
+					//HAL_ADC_Stop_DMA(&ADC1_Handler);
+					sprintf(ADC_buf,"adValue:%d %d %d %5.2f",adValue[0],adValue[1],adValue[2],Get_Temprate(adValue[3]));
+					LCD_Fill(0,lcddev.height - 60,lcddev.width,lcddev.height - 40,BLACK);
+					Gui_StrCenter(0,lcddev.height - 60,RED,BLACK,(u8*)ADC_buf,16,0);
+				}
+			#endif
+			
+			
 		}
 		
 		/*____________________________________1s周期执行：通常为运行状态指示，滴答心跳提醒等等__________________________________________*/
@@ -89,29 +120,42 @@ void Bare_Begin(void)
 		{
 			Timer_IT_flags._1sec_flag = FALSE;
 			
-			/*1s周期要做的事情*/		
+			/*1s周期要做的事情*/
+
+			#if SYSTEM_FSMC_ENABLE
+				char* str_buf = mymalloc(ExRAM1,20000);
+				char* str_buf2 = "mymalloc fault";
+				if(str_buf == NULL)
+					LCD_ShowString(5,lcddev.height - 80,16,(u8*)str_buf2);
+				else
+					sprintf(str_buf,"%6.3f-%6.3f%%\0",Timer_IT_flags._100msec/3.3f,my_mem_perused(ExRAM1)*100.0f),
+					LCD_ShowString(5,lcddev.height - 80,16,(u8*)str_buf);
+				myfree(ExRAM1,str_buf);
+			#endif
 			
-			//显示RTC时间
+			/*显示RTC时间*/
 			char RTC_buf[50];
-//			#if SYSTEM_RTC_ENABLE
-//				RTC_TimeTypeDef RTC_RealTime;
-//				RTC_DateTypeDef	RTC_RealDate;
-//				HAL_RTC_GetTime(&RTC_Handler, &RTC_RealTime, RTC_FORMAT_BIN);
-//				HAL_RTC_GetDate(&RTC_Handler, &RTC_RealDate, RTC_FORMAT_BIN);
-//				sprintf(RTC_buf,"%d-%d-%d-%d   %d-%d-%d\r\n",RTC_RealDate.Year + 1970,RTC_RealDate.Month,RTC_RealDate.Date,RTC_RealDate.WeekDay,RTC_RealTime.Hours,RTC_RealTime.Minutes,RTC_RealTime.Seconds);
-//				printf_uart(UART1,"%s",RTC_buf);
-//			#endif
+			#if SYSTEM_RTC_ENABLE
+				RTC_TimeTypeDef RTC_RealTime;
+				RTC_DateTypeDef	RTC_RealDate;
+				HAL_RTC_GetTime(&RTC_Handler, &RTC_RealTime, RTC_FORMAT_BIN);
+				HAL_RTC_GetDate(&RTC_Handler, &RTC_RealDate, RTC_FORMAT_BIN);
+				sprintf(RTC_buf,"%4d-%2d-%2d-%1d %2d-%2d-%2d\r\n",RTC_RealDate.Year + 1970,RTC_RealDate.Month,RTC_RealDate.Date,RTC_RealDate.WeekDay,RTC_RealTime.Hours,RTC_RealTime.Minutes,RTC_RealTime.Seconds);
+				Gui_StrCenter(0,lcddev.height - 40,BRRED,BLACK,(u8*)RTC_buf,16,0);
+				//printf_uart(UART1,"%s",RTC_buf);
+			#endif
 			
+			/*显示运行时间（秒）*/
 			POINT_COLOR = BLUE;
 			sprintf(RTC_buf,"%4ds",sys_GetsysRunTime(NULL,NULL,NULL));
 			LCD_ShowString(5,20,16,(u8*)RTC_buf);
-//			
-//			
-//			//显示启动次数
-//			#if SYSTEM_FLASH_IAP_ENABLE
-//				sprintf(RTC_buf,"%d",StartUpTimes);
-//				LCD_ShowString(35,20,16,(u8*)RTC_buf);
-//			#endif
+			
+			/*显示启动次数*/
+			#if SYSTEM_FLASH_IAP_ENABLE
+				POINT_COLOR = RED;
+				sprintf(RTC_buf,"%d",StartUpTimes);
+				LCD_ShowString(lcddev.width - 20,20,16,(u8*)RTC_buf);
+			#endif
 			
 		}
 		

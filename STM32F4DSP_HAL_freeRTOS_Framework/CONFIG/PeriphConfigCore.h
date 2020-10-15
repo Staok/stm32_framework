@@ -32,10 +32,10 @@
 		* CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM8的PWM通道
 		  PC6/PA7		PC7/PB0			PC8/PB1			PC9		PA6
 		  
-		  				CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM1的PWM通道
-		* 默认			PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12
-		  部分重映射	PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6
-		  完全重映射	PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15
+		  	CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM1的PWM通道
+		* 	PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12	默认
+		  	PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6		部分重映射
+		  	PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15	完全重映射
 		
 		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
 		
@@ -44,8 +44,8 @@
 		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
 		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
 		  
-		* 												FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
-		  D2	D3	NOE	NWE	NE1/NCE2	D13	D14 D15 	A16 	A17 	A18 	D0 		D1
+		* 													FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
+		  D2	D3	NOE	NWE	NE1			D13	D14 D15 	A16 	A17 	A18 	D0 		D1
 		  PD0	PD1	PD4	PD5	PD7			PD8	PD9	PD10	PD11	PD12	PD13	PD14	PD15
 		  
 		  NBL0	NBL1	A23	A19	A20	A21	A22	D4	D5	D6	D7		D8		D9		D10		D11		D12
@@ -54,8 +54,8 @@
 		  A0	A1	A2	A3	A4	A5	A6		A7		A8		A9		A10	A11	A12	A13	A14	A15
 		  PF0	PF1	PF2	PF3	PF4	PF5	PF12	PF13	PF14	PF15	PG0	PG1	PG2	PG3	PG4	PG5
 		  
-		  NE2/NCE3	NCE4_1/NE3	NCE4_2	NE4		A24		A25
-		  PG9		PG10		PG11	PG12	PG13	PG14
+		  NE2	NE3		NE4		A24		A25
+		  PG9	PG10	PG12	PG13	PG14
 		  
 		* ...TODO:DCMI、USB、CAN等外设的IO还没有列出
 
@@ -120,6 +120,36 @@ DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407
 	
 	外部扩展SRAM 在块1区3   【0x6800 0000 - 0x681F FFFF】,容量1MB(0x100000)字节（512K个16bit）
 	TFT LCD 地址 在块1区4   【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）TODO：改为A0
+	
+	STM32F407ZGT6内存分配：
+	普通内存：
+		主要内存：		地址从：0X2000 0000 开始，共 128KB），这部分内存任何外设都可以访问。
+		辅助内存CCM：	地址从：0X1000 0000 开始，共 64KB，这部分内存仅 CPU 可以访问，DMA 之类的不可以直接访问，使用时得特别注意！！
+		外部SRAM：		地址从：0X6800 0000 开始，共 1024KB。
+		都用内存管理来管理，大块内存使用应尽量使用malloc和free
+	
+*/
+
+/*FPU开启*/
+/*
+	只需确保 system_stm32f4xx.c 文件的 SystemInit()中的FPU初始化环节被启用；
+	一般来说MDK设置启用单精度(32bit)FPU就会开启相关宏，但是并没用...所以这里手动在SystemInit()函数中强行启用FPU初始化了
+*/
+
+/*________________________________________TODO：DSP使用_________________________________________*/
+/*
+移植：
+
+
+
+可用API：
+
+
+
+
+
+
+
 */
 
 /*________________________________模板固定搭配____________________________________________*/
@@ -212,6 +242,7 @@ unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 	#endif
 
 #include "TFTLCD.h"
+#include "OLED.h"
 /*_____________________________________\\\                               ///____________________________________________*
  *_________________________________________________用户GPIO配置_________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
@@ -240,7 +271,7 @@ unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 
 #define SYSTEM_IWDG_ENABLE		0			/*开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4*/
 											/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
-#define SYSTEM_MCO_PA8_OUT		0			/*设置PA8为MCO输出，默认时钟源为HSE（25M），五倍分频（最大分频）*/
+#define SYSTEM_MCO_PA8_OUT		0			/*设置PA8为MCO输出，默认时钟源为HSE（5M），五倍分频（最大分频）*/
 
 
 /*配置使用RTC，确保LSE连接有36.768kHz的晶振，确保RTC有VBAT备用电源
@@ -285,7 +316,7 @@ API:
 	extern u32 randomNum32bit; 		//存32位RNG容器
 /*可用API：
 	调用一次 HAL_RNG_GenerateRandomNumber_IT(&RNG_Handle); 来触发产生随机数
-	查询 GenerateRNG_Ready，当其位1时，可从 randomNum32bit 取32位随机数
+	查询 GenerateRNG_Ready，当其为1时，可从 randomNum32bit 取32位随机数
 	随后把 GenerateRNG_Ready 清零
 */
 
@@ -296,7 +327,7 @@ X32 + X26 + X23 + X22 + X16 + X12 + X11 + X10 +X8 + X7 + X5 + X4 + X2 + X + 1
 写成16进制就是：0x04C11DB7
 API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    114
 	HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE); //返回值为uint32_t的计算结果*/
-#define SYSTEM_CRC_ENABLE		0
+#define SYSTEM_CRC_ENABLE		1
 
 
 /*
@@ -555,13 +586,14 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 	ADC1的通道与引脚映射：
 	通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
 	IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
+	标志：B1in16					  B8in16					  B15in16	 InrTemp
 */
 #define SYSTEM_ADC1_ENABLE		0			/*启否ADC1*/
 	#define SYSTEM_ADC1_useScan		1		/*启否规则组的连续扫描，如果启用，则把下面定义的所有通道都放到规则组里，并使用DMA2 Stream0的通道0把转换结果放到目标位置
 												如果不启用，则为软件触发的单次转换*/
 		#define SYSTEM_ADC1_useCircular	1	/*只在扫描模式下有效；开启则自动循环ADC转换，只需要判断标志位和读数即可，不需要软件手动触发开启一次ADC转换*/
 	#define SYSTEM_ADC1_useChanlNum	4		/*定义共用多少路通道*/
-	#define SYSTEM_ADC1_useChanl	B1in16|B4in16|B5in16|InrTemp /*定义共用哪些通道，可写B1in16~B15in16（分别代表通道0~14），和InrTemp(内部温度通道)
+	#define SYSTEM_ADC1_useChanl	B4in16|B5in16|B8in16|InrTemp /*定义共用哪些通道，可写B1in16~B15in16（分别代表通道0~14），和InrTemp(内部温度通道)
 														（第16个ADC1通道留作内部温度标志所以不可用）*/
 													/*如果只用采集内部温度，而不用其他通道，应设置：SYSTEM_ADC1_useChanlNum为1  SYSTEM_ADC1_useChanl单设为InrTemp*/
 		#define InrTemp B16in16
@@ -652,7 +684,7 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 		唤醒条件：WKUP按键上升沿，RTC警告事件，复位按键，看门狗复位（！），典型电流值为2uA，为三个模式中最低 	类似于开关机		（可用）
 		WKUP 在PA0
 */
-#define SYSTEM_StdbyWKUP_ENABLE	0		/*使用待机-低功耗模式（占用0线外部中断）*/
+#define SYSTEM_StdbyWKUP_ENABLE	1		/*使用待机-低功耗模式（占用0线外部中断）*/
 										/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
 /*当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复，进入待机模式函数在PA0的外部中断里*/
 //对于PA0，按下为高电平，按下3s后松开，延时一秒（给时间做保存数据等关机前的准备）后进入待机状态（关机），再次按下开机
@@ -690,7 +722,7 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 	#define LCD             ((LCD_TypeDef *) LCD_BASE)
 	
 	0x7FE为：	0111 1111 1110（因为FSMC选择了16位模式，实际地址脚为0x7FE再右移1）
-	右移之后  0011 1111 1111 此为LCD->LCD_REG的 实际地址脚 情况，此时A10为0，LCD->LCD_RAM的地址为LCD->LCD_REG地址+2
+	右移之后    0011 1111 1111 此为LCD->LCD_REG的 实际地址脚 情况，此时A10为0，LCD->LCD_RAM的地址为LCD->LCD_REG地址+2
 	LCD->LCD_REG 的地址脚 0011 1111 1111		A10为0 	RS低地址
 	LCD->LCD_RAM 的地址脚 0100 0000 0001		A10为1	RS高数据
 	这样命令和数据就区分开了
@@ -703,13 +735,13 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 */
 /*可以用FSMC同时管理LCD和SRAM（对于MCU来说，外部FLASH可以用SPI的FLASH当作文件系统使用（如存图、当USB U盘或者IAP等等），不用上NOR/NAND之流，那是对MPU的）
 	这是对于不带LTDC LCD外设的如STM32F429以下的如STM32F1和STM32F40x系列而言
-  对于STM32F429，可以用LTDC LCD单独驱动LCD
+    对于STM32F429，可以用LTDC LCD单独驱动LCD
 */
 /*
   如果实际使用了大容量系列和100脚以上系列的片子但是没有LTDC，推荐用FSMC同时管理LCD和SRAM*/
 #define SYSTEM_FSMC_ENABLE	0				//是否启用FSMC
 	#define SYSTEM_FSMC_use4LCD		0		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
-	#define SYSTEM_FSMC_use4SRAM	0		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
+	#define SYSTEM_FSMC_use4SRAM	1		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
 /*
 用于LCD的部分：
 	  可用API详看TFTLCD.h
@@ -718,9 +750,17 @@ API：参数：const uint32_t aDataBuffer[BUFFER_SIZE]; #define BUFFER_SIZE    1
 	这里默认用的 块1（NORSRAM块）的区域3（区域4留给LCD喽~）（块1的区3和区4分别留给外部RAM和LCD，本模板默认，否则还得改地址）
 	默认用于驱动IS62WV51216，地址线范围为A0~A18，数据线范围D0~D15，（NUB、NLB、NWE、NOE、NCE五根控制线都对应接好）
 	底层API：（不推荐直接调用，使用自实现的malloc和free）（以字节为单位）
-		u32 testsram[250000] __attribute__((at(SRAM1_BANK3_ADDR))); 	//地址定义在外部SRAM中
+		u32 testsram[250000] __attribute__((at(SRAM1_BANK3_ADDR))); 	//地址定义在外部SRAM中，实际不要这样用，所有外部SRAM数据用malloc管理！！
 		void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n); 	//写 参数：数据指针，外部SRAM内的地址(从0开始)，写入的字节数
 		void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);   	//读 类似上
+*/
+
+/*STM32F407ZGT6内存分配：
+普通内存：
+	主要内存：		地址从：0X2000 0000 开始，共 128KB），这部分内存任何外设都可以访问。
+	辅助内存CCM：	地址从：0X1000 0000 开始，共 64KB，这部分内存仅 CPU 可以访问，DMA 之类的不可以直接访问，使用时得特别注意！！
+	外部SRAM：		地址从：0X6800 0000 开始，共 1024KB。
+	都用内存管理来管理，大块内存使用应尽量使用malloc和free
 */
 /*
 内存管理：先到malloc.h里面定义有几块RAM，RAM的标志位，和各个RAM给内存管理分配的空间
@@ -855,7 +895,7 @@ extern u8 is_buzzer_bibi;
 #define buzzer_bibi_on		is_buzzer_bibi = 1;  //用户使用，蜂鸣器间歇叫唤开启
 #define buzzer_bibi_off		is_buzzer_bibi = 0;  //用户使用，蜂鸣器间歇叫唤关闭
 
-void delay_us(u16 time);
+void delay_us(unsigned int time);
 u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*提供获取系统运行时间的函数，具体看源函数处注释*/
 
 void sys_MCU_Init_Seq(void);				/*MCU外设初始化序列，所有初始化写到这里面*/
@@ -1092,7 +1132,6 @@ void sys_SPI2_SS_io_Init(void);
 
 #endif
 /*_________________________________低功耗StandbyMode________________________________*/
-
 #if SYSTEM_StdbyWKUP_ENABLE
 	void sys_StdbyWKUP_ENABLE(void);
 	void sys_CheckWKUP_4RTOS(void);
@@ -1165,11 +1204,11 @@ void sys_SPI2_SS_io_Init(void);
 	//对IS61LV25616/IS62WV25616,地址线范围为A0~A17 
 	//对IS61LV51216/IS62WV51216,地址线范围为A0~A18
 	#define SRAM1_BANK3_ADDR    ((u32)(0x68000000))	//计算： (0x6000 0000 | ((u32)64*1024*1024*(3 - 1)))
-
+	
 	void sys_FSMC_SRAM_ENABLE(void);
 	void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n);
 	void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);
-
+	
 #endif
 
 

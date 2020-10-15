@@ -13,7 +13,8 @@ _lcd_dev lcddev;
 
 void littleDelay(void)
 {
-	delay_us(1);
+	__NOP();__NOP();
+	__NOP();__NOP();
 }
 
 //Ð´¼Ä´æÆ÷º¯Êý

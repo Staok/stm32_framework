@@ -12,6 +12,26 @@
 
 **********************************************************************************/
 #include "simui2c.h"	//模拟I2C协议
+#include "PeriphConfig.h"
+//#include "PeriphConfigCore.h"
+
+void I2C_PinOutInitSCL(){		}
+void I2C_PinOutInitSDA(){	MPU6050_SDAoutMode;}
+void I2C_PinInInitSDA(){	MPU6050_SDAinMode;}
+void I2C_PinSetSCL(u8 PinLevel){	MPU6050_SCLout = PinLevel;}
+void I2C_PinSetSDA(u8 PinLevel){	MPU6050_SDAout = PinLevel;}
+unsigned char PinGetSDA(void){		return MPU6050_SDAin;}
+
+SimuI2C SimuI2C_Handle = {
+	.PinOutInitSCL = 	I2C_PinOutInitSCL,
+	.PinOutInitSDA = 	I2C_PinOutInitSDA,
+	.PinInInitSDA = 	I2C_PinInInitSDA,
+	
+	.PinSetSCL = 		I2C_PinSetSCL,
+	.PinSetSDA = 		I2C_PinSetSDA,
+	.PinGetSDA = 		PinGetSDA,
+	.Delayus = 			delay_us
+};
 
 //###########################【函数】###########################
 
@@ -24,10 +44,10 @@
 *****************************************************************/
 void SimuI2C_Init(SimuI2C *SimuI2C_Struct)
 {
-	SimuI2C_Struct->PinOutInitSDA();
-	SimuI2C_Struct->PinOutInitSCL();
-	SimuI2C_Struct->PinSetSCL(1);
-	SimuI2C_Struct->PinSetSDA(1);
+	SimuI2C_Struct->PinOutInitSDA();SimuI2C_Struct->Delayus(1);
+	SimuI2C_Struct->PinOutInitSCL();SimuI2C_Struct->Delayus(1);
+	SimuI2C_Struct->PinSetSCL(1);SimuI2C_Struct->Delayus(1);
+	SimuI2C_Struct->PinSetSDA(1);SimuI2C_Struct->Delayus(1);
 }
 
 /*****************************************************************
@@ -39,13 +59,13 @@ void SimuI2C_Init(SimuI2C *SimuI2C_Struct)
 *****************************************************************/
 void SimuI2C_Start(SimuI2C *SimuI2C_Struct)			 //产生IIC起始信号
 {
-	SimuI2C_Struct->PinOutInitSDA();
-	SimuI2C_Struct->PinSetSDA(1);	  	  
-	SimuI2C_Struct->PinSetSCL(1);
+	SimuI2C_Struct->PinOutInitSDA();SimuI2C_Struct->Delayus(1);
+	SimuI2C_Struct->PinSetSDA(1);SimuI2C_Struct->Delayus(1); 	  
+	SimuI2C_Struct->PinSetSCL(1);SimuI2C_Struct->Delayus(1);
 	SimuI2C_Struct->Delayus(4);
- 	SimuI2C_Struct->PinSetSDA(0);//START:when CLK is high,DATA change form high to low 
+ 	SimuI2C_Struct->PinSetSDA(0);SimuI2C_Struct->Delayus(1);//START:when CLK is high,DATA change form high to low 
 	SimuI2C_Struct->Delayus(4);
-	SimuI2C_Struct->PinSetSCL(0);//钳住I2C总线，准备发送或接收数据 
+	SimuI2C_Struct->PinSetSCL(0);SimuI2C_Struct->Delayus(1);//钳住I2C总线，准备发送或接收数据 
 }	  
 
 /*****************************************************************
@@ -57,12 +77,12 @@ void SimuI2C_Start(SimuI2C *SimuI2C_Struct)			 //产生IIC起始信号
 *****************************************************************/
 void SimuI2C_Stop(SimuI2C *SimuI2C_Struct)			   //产生IIC停止信号
 {
-	SimuI2C_Struct->PinOutInitSDA();
-	SimuI2C_Struct->PinSetSCL(0);
-	SimuI2C_Struct->PinSetSDA(0);//STOP:when CLK is high DATA change form low to high
+	SimuI2C_Struct->PinOutInitSDA();SimuI2C_Struct->Delayus(1);
+	SimuI2C_Struct->PinSetSCL(0);SimuI2C_Struct->Delayus(1);
+	SimuI2C_Struct->PinSetSDA(0);SimuI2C_Struct->Delayus(1);//STOP:when CLK is high DATA change form low to high
  	SimuI2C_Struct->Delayus(4);
-	SimuI2C_Struct->PinSetSCL(1); 
-	SimuI2C_Struct->PinSetSDA(1);//发送I2C总线结束信号
+	SimuI2C_Struct->PinSetSCL(1);SimuI2C_Struct->Delayus(1); 
+	SimuI2C_Struct->PinSetSDA(1);SimuI2C_Struct->Delayus(1);//发送I2C总线结束信号
 	SimuI2C_Struct->Delayus(4);							   	
 }
 
@@ -77,7 +97,7 @@ void SimuI2C_Stop(SimuI2C *SimuI2C_Struct)			   //产生IIC停止信号
 unsigned char SimuI2C_WaitAck(SimuI2C *SimuI2C_Struct)
 {
 	unsigned char ucErrTime=0; 
-	SimuI2C_Struct->PinInInitSDA();	
+	SimuI2C_Struct->PinInInitSDA();SimuI2C_Struct->Delayus(1);	
 	SimuI2C_Struct->PinSetSDA(1);SimuI2C_Struct->Delayus(1);	   
 	SimuI2C_Struct->PinSetSCL(1);SimuI2C_Struct->Delayus(1);	 
 	while(SimuI2C_Struct->PinGetSDA())
@@ -89,7 +109,7 @@ unsigned char SimuI2C_WaitAck(SimuI2C *SimuI2C_Struct)
 			return 1;
 		}
 	}
-	SimuI2C_Struct->PinSetSCL(0);//时钟输出0 	   
+	SimuI2C_Struct->PinSetSCL(0);SimuI2C_Struct->Delayus(1);//时钟输出0 	   
 	return 0;  
 } 
 
@@ -141,11 +161,11 @@ void SimuI2C_NAck(SimuI2C *SimuI2C_Struct)
 void SimuI2C_WriteByte(SimuI2C *SimuI2C_Struct,unsigned char data)
 {                        
     unsigned char t;   	
-	SimuI2C_Struct->PinOutInitSDA();    
-    SimuI2C_Struct->PinSetSCL(0);//拉低时钟开始数据传输
+	SimuI2C_Struct->PinOutInitSDA();SimuI2C_Struct->Delayus(1);    
+    SimuI2C_Struct->PinSetSCL(0);SimuI2C_Struct->Delayus(1);//拉低时钟开始数据传输
     for(t=0;t<8;t++)
     {              
-        SimuI2C_Struct->PinSetSDA((data&0x80)>>7);
+        SimuI2C_Struct->PinSetSDA((data&0x80)>>7);SimuI2C_Struct->Delayus(1);
         data<<=1; 	  
 		SimuI2C_Struct->Delayus(2);   //对TEA5767这三个延时都是必须的
 		SimuI2C_Struct->PinSetSCL(1);

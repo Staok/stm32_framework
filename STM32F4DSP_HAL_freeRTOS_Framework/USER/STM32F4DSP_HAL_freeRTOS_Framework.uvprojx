@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\MAX7219;..\DEVICES\SPI FLASH;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\Middlewares\FATFS;..\Middlewares\malloc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\MAX7219;..\DEVICES\SPI FLASH;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\Middlewares\FATFS;..\Middlewares\malloc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi;..\DEVICES\OLED</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -406,6 +406,11 @@
               <FileName>mpu_armv7.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\CORE\mpu_armv7.h</FilePath>
+            </File>
+            <File>
+              <FileName>cmsis_armclang.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\CORE\cmsis_armclang.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -516,6 +521,11 @@
               <FileName>max7219_drive.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\MAX7219\max7219_drive.c</FilePath>
+            </File>
+            <File>
+              <FileName>OLED.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\OLED\OLED.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1381,6 +1391,11 @@
               <FileType>5</FileType>
               <FilePath>..\CORE\mpu_armv7.h</FilePath>
             </File>
+            <File>
+              <FileName>cmsis_armclang.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\CORE\cmsis_armclang.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1490,6 +1505,11 @@
               <FileName>max7219_drive.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\MAX7219\max7219_drive.c</FilePath>
+            </File>
+            <File>
+              <FileName>OLED.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\OLED\OLED.c</FilePath>
             </File>
           </Files>
         </Group>

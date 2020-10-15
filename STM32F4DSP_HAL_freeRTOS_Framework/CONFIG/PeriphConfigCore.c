@@ -117,8 +117,10 @@ void sys_MCU_Init_Seq(void)
 		sys_DAC_ENABLE();
 	#endif
 	
-	my_mem_init(InrRAM);
+	my_mem_init(InrRAM);	//初始化内部内存SRAM 	128KB
+	my_mem_init(InrCCM);	//初始化内部辅助内存CCM 64KB
 	
+	//初始化外部内存SRAM 1024KB，960KB可用
 	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)
 		sys_FSMC_SRAM_ENABLE();
 		my_mem_init(ExRAM1);
@@ -132,9 +134,10 @@ void sys_Device_Init_Seq(void)
 	/*用户应用的Device初始化序列——开始*/
 	
 	/*用户IO初始化，可选择初始化某个特定器件或者所有器件（ALL_Index）*/
-	Devices_Init(UserDevices,TestLED_Index);
-	Devices_Init(UserDevices,KEY_Index);
-	Devices_Init(UserDevices,LCD_Index); //使用LCD设备的初始化函数初始化IO
+	Devices_Init(UserDevices,TestLED_Index);	
+	Devices_Init(UserDevices,KEY_Index);	
+	Devices_Init(UserDevices,LCD_Index);	
+	Devices_Init(UserDevices,simuI2C_Index);
 	
 	/*LCD初始化*/
 	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)
@@ -143,6 +146,15 @@ void sys_Device_Init_Seq(void)
 	#else
 		LCD_Init_no_FSMC();
 	#endif
+	
+	/*OLED初始化*/
+//	SimuI2C_Init(&SimuI2C_Handle);
+//	OLED_Init();
+//	OLED_Clear();
+//	OLED_LightMode();
+//	HAL_Delay(100);
+//	OLED_Clear();
+//	OLED_ShowCHinese(0,0,0); //中
 	
 	/*用户应用的Device初始化序列——结束*/
 	
@@ -229,7 +241,7 @@ u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms)
 
 /*__________时钟系统配置函数_____________*/
 /********************************
-*描述：上电时必要进行的时钟配置，默认使用外部高速信号源，外部晶振5M，主频120M
+*描述：上电时必要进行的时钟配置，默认使用外部高速信号源，外部晶振5M，主频168M
 *参数：		1、NULL
 *返回值：	1、HAL_OK,成功
 			2、HAL_ERROR,失败
@@ -355,9 +367,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			peek_TIM2_Encoder_Speed();
 		#endif
 		
-		if(++Timer_IT_flags._10msec >= 10)
+		if(++Timer_IT_flags._10msec % 10 == 0)
 		{
-			Timer_IT_flags._10msec = 0;
+			
 			Timer_IT_flags._100msec_flag = TRUE;
 			Timer_IT_flags._100msec++;
 			
@@ -367,9 +379,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			
 		}
 		
-		if(Timer_IT_flags._100msec % 3 == 0)
+		if(Timer_IT_flags._10msec >= 30)
 		{
+			Timer_IT_flags._10msec = 0;
 			Timer_IT_flags._300msec_flag = TRUE;
+			
 			
 			#if STSTEM_TIM3PWM_ENABLE
 				if(is_buzzer_once)
@@ -1487,7 +1501,7 @@ void USART3_IRQHandler(void)	//串口3中断服务程序
 	{
 		IWDG_Handler.Instance=IWDG;
 		IWDG_Handler.Init.Prescaler=IWDG_PRESCALER_256;	//设置IWDG分频系数
-		IWDG_Handler.Init.Reload=40-1;		//重装载值
+		IWDG_Handler.Init.Reload=32-1;		//重装载值
 		HAL_IWDG_Init(&IWDG_Handler);		//初始化IWDG,默认会开启独立看门狗	
 	}
 	//喂独立看门狗
@@ -1563,7 +1577,7 @@ u8 const table_week[12]={0,3,3,6,1,4,6,2,5,0,3,5}; //月修正数据表
 //获得现在是星期几
 //功能描述:输入公历日期得到星期(只允许1901-2099年)
 //year,month,day：公历年月日 
-//返回值：星期号																						 
+//返回值：星期号 
 u8 RTC_Get_Week(u16 year,u8 month,u8 day)
 {	
 	u16 temp2;
@@ -1742,13 +1756,15 @@ u8 is_buzzer_once = 0;
 u8 is_buzzer_bibi = 0;
 
 
-void delay_us(u16 time)
+void delay_us(unsigned int time)
 {    
-   u16 i=0;  
+   u8 i;  
    while(time--)
    {
-      i=5;  //自己定义
-      while(i--) ;    
+	   for(i = 0;i < 168;i++)
+	   {
+			__NOP();
+	   }
    }
 }
 

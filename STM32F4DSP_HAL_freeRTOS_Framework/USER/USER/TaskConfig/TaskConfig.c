@@ -108,8 +108,8 @@ void led0_task(void *pvParameters)
 		
 		vTaskDelay(1000);
 		
-		char RTC_buf[50];
 		#if SYSTEM_RTC_ENABLE
+			char RTC_buf[50];
 			RTC_TimeTypeDef RTC_RealTime;
 			RTC_DateTypeDef	RTC_RealDate;
 			HAL_RTC_GetTime(&RTC_Handler, &RTC_RealTime, RTC_FORMAT_BIN);

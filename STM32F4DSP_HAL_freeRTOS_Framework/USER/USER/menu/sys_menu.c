@@ -123,7 +123,6 @@ void runFunctions(const struct MenuItem *MenuItemNow,const struct input_struct i
 		case left:
 		case right:	
 		case enter:
-						//LCD_ShowString(10,30,16,(u8*)MenuItemNow->DisplayString,0);
 						if(mystrcmp(MenuItemNow->DisplayString,"RunMode1") == 0)
 						{
 							RunMode1.isRun = !RunMode1.isRun;

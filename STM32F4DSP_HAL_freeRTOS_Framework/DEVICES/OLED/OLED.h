@@ -1,6 +1,7 @@
 #ifndef __OLED_H
-#define __OLED_H			  	 
+#define __OLED_H
 #include "PeriphConfigCore.h" 
+
 
 
 
@@ -25,7 +26,11 @@ void OLED_Set_Pos(unsigned char x, unsigned char y);
 void OLED_ShowCHinese(u8 x,u8 y,u8 no);
 void OLED_DrawBMP(unsigned char x0, unsigned char y0,unsigned char x1, unsigned char y1,unsigned char BMP[]);
 void fill_picture(unsigned char fill_Data);
-#endif  
+
+
+extern unsigned char BMP1[];
+
+#endif
 
 
 /*
@@ -45,12 +50,26 @@ API用例：
 		OLED_ShowCHinese(72,0,4);//子
 		OLED_ShowCHinese(90,0,5);//科
 		OLED_ShowCHinese(108,0,6);//技
-	TODO：实现反白显示		
-		OLED_ShowString(0,6,"ASCII:",16);
 		
 		
-		
+		API参数说明：（和TFT不一样！）
+		x：向屏幕右平移多个个像素开始显示
+			y：向屏幕下平移多少8个像素开始显示（不大于64/8！）
+				char*s字符
+					1：正常显示；0：反白显示
+		OLED_ShowString(5,0,"ASCII:",12,1);
+		OLED_ShowString(5,20,"ASCII:",16,0);
 		OLED_DrawBMP(0,0,128,8,BMP1);
+		
+		
+		测试例程：
+			OLED_DrawBMP(0,0,128,8,BMP1);
+			HAL_Delay(500);
+			OLED_LightMode();
+			HAL_Delay(500);
+			OLED_Clear();
+			OLED_ShowString(5,1,(u8*)"ASCII:",8,0);
+			OLED_ShowString(5,2,(u8*)"ASCII:",16,1);
 		
 		
 */

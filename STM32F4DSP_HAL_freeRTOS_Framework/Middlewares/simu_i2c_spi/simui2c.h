@@ -25,7 +25,7 @@ typedef struct _SimuI2C{				//I2C硬件管理块
 	void (*PinSetSCL)(unsigned char);		//SCL引脚输出函数
 	void (*PinSetSDA)(unsigned char);		//SDA引脚输出函数
 	unsigned char (*PinGetSDA)();			//SDA引脚读取函数
-	void (*Delayus)(unsigned int);			//us延时函数
+	void (*Delayus)(void);			//us延时函数
 }SimuI2C;	
 
 

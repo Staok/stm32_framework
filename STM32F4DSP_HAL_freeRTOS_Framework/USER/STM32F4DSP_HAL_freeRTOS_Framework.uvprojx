@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\MAX7219;..\DEVICES\SPI FLASH;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\Middlewares\FATFS;..\Middlewares\malloc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi;..\DEVICES\OLED</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\SPI FLASH;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\Middlewares\FATFS;..\Middlewares\malloc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -516,16 +516,6 @@
               <FileName>TFTLCD.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\TFTLCD\TFTLCD.c</FilePath>
-            </File>
-            <File>
-              <FileName>max7219_drive.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DEVICES\MAX7219\max7219_drive.c</FilePath>
-            </File>
-            <File>
-              <FileName>OLED.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DEVICES\OLED\OLED.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1500,16 +1490,6 @@
               <FileName>TFTLCD.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\TFTLCD\TFTLCD.c</FilePath>
-            </File>
-            <File>
-              <FileName>max7219_drive.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DEVICES\MAX7219\max7219_drive.c</FilePath>
-            </File>
-            <File>
-              <FileName>OLED.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\DEVICES\OLED\OLED.c</FilePath>
             </File>
           </Files>
         </Group>

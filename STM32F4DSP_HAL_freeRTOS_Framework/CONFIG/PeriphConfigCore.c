@@ -150,11 +150,6 @@ void sys_Device_Init_Seq(void)
 	/*OLED初始化*/
 //	SimuI2C_Init(&SimuI2C_Handle);
 //	OLED_Init();
-//	OLED_Clear();
-//	OLED_LightMode();
-//	HAL_Delay(100);
-//	OLED_Clear();
-//	OLED_ShowCHinese(0,0,0); //中
 	
 	/*用户应用的Device初始化序列——结束*/
 	

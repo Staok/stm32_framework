@@ -38,10 +38,10 @@ extern u8 key_Down_Interrupted;
 #define TestLED2_Ctrl	PFout(10)
 
 #define	MPU6050_SCLout 	PEout(2)
-#define	MPU6050_SDAout 	PEout(4)
-#define	MPU6050_SDAin	PEin(4)
-#define MPU6050_SDAinMode	PEinMode(4)
-#define MPU6050_SDAoutMode	PEoutMode(4)
+#define	MPU6050_SDAout 	PEout(3)
+#define	MPU6050_SDAin	PEin(3)
+#define MPU6050_SDAinMode	PEinMode(3)
+#define MPU6050_SDAoutMode	PEoutMode(3)
 
 
 /*_____________________________________\\\                               ///____________________________________________*
@@ -168,8 +168,8 @@ extern Devices_Init_Struct UserDevices[];
 #define PAmodeIn(x)		{if(x>7){PAmodeInH(x);}else{PAmodeInL(x);}}
 #define PAmodeOut(x)	{if(x>7){PAmodeOutH(x);}else{PAmodeOutL(x);}}
 
-#define PEinMode(x)		GPIOE->MODER &= ~(0x00000003 << (x * 2))
-#define PEoutMode(x)	GPIOE->MODER &= ~(0x00000001 << (x * 2));GPIOE->OTYPER &= ~(0x00000001 << x) 
+#define PEinMode(x)		{GPIOE->MODER &= ~(0x00000003 << (x * 2));GPIOE->MODER |= 0x00000000 << (x * 2);}
+#define PEoutMode(x)	{GPIOE->MODER &= ~(0x00000003 << (x * 2));GPIOE->MODER |= 0x00000001 << (x * 2);}
 //默认输出设置是推挽，非开漏
 
 #define DS18B20_IO_IN()  {GPIOG->MODER&=~(3<<(9*2));GPIOG->MODER|=0<<(9*2);}	//PG9输入模式

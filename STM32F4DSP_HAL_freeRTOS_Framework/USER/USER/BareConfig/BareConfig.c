@@ -112,7 +112,6 @@ void Bare_Begin(void)
 				}
 			#endif
 			
-			
 		}
 		
 		/*____________________________________1s周期执行：通常为运行状态指示，滴答心跳提醒等等__________________________________________*/
@@ -123,6 +122,7 @@ void Bare_Begin(void)
 			/*1s周期要做的事情*/
 
 			#if SYSTEM_FSMC_ENABLE
+				POINT_COLOR = RED;
 				char* str_buf = mymalloc(ExRAM1,20000);
 				char* str_buf2 = "mymalloc fault";
 				if(str_buf == NULL)

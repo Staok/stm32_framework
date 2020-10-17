@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\SPI FLASH;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\Middlewares\FATFS;..\Middlewares\malloc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\SPI FLASH;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM4F;..\Middlewares\FATFS;..\Middlewares\malloc;..\Middlewares\MyString;..\Middlewares\pid;..\Middlewares\printf;..\Middlewares\simu_i2c_spi;..\DEVICES\MPU6050</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -516,6 +516,16 @@
               <FileName>TFTLCD.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\TFTLCD\TFTLCD.c</FilePath>
+            </File>
+            <File>
+              <FileName>filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\MPU6050\filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\MPU6050\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1490,6 +1500,16 @@
               <FileName>TFTLCD.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\TFTLCD\TFTLCD.c</FilePath>
+            </File>
+            <File>
+              <FileName>filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\MPU6050\filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\MPU6050\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>

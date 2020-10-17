@@ -9,7 +9,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define M_PI  3.14159265358979323846
+#define M_PI  3.14159265358979323846f
 
 //定义一些常用的数据类型短关键字 
 typedef int32_t  s32;

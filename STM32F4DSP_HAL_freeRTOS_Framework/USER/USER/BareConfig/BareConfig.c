@@ -20,6 +20,7 @@ void Bare_Begin(void)
 		HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum);
 	#endif
 	BACK_COLOR = BLACK;
+		
 	for(;;)
 	{
 		/*注意：这里尽量不要用10毫秒中断标志！这里只用100毫秒、300毫秒、1秒和一分钟的中断标志，够用了*/
@@ -111,6 +112,17 @@ void Bare_Begin(void)
 					Gui_StrCenter(0,lcddev.height - 60,RED,BLACK,(u8*)ADC_buf,16,0);
 				}
 			#endif
+			
+			
+				POINT_COLOR = RED;
+				char str_buf[200];
+				short MPU6050_Gyro[3];
+				short MPU6050_Accel[3];
+				float mpu_temp = MPU_Get_Temperature();
+				MPU6050ReadAcc(MPU6050_Accel);
+				MPU6050ReadGyro(MPU6050_Gyro);
+				sprintf(str_buf,"MPU6050_Accel-%d-%d-%d-%5.2f-%d",MPU6050_Accel[0],MPU6050_Accel[1],MPU6050_Accel[2],mpu_temp,Timer_IT_flags._100msec);
+				LCD_ShowString(5,lcddev.height - 60,16,(u8*)str_buf);
 			
 		}
 		

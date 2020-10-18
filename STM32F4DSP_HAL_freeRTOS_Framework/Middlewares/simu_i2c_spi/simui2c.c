@@ -18,14 +18,18 @@
 
 /*在这里填入IO控制函数*/
 void I2C_PinOutInitSCL(){		}
-void I2C_PinOutInitSDA(){	MPU6050_SDAoutMode;}
-void I2C_PinInInitSDA(){	MPU6050_SDAinMode;}
-void I2C_PinSetSCL(u8 PinLevel){	MPU6050_SCLout = PinLevel;}
-void I2C_PinSetSDA(u8 PinLevel){	MPU6050_SDAout = PinLevel;}
-unsigned char PinGetSDA(void){		return MPU6050_SDAin;}
+void I2C_PinOutInitSDA(){	simuI2C_SDAoutMode;}
+void I2C_PinInInitSDA(){	simuI2C_SDAinMode;}
+void I2C_PinSetSCL(u8 PinLevel){	simuI2C_SCLout = PinLevel;}
+void I2C_PinSetSDA(u8 PinLevel){	simuI2C_SDAout = PinLevel;}
+unsigned char PinGetSDA(void){		return simuI2C_SDAin;}
 
-void OLED_littleDelay(void)
+void simuI2C_littleDelay(void)
 {
+	__NOP();__NOP();
+	__NOP();__NOP();
+	
+	__NOP();__NOP();
 	__NOP();__NOP();
 	__NOP();__NOP();
 }
@@ -38,7 +42,7 @@ SimuI2C SimuI2C_Handle = {
 	.PinSetSCL = 		I2C_PinSetSCL,
 	.PinSetSDA = 		I2C_PinSetSDA,
 	.PinGetSDA = 		PinGetSDA,
-	.Delayus = 			OLED_littleDelay
+	.Delayus = 			simuI2C_littleDelay
 };
 
 //###########################【函数】###########################
@@ -161,8 +165,8 @@ void SimuI2C_NAck(SimuI2C *SimuI2C_Struct)
 void SimuI2C_WriteByte(SimuI2C *SimuI2C_Struct,unsigned char data)
 {                        
     unsigned char t;   	
-	SimuI2C_Struct->PinOutInitSDA();SimuI2C_Struct->Delayus();    
-    SimuI2C_Struct->PinSetSCL(0);SimuI2C_Struct->Delayus();//拉低时钟开始数据传输
+	SimuI2C_Struct->PinOutInitSDA();	SimuI2C_Struct->Delayus();    
+    SimuI2C_Struct->PinSetSCL(0);		SimuI2C_Struct->Delayus();//拉低时钟开始数据传输
     for(t=0;t<8;t++)
     {              
         SimuI2C_Struct->PinSetSDA((data&0x80)>>7);SimuI2C_Struct->Delayus();
@@ -183,11 +187,11 @@ void SimuI2C_WriteByte(SimuI2C *SimuI2C_Struct,unsigned char data)
 unsigned char SimuI2C_ReadByte(SimuI2C *SimuI2C_Struct,unsigned char ack)
 {
 	unsigned char i,receive=0;
-	SimuI2C_Struct->PinInInitSDA();
+	SimuI2C_Struct->PinInInitSDA();					SimuI2C_Struct->Delayus();
     for(i=0;i<8;i++ )
 	{
         SimuI2C_Struct->PinSetSCL(0);				SimuI2C_Struct->Delayus();
-		SimuI2C_Struct->PinSetSCL(1);
+		SimuI2C_Struct->PinSetSCL(1);				SimuI2C_Struct->Delayus();
         receive<<=1;
         if(SimuI2C_Struct->PinGetSDA())receive++;	SimuI2C_Struct->Delayus(); 
     }					 

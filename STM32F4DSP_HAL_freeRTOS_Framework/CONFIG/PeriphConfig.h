@@ -37,11 +37,11 @@ extern u8 key_Down_Interrupted;
 #define TestLED_Ctrl	PFout(9)
 #define TestLED2_Ctrl	PFout(10)
 
-#define	MPU6050_SCLout 	PEout(2)
-#define	MPU6050_SDAout 	PEout(3)
-#define	MPU6050_SDAin	PEin(3)
-#define MPU6050_SDAinMode	PEinMode(3)
-#define MPU6050_SDAoutMode	PEoutMode(3)
+#define	simuI2C_SCLout 	PEout(2)
+#define	simuI2C_SDAout 	PEout(3)
+#define	simuI2C_SDAin	PEin(3)
+#define simuI2C_SDAinMode	PEinMode(3)
+#define simuI2C_SDAoutMode	PEoutMode(3)
 
 
 /*_____________________________________\\\                               ///____________________________________________*

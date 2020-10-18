@@ -246,6 +246,7 @@ void OLED_Init(void)
 //	
 //	OLED_WR_Byte(0xAF,OLED_CMD);//--turn on oled panel
 	
+	SimuI2C_Init(&SimuI2C_Handle);
 	
 	OLED_WR_Byte(0xAE,OLED_CMD); //关闭显示
 	OLED_WR_Byte(0xD5,OLED_CMD); //设置时钟分频因子,震荡频率

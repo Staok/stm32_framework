@@ -369,7 +369,8 @@
 /* º¯ÊýÉùÃ÷ ------------------------------------------------------------------*/
 void MPU6050ReadGyro(short *gyroData);
 void MPU6050ReadAcc(short *accData);
-void MPU6050_ReadTemp(short*Temperature);
+void MPU_Set_Rate(u16 rate);
+float MPU_Get_Temperature(void);
 
 void MPU6050_Init(void);
 void PMU6050_ReadData(uint8_t reg_add,unsigned char*Read,uint8_t num);

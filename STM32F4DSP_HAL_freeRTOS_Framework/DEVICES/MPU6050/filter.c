@@ -61,7 +61,7 @@ void Kalman_Filter(float Accel,float Gyro, float angle, float angleAnddot[2])
 float first_order_filter_for_mpu(float* angle_m, float* gyro_m, float* angle)
 {
 	float K1 = 0.02; 
-	*angle = K1 * (*angle_m) + (1.0 - K1) * ((*angle) + (*gyro_m) * 0.005);
+	*angle = K1 * (*angle_m) + (1.0f - K1) * ((*angle) + (*gyro_m) * 0.005f);
 	return *angle;
 }
 
@@ -72,7 +72,7 @@ float first_order_filter_for_mpu(float* angle_m, float* gyro_m, float* angle)
 **************************************************************************/
 float QingHua_AngleCal(float* angle_m, float* gyro_m, float* angle)
 {
-	float Gt = 1,Td = 10; //TODO:严格来说，Td应该等于两次本函数被调用之间的时间间隔，如果gyro_m的单位为度/ms，则Td的单位也是ms
+	float Gt = 1.0f,Td = 10.0f; //TODO:严格来说，Td应该等于两次本函数被调用之间的时间间隔，如果gyro_m的单位为度/ms，则Td的单位也是ms
 	*angle += (((*gyro_m) + ((*angle_m) - (*angle)) / Gt) * Td);
 	return *angle;
 }

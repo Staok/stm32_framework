@@ -148,8 +148,11 @@ void sys_Device_Init_Seq(void)
 	#endif
 	
 	/*OLED初始化*/
-//	SimuI2C_Init(&SimuI2C_Handle);
 //	OLED_Init();
+	
+	/*MPU6050初始化*/
+	MPU6050_Init();
+	
 	
 	/*用户应用的Device初始化序列——结束*/
 	
@@ -209,6 +212,7 @@ void FaultASSERT(char* FaultMessage)
 	/*往串口1发送数据*/
 	printf_uart(UART1,"Fault Message : %s\r\n",FaultMessage);
 	printf_uart(UART1,"File&Line : %s,%d\r\n",__FILE__,__LINE__);
+	LCD_ShowString(5,0,16,(u8*)FaultMessage);
 	//灯提示，声提示
 	buzzer_bibi_on;
 	for(;;)

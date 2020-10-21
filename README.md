@@ -19,7 +19,7 @@ System init over!
 ## 近期计划
 
 -   完成LWIP的移植和测试（包括外部MAC+PHY芯片版本（F1）和外部PHY芯片版本（F4））
--   测试DCMI驱动OV7725和OV2640
+-   测试DCMI和IO驱动OV7725和OV2640
 -   完整移植、测试和API罗列F4的DSP库
 -   大V的USB的相关所有例程移植和测试（F1和F4）
 -   IAP

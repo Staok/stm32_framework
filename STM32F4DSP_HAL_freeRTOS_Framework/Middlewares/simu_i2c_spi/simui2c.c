@@ -17,12 +17,12 @@
 
 
 /*在这里填入IO控制函数*/
-void I2C_PinOutInitSCL(){		}
-void I2C_PinOutInitSDA(){	simuI2C_SDAoutMode;}
-void I2C_PinInInitSDA(){	simuI2C_SDAinMode;}
-void I2C_PinSetSCL(u8 PinLevel){	simuI2C_SCLout = PinLevel;}
-void I2C_PinSetSDA(u8 PinLevel){	simuI2C_SDAout = PinLevel;}
-unsigned char PinGetSDA(void){		return simuI2C_SDAin;}
+//void I2C_PinOutInitSCL(){		}
+//void I2C_PinOutInitSDA(){	simuI2C_SDAoutMode;}
+//void I2C_PinInInitSDA(){	simuI2C_SDAinMode;}
+//void I2C_PinSetSCL(u8 PinLevel){	simuI2C_SCLout = PinLevel;}
+//void I2C_PinSetSDA(u8 PinLevel){	simuI2C_SDAout = PinLevel;}
+//unsigned char PinGetSDA(void){		return simuI2C_SDAin;}
 
 void simuI2C_littleDelay(void)
 {
@@ -34,16 +34,16 @@ void simuI2C_littleDelay(void)
 	__NOP();__NOP();
 }
 
-SimuI2C SimuI2C_Handle = {
-	.PinOutInitSCL = 	I2C_PinOutInitSCL,
-	.PinOutInitSDA = 	I2C_PinOutInitSDA,
-	.PinInInitSDA = 	I2C_PinInInitSDA,
-	
-	.PinSetSCL = 		I2C_PinSetSCL,
-	.PinSetSDA = 		I2C_PinSetSDA,
-	.PinGetSDA = 		PinGetSDA,
-	.Delayus = 			simuI2C_littleDelay
-};
+//SimuI2C SimuI2C_Handle = {
+//	.PinOutInitSCL = 	I2C_PinOutInitSCL,
+//	.PinOutInitSDA = 	I2C_PinOutInitSDA,
+//	.PinInInitSDA = 	I2C_PinInInitSDA,
+//	
+//	.PinSetSCL = 		I2C_PinSetSCL,
+//	.PinSetSDA = 		I2C_PinSetSDA,
+//	.PinGetSDA = 		PinGetSDA,
+//	.Delayus = 			simuI2C_littleDelay
+//};
 
 //###########################【函数】###########################
 

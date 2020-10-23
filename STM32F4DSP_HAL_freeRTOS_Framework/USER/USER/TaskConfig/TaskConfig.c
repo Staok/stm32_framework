@@ -227,7 +227,45 @@ _____________大部分API罗列_____________
 			剩余： u8 q_remainSize = uxQueueSpacesAvailable(qMsg);
 			未读： u8 q_unreadSize =  uxQueueMessagesWaiting(qMsg); //总大小 length 等于 uxQueueMessagesWaiting(qMsg) + uxQueueSpacesAvailable(qMsg)
 			
-			
+		线程安全的意思：
+			比如有两个任务中会对同一个FIFO队列写或者读，要写成：
+			// 4 threads below, 2 for write, 2 for read
+			void thread_write_1(void* arg) {
+				// Use write mutex
+				while (1) {
+					mutex_get(&m_w);		//在写之前等其他任务给可写的信号
+					lwrb_write(&rb, ...);
+					mutex_give(&m_w);		//在写完之后给可写的信号
+				}
+			}
+
+			void thread_write_2(void* arg) {
+				// Use write mutex
+				while (1) {
+					mutex_get(&m_w);
+					lwrb_write(&rb, ...);
+					mutex_give(&m_w);
+				}
+			}
+
+			void thread_read_1(void* arg) {
+				// Use read mutex
+				while (1) {
+					mutex_get(&m_r);		//在读之前等其他任务给可读的信号
+					lwrb_read(&rb, ...);
+					mutex_give(&m_r);		//在读完之后给可读的信号
+				}
+			}
+
+			void thread_read_2(void* arg) {
+				// Use read mutex
+				while (1) {
+					mutex_get(&m_r);
+					lwrb_read(&rb, ...);
+					mutex_give(&m_r);
+				}
+			}
+
 		任务通知：
 			规范：可模拟二值、计数型信号量和事件标志组；有接收阻塞，没有发送失败的阻塞；不用初始化。
 			发送：	xTaskNotify(接收任务的任务句柄，uint32_t类型的通知值，通知方法)			//带通知值，不保留接收任务的原通过值

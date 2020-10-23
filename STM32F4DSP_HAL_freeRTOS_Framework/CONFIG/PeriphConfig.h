@@ -17,7 +17,7 @@ enum devicesIndex_enum
 	TestLED_Index = 0,
 	KEY_Index,
 	LCD_Index,
-	simuI2C_Index,
+//	simuI2C_Index,
 	
 	ALL_Index		//最后这个固定的不要删
 };
@@ -37,11 +37,11 @@ extern u8 key_Down_Interrupted;
 #define TestLED_Ctrl	PFout(9)
 #define TestLED2_Ctrl	PFout(10)
 
-#define	simuI2C_SCLout 	PEout(2)
-#define	simuI2C_SDAout 	PEout(3)
-#define	simuI2C_SDAin	PEin(3)
-#define simuI2C_SDAinMode	PEinMode(3)
-#define simuI2C_SDAoutMode	PEoutMode(3)
+//#define	simuI2C_SCLout 	PEout(2)
+//#define	simuI2C_SDAout 	PEout(3)
+//#define	simuI2C_SDAin	PEin(3)
+//#define simuI2C_SDAinMode	PEinMode(3)
+//#define simuI2C_SDAoutMode	PEoutMode(3)
 
 
 /*_____________________________________\\\                               ///____________________________________________*

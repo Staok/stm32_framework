@@ -7,7 +7,7 @@
 /*STEP 1:去.h文件里定义都有什么器件*/
 
 /*STEP 2:定义一共有多少个器件*/
-#define devicesNum	4
+#define devicesNum	3
 
 /*STEP 3:定义每个器件所用到的IO和其配置（只是定义，但可以分别选择初始化或者不初始化）*/
 /*参数说明：参数必须在以下列举中选
@@ -53,12 +53,12 @@ GPIO_Init_Struct LCD_IO_Struct[] =
 	{{GPIO_PIN_15, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_HIGH},	GPIOB,  GPIO_PIN_SET,		15,		  FALSE},
 };
 
-/*I2C的IO定义*/
-GPIO_Init_Struct simuI2C_IO_Struct[] =
-{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
-	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOE,  GPIO_PIN_SET,		2,		  TRUE},	//MPU6050 SCL
-	{{GPIO_PIN_3, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOE,  GPIO_PIN_SET,		2,		  TRUE} 	//MPU6050 SDA
-};
+///*I2C的IO定义*/
+//GPIO_Init_Struct simuI2C_IO_Struct[] =
+//{	/*	PIN				MODE			  上下拉		翻转速度		  	GPIOx 	  默认状态     EXTI优先级	启否EXTI*/
+//	{{GPIO_PIN_2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOE,  GPIO_PIN_SET,		2,		  TRUE},	//MPU6050 SCL
+//	{{GPIO_PIN_3, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_HIGH},	GPIOE,  GPIO_PIN_SET,		2,		  TRUE} 	//MPU6050 SDA
+//};
 
 /*STEP 3.5:在这里和去.h文件里填写用于外部中断的IO的中断标志位*/
 //当IO使用外部中断时，用一个标志位记录中断是否发生，把长时间的处理函数放到中断外面！
@@ -90,12 +90,12 @@ Devices_Init_Struct UserDevices[devicesNum] =
 		.deviceName 		= 	"LCD"			,
 		.device_IOnum 		= 	13				
 	},
-	{	
-		.deviceIO_Struct 	= 	simuI2C_IO_Struct	,
-		.deviceIndex 		= 	simuI2C_Index		,
-		.deviceName 		= 	"MPU6050"			,
-		.device_IOnum 		= 	2					
-	}
+//	{	
+//		.deviceIO_Struct 	= 	simuI2C_IO_Struct	,
+//		.deviceIndex 		= 	simuI2C_Index		,
+//		.deviceName 		= 	"simuI2C"			,
+//		.device_IOnum 		= 	2					
+//	}
 };
 
 

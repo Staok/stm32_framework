@@ -12,7 +12,7 @@ void sys_MCU_Init_Seq(void)
 	/*
 		时钟分配：
 		HSE外接8Mhz晶振，LSE外接32.768Khz晶振
-		开启HSE（8M）、LSE（32.768K）和LSI（32K），关闭HSI（16M）
+		HSE（8M）	LSE（32.768K）	LSI（32K）	HSI（16M）
 		PLLCLK = SYSCLK = AHBCLK = HCLK 均为168MHz；APB2外设为84MHz，APB2定时器为168MHz；APB1外设为42Mhz，APB1定时器为84Mhz
 		
 		ETH\FSMC\USB FS\USB HS\GPIO\DMA 的最高速度具体看手册
@@ -74,7 +74,7 @@ void sys_MCU_Init_Seq(void)
 	printf_uart(UART1,"Compile time : %s,%s\r\n",__DATE__,__TIME__);
 	printf_uart(UART1,"Version : %s\r\n",Version_of_stm32_framework);
 	printf_uart(UART1,"OK,then...System is starting...\r\n");
-		
+	
 	
 	/*获取HCLK频率并打印到串口1，外设时钟均来自此再分频*/
 	sysCoreClock = HAL_RCC_GetHCLKFreq(); 
@@ -117,8 +117,8 @@ void sys_MCU_Init_Seq(void)
 		sys_DAC_ENABLE();
 	#endif
 	
-	my_mem_init(InrRAM);	//初始化内部内存SRAM 	128KB
-	my_mem_init(InrCCM);	//初始化内部辅助内存CCM 64KB
+	my_mem_init(InrRAM);	//初始化内部内存SRAM 		128KB
+	my_mem_init(InrCCM);	//初始化内部辅助内存CCM 	64KB
 	
 	//初始化外部内存SRAM 1024KB，960KB可用
 	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4SRAM)
@@ -137,7 +137,7 @@ void sys_Device_Init_Seq(void)
 	Devices_Init(UserDevices,TestLED_Index);	
 	Devices_Init(UserDevices,KEY_Index);	
 	Devices_Init(UserDevices,LCD_Index);	
-	Devices_Init(UserDevices,simuI2C_Index);
+//	Devices_Init(UserDevices,simuI2C_Index);
 	
 	/*LCD初始化*/
 	#if (SYSTEM_FSMC_ENABLE) && (SYSTEM_FSMC_use4LCD)
@@ -151,7 +151,7 @@ void sys_Device_Init_Seq(void)
 //	OLED_Init();
 	
 	/*MPU6050初始化*/
-	MPU6050_Init();
+//	MPU6050_Init();
 	
 	
 	/*用户应用的Device初始化序列——结束*/
@@ -1048,7 +1048,6 @@ void TIM3_IRQHandler(void)
 
 UART_HandleTypeDef UART1_Handler,UART2_Handler,UART3_Handler; //UART句柄
 u8 aRxBuffer1[RXBUFFERSIZE],aRxBuffer2[RXBUFFERSIZE],aRxBuffer3[RXBUFFERSIZE];//HAL库使用的串口接收缓冲
-//QueueHandle_t Uart1_fifo;	/*串口1的模式1数据接收fifo句柄*/
 
 /*printf函数和printf_uart会调用此函数发送单个字节，需填入串口发送，只用printf_uart就行了*/
 void _putchar(char character)
@@ -1077,6 +1076,11 @@ void _putchar(char character)
 }
 
 #if SYSTEM_UART1_ENABLE
+
+char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; 				/*串口1的模式0数据接受区*/
+char USART1_RX_FIFO_buf[USART1_RX_FIFO_MaxNum]; 		/*串口1的模式1的FIFO数据接受区*/
+lwrb_t USART1_RX_FIFO_Handle;							/*用于串口1模式1的FIFO的句柄*/
+
 void sys_USART1_ENABLE(void)
 {
 	//UART 初始化设置
@@ -1093,14 +1097,9 @@ void sys_USART1_ENABLE(void)
 	
 	HAL_UART_Receive_IT(&UART1_Handler, (u8 *)aRxBuffer1, RXBUFFERSIZE);//该函数会开启接收中断：标志位UART_IT_RXNE，并且设置接收缓冲以及接收缓冲接收最大数据量
 	
-//	Uart1_fifo = xQueueCreate(USART1_RX_FIFO_MaxNum,sizeof( char ));
-//	
-//	if(Uart1_fifo == NULL)
-//	{
-//		FaultASSERT("AT:fifo_create");
-//	}
+
+	lwrb_init(&USART1_RX_FIFO_Handle, USART1_RX_FIFO_buf, sizeof(USART1_RX_FIFO_buf));
 }
-char USART1_RX_BUF[USART1_RX_BUF_MaxNum]; 		/*串口1的模式0数据接受区*/
 
 u8 sys_USART1_RX_Fetch(u8 is_print, char *buf,u16 *RX_ByteNum)
 {
@@ -1123,31 +1122,34 @@ u8 sys_USART1_RX_Fetch(u8 is_print, char *buf,u16 *RX_ByteNum)
 			/*USART1_RX_BUF共有USART1_RX_ByteNum个有效字节，不带\r\n的字符串，第USART1_RX_ByteNum的位置是结束符\0*/
 			USART1_SetUnDone;
 			return HAL_OK;
-		}else{
+		}else
+		{
 			return HAL_ERROR;
-			}
+		}
 	}else{
 		/*1为以FIFO先进先出的环形缓存实现接受区，无协议*/
 		
-//		u16 i = 0;
-		char ibuf = 42;
+		char buf_buf = NULL;
+		u16 RX_ByteNum_buf = 0;
 		
-//		while(xQueueReceive(Uart1_fifo, &ibuf, 0) == pdPASS)
-//		{
-//			buf[i++] = ibuf;
-//		}
-//		buf[i] = '\0';
-//		*RX_ByteNum = i;
-//		
-//		if(is_print)
-//			printf_uart(UART1,"%s",buf);
-//		
-		if(ibuf != 42)
+		while(lwrb_get_full(&USART1_RX_FIFO_Handle))
+		{
+			lwrb_peek(&USART1_RX_FIFO_Handle,0,&buf_buf,1);
+			mystrcat(buf,&buf_buf);
+			RX_ByteNum_buf++;
+		}
+		//加个结束符
+		mystrcat(buf,(char*)'\0');
+		
+		*RX_ByteNum = RX_ByteNum_buf;
+		
+		if(buf_buf != NULL)
 		{
 			return HAL_OK;
-		}else{
+		}else
+		{
 			return HAL_ERROR;
-			}
+		}
 	}
 }
 
@@ -1314,7 +1316,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 }
 
 
-//char USART1_RX_FIFO_buf[USART1_RX_FIFO_MaxNum] = "0"; 	/*串口1的模式0的FIFO数据接受区，静态创建时才用*/
+
 /*以下四行放在了sys.h里面*/
 //#define USART1_RX_DONE_mask 0x8000
 //#define USART1_RX_MODE_mask 0x4000
@@ -1370,15 +1372,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			}
 		}else 		/*协议1：以FIFO先进先出的环形缓存实现接受区，无协议，需要及时拿走，如果缓存满了则新入数据丢失*/
 		{
-			/*这里不好使，当数据量很大的时候MCU就卡死了，以后换成一个别的协议解析比如modbus等等*/
-//			BaseType_t YieldRequired;
-//			if(uxQueueSpacesAvailable(Uart1_fifo) > 0)
-//			{
-//				xQueueSendFromISR(Uart1_fifo,&aRxBuffer1[0],&YieldRequired);
-//			}else{
-//				xQueueOverwriteFromISR(Uart1_fifo,&aRxBuffer1[0],&YieldRequired);
-//			}
-//			if(YieldRequired == pdTRUE) portYIELD_FROM_ISR(YieldRequired);
+			if(lwrb_get_free(&USART1_RX_FIFO_Handle))
+				lwrb_write(&USART1_RX_FIFO_Handle, &aRxBuffer1[0], 1);
+			
+			
 		}
 	}else if(huart->Instance==USART2)//如果是串口2
 	{

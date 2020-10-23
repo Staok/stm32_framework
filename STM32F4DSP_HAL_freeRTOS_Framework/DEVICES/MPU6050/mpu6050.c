@@ -222,16 +222,16 @@ void MPU6050_GetAngle(float* Angle[3],float* AngleSpeed[3])
 	}
 	
 	/*把加速度计的值转为与陀螺仪同位置的角度值*/
-	MPU6050_GyroF[0] = atan2f(MPU6050_Gyro[1],MPU6050_Gyro[2])*180.0f/M_PI;	//tan(θx) = tan(θyz) = Ry/Rz
-	MPU6050_GyroF[1] = atan2f(MPU6050_Gyro[0],MPU6050_Gyro[2])*180.0f/M_PI;	//tan(θy) = tan(θxz) = Rx/Rz
-	MPU6050_GyroF[2] = atan2f(MPU6050_Gyro[0],MPU6050_Gyro[1])*180.0f/M_PI;	//tan(θz) = tan(θxy) = Rx/Ry
+	MPU6050_AccelF[0] = atan2f(MPU6050_Accel[1],MPU6050_Accel[2])*180.0f/M_PI;	//tan(θx) = tan(θyz) = Ry/Rz
+	MPU6050_AccelF[1] = atan2f(MPU6050_Accel[0],MPU6050_Accel[2])*180.0f/M_PI;	//tan(θy) = tan(θxz) = Rx/Rz
+	MPU6050_AccelF[2] = atan2f(MPU6050_Accel[0],MPU6050_Accel[1])*180.0f/M_PI;	//tan(θz) = tan(θxy) = Rx/Ry
 	
 	
 	/*单位转换，加速度单位为g，陀螺仪单位为度/ms*/
 	for(i = 0;i < 3;i++)
 	{
-		MPU6050_GyroF[i] = 		MPU6050_Gyro[i];
-		MPU6050_AccelF[i] = 	MPU6050_Accel[i];
+//		MPU6050_GyroF[i] = 		MPU6050_Gyro[i] 	* xx.xx;
+//		MPU6050_AccelF[i] = 	MPU6050_Accel[i] 	* xx.xx;
 	}
 	
 	

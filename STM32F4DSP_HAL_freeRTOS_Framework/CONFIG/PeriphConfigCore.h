@@ -174,6 +174,7 @@ DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407
 													void *mymemcpy(void *des,const void *src,size_t len);
 													char *mystrtok(char *s, const char *delim);*/
 int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
+#include "lwrb.h"								/*提供一个FIFO实现，github开源库地址：*/
 unsigned char BCD2HEX(unsigned char bcd_data); 	//提供BCD转为HEX子程序
 unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 #include "printf.h"								
@@ -244,7 +245,7 @@ unsigned char HEX2BCD(unsigned char hex_data); 	//提供HEX转为BCD子程序
 /*DEVICES所有头文件*/
 #include "TFTLCD.h"
 //#include "OLED.h"
-#include "mpu6050.h"
+//#include "mpu6050.h"
 
 
 /*_____________________________________\\\                               ///____________________________________________*

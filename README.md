@@ -89,7 +89,7 @@ System init over!
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
 -   LWIP：暂时缺省
--   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释（**TODO**：添加SPI FLASH驱动并写入FATFS底层（考虑这个开源库驱动SPI FLASH：https://github.com/armink/SFUD），添加MCU内部FLASH驱动并写入FATFS底层）
+-   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释（**TODO**：添加SPI FLASH驱动并写入FATFS底层（考虑这个开源库驱动SPI FLASH：https://github.com/armink/SFUD），添加MCU内部FLASH驱动并写入FATFS底层，并在实现写入字库的程序，参考普中等的字库例程）
 -   DSP\FPU：暂时缺省
 -   线性回归：暂时缺省
 -   常用校验、加密算法：暂时缺省

@@ -12,7 +12,7 @@ System is starting...
 System init over!
 ```
 
-喜欢的话，点个小star鸭~
+除了开源库之外的代码，每一行都经过手动移植、修改、检查和运行，是有灵魂的。喜欢的话，点个小star鸭~
 
 ------
 

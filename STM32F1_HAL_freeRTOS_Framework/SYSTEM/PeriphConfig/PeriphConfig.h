@@ -1,7 +1,7 @@
 #ifndef __PERIPHCONFIG_H
 #define __PERIPHCONFIG_H
 
-#include "sys.h"
+#include "sys_config.h"
 
 
 /*STEP1:定义都有什么器件*/

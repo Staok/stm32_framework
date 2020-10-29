@@ -1,7 +1,6 @@
 #ifndef __TFTLCD_H__
 #define __TFTLCD_H__
 
-#include "sys.h"
 /*
   说明和API：
 
@@ -106,7 +105,7 @@ LCD分辨率参数：
 //#define USE_Chinese_FONT	1	//是否使用中文显示，如果没用到就置0，则不会编译相关函数和字库
 
 /*_______________________________以下都是固定的，不用动______________________________________*/
-#include "sys.h"
+#include "sys_config.h"
 //LCD重要参数集
 typedef struct  
 {		 	 

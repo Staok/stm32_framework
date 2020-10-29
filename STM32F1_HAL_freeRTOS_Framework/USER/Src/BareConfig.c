@@ -20,13 +20,17 @@ void Bare_Begin(void)
 	BACK_COLOR = BLACK;
 	for(;;)
 	{
+		#if SYS_SUPPORT_LWIP && NO_SYS
+			lwip_pkt_handle();
+		#endif
 		/*注意：这里尽量不要用10毫秒中断标志！这里只用100毫秒、300毫秒、1秒和一分钟的中断标志，够用了*/
-		
 		if(Timer_IT_flags._10msec_flag == TRUE)
 		{
 			Timer_IT_flags._10msec_flag = FALSE;
 			
-			
+			#if SYS_SUPPORT_LWIP
+				lwip_periodic_handle();
+			#endif
 		}
 		
 		

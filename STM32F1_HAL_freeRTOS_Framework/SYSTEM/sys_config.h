@@ -1,5 +1,5 @@
-#ifndef __SYS_H
-#define __SYS_H
+#ifndef __SYS_CONFIG_H
+#define __SYS_CONFIG_H
 
 #include "sysVar.h"								/*定义系统级常用的变量、数据类型和二进制表示宏*/
 #include "stm32f1xx.h"
@@ -158,10 +158,15 @@ STM32F
 	C编译器中的预定义宏
 		VECT_TAB_SRAM         - 增加这个符号表示中断向量表定位在CPU内部RAM （针对在CPU内部RAM运行的工程才需要添加，一般都不用）
 */
-
-#define SYSTEM_SUPPORT_OS		0				/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
+#include "isUseFreeRTOS.h"						  /*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
 													FreeRTOS版本：v10.3.1
 													默认用于任务的RAM堆栈大小为5KB，按需修改！*/
+
+#include "lwipopts.h"							/*支持lwip，在里面配置和控制是否开启*/
+
+#if SYS_SUPPORT_LWIP
+	#include "lwip_comm.h"
+#endif
 
 #define SYSTEM_SUPPORT_Menu		1				/*模板固定搭配！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！*/
 /*
@@ -184,6 +189,7 @@ char *mystrtok(char *s, const char *delim);
 */
 int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
 u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*提供获取系统运行时间的函数，具体看源函数处注释*/
+unsigned int Curl_rand(void);					/*实现伪随机数的支持*/
 #define SYSTEM_SUPPORT_sprintf	1				/*模板固定搭配！包含且编译printf.h，github开源文件，无依赖，功能比较全。
 													约占6KB，对于stm32够，对于其他小容量MCU则看“其他几个sprintf实现”文件夹里面的,不要纠结了。
 													开源仓库地址：https://github.com/mpaland/printf
@@ -206,14 +212,8 @@ u16 sys_GetsysRunTime(u16* mins,u16* secs,u16* _10ms);/*提供获取系统运行时间的函
 	#include "task.h"
 	#include "queue.h"
 	#include "TaskConfig.h"
-	
-	#define xPortPendSVHandler 	PendSV_Handler //莫要乱动撒
-	#define vPortSVCHandler 	SVC_Handler
 #else
 	#include "BareConfig.h"
-	
-//	#include "FreeRTOS.h"  /*这里是为了串口用消息队列接收数据，但是不好使，以后改了不用接收函数的时候这两个include就可以去掉！*/
-//	#include "queue.h"
 #endif
 
 #if SYSTEM_SUPPORT_Menu

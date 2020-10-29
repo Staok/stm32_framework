@@ -1,6 +1,6 @@
 #ifndef __MALLOC_H
 #define __MALLOC_H
-#include "sys.h"
+#include "sys_config.h"
 
 /*此文件借鉴 ALIENTEK战舰STM32开发板V3 内存管理 的源代码*/
 /*后来又发现，硬石的YSFx系列开发板历程里的内存管理源代码和这里的几乎一模一样，而且都说自己是作者...*/
@@ -18,9 +18,9 @@
 //InrRAM内存参数设定，InrRAM完全处于内部SRAM里面
 #define InrRAM_BLOCK_SIZE			32  	  							//内存块大小为32字节（一般不用动，保持默认就好）
 #if ((STM32F103xG) || (STM32F103xE))
-	#define InrRAM_MAX_SIZE			40*1024  								//最大管理内存 40K （注意FreeRTOS的内存分配大小，灵活调整）
+	#define InrRAM_MAX_SIZE			20*1024  							//最大管理内存 20K （注意FreeRTOS的内存分配大小，灵活调整）
 #else
-	#define InrRAM_MAX_SIZE			5*1024  								//最大管理内存 5K （注意FreeRTOS的内存分配大小，灵活调整）
+	#define InrRAM_MAX_SIZE			5*1024  							//最大管理内存 5K （注意FreeRTOS的内存分配大小，灵活调整）
 #endif
 #define InrRAM_ALLOC_TABLE_SIZE	(InrRAM_MAX_SIZE/InrRAM_BLOCK_SIZE) 	//内存表大小
 

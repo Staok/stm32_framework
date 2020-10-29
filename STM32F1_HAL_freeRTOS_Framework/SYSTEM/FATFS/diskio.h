@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "sys.h"
+#include "sys_config.h"
 #include "ff.h"
 
 /* Status of Disk Functions */

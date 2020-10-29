@@ -80,6 +80,12 @@
 //断言
 #define vAssertCalled(char,int) //printf("Error:%s,%d\r\n",char,int)
 #define configASSERT(x) if((x)==0) vAssertCalled(__FILE__,__LINE__)
+	
+#include "isUseFreeRTOS.h"
+#if SYSTEM_SUPPORT_OS
+	#define xPortPendSVHandler 	PendSV_Handler //莫要乱动撒
+	#define vPortSVCHandler 	SVC_Handler
+#endif
 
 /***************************************************************************************************************/
 /*                                        FreeRTOS基础配置配置选项                                              */
@@ -124,7 +130,7 @@
 /*                                FreeRTOS与内存申请有关配置选项                                                */
 /***************************************************************************************************************/
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       //支持动态内存申请
-#define configTOTAL_HEAP_SIZE					((size_t)(10*1024))     //系统所有总的堆大小
+#define configTOTAL_HEAP_SIZE					((size_t)(5*1024))     //系统所有总的堆大小
 //->等待设置<-
 /*
 FLASH               RAM

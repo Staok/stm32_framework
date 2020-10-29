@@ -1,4 +1,4 @@
-#include "sys.h"
+#include "sys_config.h"
 #include "periphconfig.h"
 
 /*
@@ -179,6 +179,11 @@ void sys_Device_Init_Seq(void)
 	#endif
 	
 	/*用户应用的Device初始化序列——结束*/
+	
+	#if SYS_SUPPORT_LWIP
+		if(lwip_comm_init() != 0)
+			FaultASSERT("AT:lwip_comm_init");
+	#endif
 	
 	/*__________启动模板的心跳，开启MCU的精彩一生__________*/
 	/*初始化并启动TIM4*/
@@ -1884,6 +1889,23 @@ int myatoi(const char *str)
 		}
 	}
 	return s*(falg?-1:1);
+}
+
+/* 实现伪随机数的支持*/
+unsigned int Curl_rand(void)
+{
+	static unsigned int gtimes = 0; 	//记录被调用了多少次
+	static unsigned int randseed = 50; 	//随机数种子
+	
+	if(++gtimes > (randseed & 0x000f)) //当被调用(randseed & 0x000f)次后更新一下随机数种子
+	{
+		sys_GetsysRunTime(NULL,NULL,(u16*)&randseed);
+		gtimes = 0;
+	}
+	
+	/* 返回一个无符号32位整型的伪随机数. */
+	randseed = randseed * 3971038;
+	return (randseed << 7) | ((randseed >> 7) & 0xFFFF);
 }
 
 

@@ -1,7 +1,7 @@
 #ifndef __SYS_MENU_H
 #define __SYS_MENU_H
 
-#include "sys.h"
+#include "sys_config.h"
 #include "periphconfig.h"
 
 

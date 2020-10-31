@@ -1,6 +1,8 @@
 # stm32_framework
 Welcome to the stm32_framework !
 
+本项目是“瞰百易”计划的一部分
+
 一个志在实现STM32F1、F2和F4工程模板的项目，包含HAL库的高级封装、菜单库、FreeRTOS、LittlevGL、LWIP、FATFS、DSP和USB等等的组件，以及包含加密、BPNN、最小二乘等诸多常用的算法，并具有良好的易用性、解耦性和可剪裁性！
 
 ```

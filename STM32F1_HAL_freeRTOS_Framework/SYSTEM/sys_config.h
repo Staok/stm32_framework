@@ -89,8 +89,8 @@
 /*坑说明：
 	1、由于历史遗留原因，本MDK工程编码位GB2312，所以用外部文件写程序时请选用GB2312编码来写
 		但是如果已经使用UTF-8等编码编写了很多内容时，只需用notepad软件新建一个新文件，选择GB2312编码，然后复制原来UTF-8等编码格式的原文进来，就自动转为GB2312编码了
-		
-		
+		或者应win自带的文本文件保存格式选择GB2312即可
+		不过推荐以后都按照UTF-8格式！
 */
 
 /*
@@ -158,7 +158,71 @@ STM32F
 	C编译器中的预定义宏
 		VECT_TAB_SRAM         - 增加这个符号表示中断向量表定位在CPU内部RAM （针对在CPU内部RAM运行的工程才需要添加，一般都不用）
 */
-#include "isUseFreeRTOS.h"						  /*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
+/*________________________________________DSP使用_________________________________________*/
+/*	ARM	CMSIS 5.7.0 DSP Lib
+P.S：	每个版本的 Cube 软件包都会携带 CMSIS 文件夹，只是版本比较老，不推荐
+P.SS：	不使用MDK的math.h库，只使用arm_math.h的库，即ARM的数学库，从F0到F4等都有
+添加：
+	1 添加文件：
+		库版本：Files 加入DSP_LIB\arm_cortexM4lf_math.lib（浮点 Cortex-M4 小端模式），Include Paths 加入DSP_LIB\Inc
+		源文件版本：解压 ..\DSP_LIB\src下的.zip文件，添加每个文件夹中的主要.c文件（不用都添加），Include Paths 加入DSP_LIB\Inc
+	2 添加必要宏定义在Define：ARM_MATH_CM4,__CC_ARM（PS,在CMSIS\DSP下的编译生成.lib的MDK工程中，看见已经定义了宏：
+	ARM_MATH_MATRIX_CHECK, ARM_MATH_ROUNDING, ARM_MATH_LOOPUNROLL，所以我猜这里就不用再添加了，猜的，TODO：需要试验）
+	3 编译
+注意：（重要）
+	在计算表达式中，强制常量为单精度浮点数，以避免引入双精度浮点数动算，即所有常数浮点数后面加f
+	不要使用math.h里面的函数，要使用arm_math.h的API
+	大量数据可以用malloc放在CCM RAM里面
+	尽量用乘法代替除法，尽量减少除法
+	找出算法中的重复计算，将其合并，只计算一次
+	对于复杂的计算，考虑是否能用查表来代替，在存储空间不是很紧张的情况下
+	选择优化等级-O3
+	常规乘法加法或单精度浮点的算式尽量直接写；特殊计算如三角函数、开方或者矩阵运算、FFT等就要用DSP函数了！
+		用最高层的API，不要用底层的乘、加等API自己实现计算过程，这样反而更慢（意思同上一条）
+		测试了arm_sqrt_f32、三角函数，这些都要比math.h库快10倍左右！
+	
+数据类型：
+	各种Qn的数据类型的范围按照下面类型重定义来就行了
+	typedef int8_t q7_t;
+	typedef int16_t q15_t;
+	typedef int32_t q31_t;
+	typedef int64_t q63_t;
+	typedef float float32_t;
+	typedef double float64_t;
+	在 CMSIS-DSP 常用的是 Q15，Q31等等，分别表示除以 2^15(32768)，除以 2^31(2147483648) 就可以得到实际的浮点数
+API使用：
+	（以_f32结尾的函数是浮点运算，以_q8, _q15, _q31,结尾的函数是定点运算）
+	常见的API看安富莱的DSP的手册，全面的就要看CMSIS Docs
+		BasicMathFunctions
+			基本数学函数：提供浮点数的各种基本运算函数，如向量加减乘除等运算。
+		CommonTables
+			arm_common_tables.c 文件提供位翻转或相关参数表。
+		ComplexMathFunctions
+			复杂数学功能，如向量处理，求模运算的。
+		ControllerFunctions
+			控制功能函数。包括正弦余弦，PID 电机控制，矢量 Clarke 变换，矢量 Clarke 逆变换，Park变换和逆变换，sin cos函数。
+		FastMathFunctions
+			快速数学功能函数。提供了一种快速的近似正弦，余弦和平方根等相比 CMSIS 计算库要快的数学函数。
+		FilteringFunctions
+			滤波函数功能，主要为 FIR 和 LMS（最小均方根）等滤波函数。
+		MatrixFunctions
+			矩阵处理函数。包括矩阵加法、矩阵初始化、矩阵反、矩阵乘法、矩阵规模、矩阵减法、矩阵转置等函数。
+		StatisticsFunctions
+			统计功能函数。如求平均值、最大值、最小值、计算均方根 RMS、计算方差/标准差等。
+		SupportFunctions
+			支持功能函数，如数据拷贝，Q 格式和浮点格式相互转换，Q 任意格式相互转换。
+		TransformFunctions
+			变换功能。包括复数 FFT（CFFT）/复数 FFT 逆运算（CIFFT）、实数 FFT（RFFT）/实数FFT 逆运算（RIFFT）、和 DCT（离散余弦变换）和配套的初始化函数。
+	
+	新版CMSIS 5.7.0中的DSP库还支持了：
+		SVM（支持向量机）
+		贝叶斯估计
+		距离
+		线性插值 和 双线性插值
+*/
+#include "arm_math.h"
+
+#include "isUseFreeRTOS.h"						/*定义是否使用FreeRTOS，不是0就是1——————！按需要进行修改！
 													FreeRTOS版本：v10.3.1
 													默认用于任务的RAM堆栈大小为5KB，按需修改！*/
 

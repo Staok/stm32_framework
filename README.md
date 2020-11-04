@@ -49,7 +49,7 @@ System init over!
 
 （加粗体为暂时尚未实现的外设或者组件）
 
--   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ **DSP** \ FPU \ **USB(HCD PCD)** \ CAN \ **Ethernet**）
+-   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB(HCD PCD)** \ CAN \ **Ethernet**）
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 -   FreeRTOS
 -   **LittlevGL**
@@ -65,7 +65,8 @@ System init over!
 -   **常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）**
 -   **音频编解码（MP3转PCM，外接一个功放直接播放）**
 -   **Modbus协议**
--   **MQTT协议（包含cjson）**
+-   **MQTT协议（包含cjson，LWIP应用）**
+-   **HTTP协议（LWIP应用）**
 -   **JPEG、GIF解码和BMP编解码**
 
 ## 组件说明
@@ -92,14 +93,15 @@ System init over!
 -   软件ringbuf，FIFO缓冲：由于应对大数据传输时，一个开源FIFO库
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
--   LWIP：暂时缺省
+-   LWIP：已经添加，详情稍后更新（支持TCP server，TCP client和UDP通讯）
 -   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释（**TODO**：添加SPI FLASH驱动并写入FATFS底层（考虑这个开源库驱动SPI FLASH：https://github.com/armink/SFUD），添加MCU内部FLASH驱动并写入FATFS底层，并在实现写入字库的程序，参考普中等的字库例程）
--   DSP\FPU：暂时缺省
+-   DSP\FPU：已经添加，详情稍后更新
 -   线性回归：暂时缺省
 -   常用校验、加密算法：暂时缺省
 -   音频编解码：暂时缺省
 -   Modbus：暂时缺省
--   MQTT：暂时缺省
+-   MQTT：LWIP应用，暂时缺省
+-   HTTP协议：（LWIP应用）
 -   JPEG、GIF解码和BMP编解码：暂时缺省
 
 ### 框架基础外设

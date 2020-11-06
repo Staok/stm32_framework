@@ -370,13 +370,16 @@
 void MPU6050ReadGyro(short *gyroData);
 void MPU6050ReadAcc(short *accData);
 void MPU_Set_Rate(u16 rate);
-float MPU_Get_Temperature(void);
 
-void MPU6050_Init(void);
+
 void PMU6050_ReadData(uint8_t reg_add,unsigned char*Read,uint8_t num);
 void PMU6050_WriteReg(uint8_t reg_add,uint8_t reg_dat);
 
+/*下面四行供用户用*/
 extern unsigned char MPU6050_ID;
+void MPU6050_Init(void);
+float MPU_Get_Temperature(void);
+void MPU6050_GetAngle(float* Angle[3],float* AngleSpeed[3],u8 which_filter);
 
 
 #endif  //__MPU6050_H__

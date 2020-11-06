@@ -1,0 +1,979 @@
+/*_____________________________________\\              \\   //              //___________________________________________*
+ *_____________________________________________欢迎来到 stm32_framework__________________________________________________*
+ *_____________________________________//              //   \\             \\____________________________________________*/
+/*_____________________________________\\              \\   //             //____________________________________________*
+*项目名称：STM32F4编程框架
+*项目说明：本项目是”瞰百易”计划的一部分
+*作者：Staok，邮箱：superxhy@qq.com
+*开源地址：仓库地址 https://github.com/Staok/stm32_framework
+*如果觉得好用，请注明开源仓库地址，待我以后研究下开源协议再加上开源协议嘿嘿
+ *_____________________________________//              //   \\             \\____________________________________________*/
+/*_____________________________________\\              \\   //             //____________________________________________*
+简单使用说明：
+	外设剪裁和配置在PeriphconfigCore.h里
+	
+	初始化函数均在PeriphconfigCore.c里
+	所有外设API均在PeriphconfigCore.h，新文件使用时请调用
+	所有GPIO的API均在Periphconfig.h，新文件使用时请调用
+	
+	FreeRTOS任务编写在TaskConfig.c里
+	裸机程序任务编写在BareConfig.c里
+ *_____________________________________///                               \\\____________________________________________*/
+
+/*
+启动：	BOOT1	BOOT0		启动区域
+		  x		  0			FLASH
+		  0		  1			系统储存器(ISP下载)
+		  1		  1			SRAM
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *__________________________________________________PIN MAP_____________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+注：以下这些外设的IO在其初始化函数内已经初始化好，不用再单独初始化
+						[IO]										[描述]
+外设：	* PA8												MCO输出，默认时钟源为HSE
+		
+		* CH1/PA6	CH2/PA7		CH3/PB0		CH4/PB1			TIM3默认PWM口
+		
+		  CH1/PB4	CH2/PB5		CH3/PB0		CH4/PB1			TIM3部分重映射PWM口
+		  CH1/PC6	CH2/PC7		CH3/PC8		CH4/PC9			TIM3完全重映射PWM口
+		  
+		* TX/PA9	RX/PA10		TX/PB6		RX/PB7			USART1默认引脚和重映射引脚
+		  TX/PA2	RX/PA3		TX/PD5		RX/PD6			USART2默认引脚和重映射引脚
+		  TX/PB10	RX/PB11		TX/PD8		RX/PD9			USART3默认引脚和重映射引脚
+		  
+		* CS/PA4	CLK/PA5		MISO/PA6	MOSI/PA7		SPI1默认引脚
+		  CS/PB12	CLK/PB13	MISO/PB14 	MOSI/PB15		SPI2默认引脚
+		  
+		* 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15	ADC1各个通道引脚
+		  A0 A1 A2 A3 A4 A5 A6 A7 B0 B1 C0 C1 C2 C3 C4 C5
+		  
+		* CH1/PA15	CH2/PB3		CH3/PB10	CH4/PB11		TIM2四个PWM通道
+		
+		* CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM8的PWM通道
+		  PC6/PA7		PC7/PB0			PC8/PB1			PC9		PA6
+		  
+		  	CH1/CH1N		CH2/CH2N		CH3/CH3N		CH4		BKIN	TIM1的PWM通道
+		* 	PA8/PB13		PA9/PB14		PA10/PB15		PA11	PB12	默认
+		  	PA8/PA7			PA9/PB0			PA10/PB1		PA11	PA6		部分重映射
+		  	PE9/PE8			PE11/PE10		PE13/PE12		PE14	PE15	完全重映射
+		
+		* PA0												StandBy待机低功耗模式的唤醒按键WKUP（占用0线外部中断）
+		
+		* PA4		PA5										DAC_OUT1  DAC_OUT2（hd容量系类外设）
+		
+		* PC8/SDIO_D0	PC9/SDIO/D1		PC10/SDIO_D2		SDIO固定引脚，用于接SD卡
+		  PC11/SDIO_D3	PC12/SDIO_CK	PD2/SDIO_CMD
+		  
+		* 													FSMC引脚（A[0:25],D[0:15],NEx,NOE,NWE,NBL0,NBL1）
+		  D2	D3	NOE	NWE	NE1			D13	D14 D15 	A16 	A17 	A18 	D0 		D1
+		  PD0	PD1	PD4	PD5	PD7			PD8	PD9	PD10	PD11	PD12	PD13	PD14	PD15
+		  
+		  NBL0	NBL1	A23	A19	A20	A21	A22	D4	D5	D6	D7		D8		D9		D10		D11		D12
+		  PE0	PE1		PE2	PE3	PE4	PE5	PE6	PE7	PE8	PE9	PE10	PE11	PE12	PE13	PE14	PE15
+		  
+		  A0	A1	A2	A3	A4	A5	A6		A7		A8		A9		A10	A11	A12	A13	A14	A15
+		  PF0	PF1	PF2	PF3	PF4	PF5	PF12	PF13	PF14	PF15	PG0	PG1	PG2	PG3	PG4	PG5
+		  
+		  NE2	NE3		NE4		A24		A25
+		  PG9	PG10	PG12	PG13	PG14
+		  
+		* ...TODO:DCMI、USB、CAN等外设的IO还没有列出
+
+
+用户：	*
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *__________________________________________________复用资源介绍________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+
+GPIO的AF复用功能完整表在 “stm32f407ze.pdf” 的 62页 开始
+
+DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407417-stm32f427437-and-stm32f429439-advanced-armbased-32bit-mcus-stmicroelectronics”
+			的 307页 开始
+
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_________________________________________________外设资源介绍_________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+	STM32F407ZGT6：
+		1024KB(hd)FLASH，128KB（InrRAM）+ 64KB（InrCCM）RAM，144脚LQFP封装，114个GPIO，-40~85℃
+	
+	时钟分配：
+		HSE外接8Mhz晶振，LSE外接32.768Khz晶振
+		开启HSE（8M）、LSE（32.768K）和LSI（32K），关闭HSI（16M）
+		PLLCLK = SYSCLK = AHBCLK = HCLK 均为168MHz；APB2外设为84MHz，APB2定时器为168MHz；APB1外设为42Mhz，APB1定时器为84Mhz
+		
+		ETH\FSMC\USB FS\USB HS\GPIO\DMA 的最高速度具体看手册
+		RTC 时钟取自 LSE = 32.768K 	（默认不开，使能RTC时会开）
+		IWDG时钟取自 LSI = 32K 		（默认开）
+					 HSI = 16M		（默认不开）
+		DCMI 54 Mbyte/s max
+		
+		APB2外设(84M)：SDIO\EXT IT\USART1\USART6\SPI1\ADC123
+		APB2定时器(168M)：TIM1 TIM8 TIM9 TIM10 TIM11
+		APB1外设(42M)：USART2\USART3\UART4\UART5\SPI2、I2S2\SPI3、I2S3\I2C123\bxCAN12\DAC12
+		APB1定时器(84M)：TIM2 TIM3 TIM4 TIM5 TIM12 TIM13 TIM14 TIM6 TIM7
+	
+		定时器不管16或者32位的，都按16位来用，也很够了
+	本框架TIM分配：
+		TIM4	10ms时基，用户不可写中断程序
+		TIM3	产生辅助PWM，可中断提供辅助时基，通道按照其他外设使用情况灵活分配
+		TIM2	多功能使用，可中断提供辅助时基，通道可用于PWM、正交编码解码、输入捕获
+		TIM5	同上
+		TIM1\8	主PWM，产生3对互补、带死区、带刹车和电平可调的PWM
+		TIM6\7	官方推荐用于触发DAC（也可产生三角波）或者产生额外时基
+	
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_______________________________________________外设优先级划分_________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+优先级分组为4，只有0~15的16级抢占优先级
+
+
+优先级	0			1				2				3				4				5				...
+	   保留	    TIM4(时基)	 	按键外部中断	按键外部中断	TIM6(辅助时基)
+				TIM5(测时)		  TIM3（PWNM）	TIM7(辅助时基)
+											    TIM2（多功能）   
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_________________________________________________内部空间划分_________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+   	CPU内部 FLASH  			【0x0800 0000 - 0x080F FFFF】,容量512K(0x80000)字节
+	CPU内部 SRAM1  			【0x2000 0000 - 0x2000 FFFF】,容量128K(0x20000)字节
+	
+	外部扩展SRAM 在块1区3   【0x6800 0000 - 0x681F FFFF】,容量1MB(0x100000)字节（512K个16bit）
+	TFT LCD 地址 在块1区4   【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）TODO：改为A0
+	
+	STM32F407ZGT6内存空间：
+	普通内存：
+		主要内存：		地址从：0X2000 0000 开始，共 128KB），这部分内存任何外设都可以访问。
+		辅助内存CCM：	地址从：0X1000 0000 开始，共 64KB，这部分内存仅 CPU 可以访问，DMA 之类的不可以直接访问，使用时得特别注意！！
+		外部SRAM：		地址从：0X6800 0000 开始，共 1024KB。
+		都用内存管理来管理，大块内存使用应尽量使用malloc和free
+		
+	Malloc内存分配划分：
+		主要内存 SRAM1：		划分：70*1024字节	标志：InrRAM
+		辅助内存 CCM：			划分：60*1024字节	标志：InrCCM	（推荐DSP等需要高速访问的大量数据用CCM）
+		外扩内存 SRAM:			划分：960*1024字节	标志：ExRAM1
+	
+	LWIP 		默认吃 30*1024 字节的 InrRAM			（不推荐LWIP占用CCM内存，因为CCM内存不能被DMA访问！）
+	FreeRTOS 	默认吃 30*1024 字节的 主要内存 SRAM1
+	
+	综上：		SRAM1 	上电后的默认 占用比 （70+30/128）
+				InrRAM 	上电后的默认 占用比 （30/70）
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *__________________________________________________FPU使用_____________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+	只需确保 system_stm32f4xx.c 文件的 SystemInit()中的FPU初始化环节被启用；
+	一般来说MDK设置启用单精度(32bit)FPU就会开启相关宏，但是并没用...所以这里手动在SystemInit()函数中强行启用FPU初始化了
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_____________________________________________ARM CMSIS DSP库使用______________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*	ARM	CMSIS 5.7.0 DSP Lib
+P.S：	每个版本的 Cube 软件包都会携带 CMSIS 文件夹，只是版本比较老，不推荐
+P.SS：	不使用MDK的math.h库，只使用arm_math.h的库，即ARM的数学库，从F0到F4等都有
+添加：
+	1 添加文件：
+		库版本：Files 加入DSP_LIB\arm_cortexM4lf_math.lib（浮点 Cortex-M4 小端模式），Include Paths 加入DSP_LIB\Inc
+		源文件版本：解压 ..\DSP_LIB\src下的.zip文件，添加每个文件夹中的主要.c文件（不用都添加），Include Paths 加入DSP_LIB\Inc
+	2 添加必要宏定义在Define：ARM_MATH_CM4,__CC_ARM（PS,在CMSIS\DSP下的编译生成.lib的MDK工程中，看见已经定义了宏：
+	ARM_MATH_MATRIX_CHECK, ARM_MATH_ROUNDING, ARM_MATH_LOOPUNROLL，所以我猜这里就不用再添加了，猜的，TODO：需要试验）
+	3 编译
+注意：（重要）
+	在计算表达式中，强制常量为单精度浮点数，以避免引入双精度浮点数动算，即所有常数浮点数后面加f
+	不要使用math.h里面的函数，要使用arm_math.h的API
+	大量数据可以用malloc放在CCM RAM里面
+	尽量用乘法代替除法，尽量减少除法
+	找出算法中的重复计算，将其合并，只计算一次
+	对于复杂的计算，考虑是否能用查表来代替，在存储空间不是很紧张的情况下
+	选择优化等级-O3
+	常规乘法加法或单精度浮点的算式尽量直接写；特殊计算如三角函数、开方或者矩阵运算、FFT等就要用DSP函数了！
+		用最高层的API，不要用底层的乘、加等API自己实现计算过程，这样反而更慢（意思同上一条）
+		测试了arm_sqrt_f32、三角函数，这些都要比math.h库快10倍左右！
+	推荐用CCM内存存储大量的DSP数据，提高访问速度
+数据类型：
+	各种Qn的数据类型的范围按照下面类型重定义来就行了
+	typedef int8_t q7_t;
+	typedef int16_t q15_t;
+	typedef int32_t q31_t;
+	typedef int64_t q63_t;
+	typedef float float32_t;
+	typedef double float64_t;
+	在 CMSIS-DSP 常用的是 Q15，Q31等等，分别表示除以 2^15(32768)，除以 2^31(2147483648) 就可以得到实际的浮点数
+API使用：
+	（以_f32结尾的函数是浮点运算，以_q8, _q15, _q31,结尾的函数是定点运算）
+	常见的API看安富莱的DSP的手册，全面的就要看CMSIS Docs
+		BasicMathFunctions
+			基本数学函数：提供浮点数的各种基本运算函数，如向量加减乘除等运算。
+		CommonTables
+			arm_common_tables.c 文件提供位翻转或相关参数表。
+		ComplexMathFunctions
+			复杂数学功能，如向量处理，求模运算的。
+		ControllerFunctions
+			控制功能函数。包括正弦余弦，PID 电机控制，矢量 Clarke 变换，矢量 Clarke 逆变换，Park变换和逆变换，sin cos函数。
+		FastMathFunctions
+			快速数学功能函数。提供了一种快速的近似正弦，余弦和平方根等相比 CMSIS 计算库要快的数学函数。
+		FilteringFunctions
+			滤波函数功能，主要为 FIR 和 LMS（最小均方根）等滤波函数。
+		MatrixFunctions
+			矩阵处理函数。包括矩阵加法、矩阵初始化、矩阵反、矩阵乘法、矩阵规模、矩阵减法、矩阵转置等函数。
+		StatisticsFunctions
+			统计功能函数。如求平均值、最大值、最小值、计算均方根 RMS、计算方差/标准差等。
+		SupportFunctions
+			支持功能函数，如数据拷贝，Q 格式和浮点格式相互转换，Q 任意格式相互转换。
+		TransformFunctions
+			变换功能。包括复数 FFT（CFFT）/复数 FFT 逆运算（CIFFT）、实数 FFT（RFFT）/实数FFT 逆运算（RIFFT）、和 DCT（离散余弦变换）和配套的初始化函数。
+	
+	新版CMSIS 5.7.0中的DSP库还支持了：
+		SVM（支持向量机）
+		贝叶斯估计
+		距离
+		线性插值 和 双线性插值
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_______________________________________________LWIP 2.1.2 使用________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+启用宏：SYS_SUPPORT_LWIP（在lwipopts.h的顶部）
+版本：2.1.2，在 lwipopts.h 文件内配置和剪裁（已经调好不建议轻易动）
+相关API和使用说明（裸机和OS），请详看 lwip的官方手册（本地有）
+STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
+初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+
+初始化标程：
+	/*LWIP 2.1.2 初始化*/
+	u8 init_return = lwip_comm_init(&lwip_handle);
+	if(init_return != 0)
+	{
+		lwip_comm_destroy(&lwip_handle); //初始化失败时恢复原样
+		sprintf(init_return_buf,"AT:lwip_comm_init %d",init_return);
+		FaultASSERT("lwip_comm_init",init_return,flag_Warning);
+	}
+	
+	
+应用说明(Applications)：
+
+裸机：使用“RAW”API
+	UDP：
+
+
+	TCP server:
+
+	TCP client:
+	
+	
+	
+FreeRTOS：使用“NETCONN”API
+	
+	
+暂未计划实现的：
+	HTTP client
+	Http server
+	MQTT client	
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_______________________________________________FATFS ff14 使用________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+启用宏：SYSTEM_FATFS_ENABLE（在PeriphConfigCore.h的“组件选择”里）
+版本：ff14，启动FATFS文件系统，管理SDIO驱动的SD卡，SPI驱动的SD卡，SPI FLASH，USB口的U盘，USB文件系统等等
+FATSF支持FAT12/FAT16/FAT32/exFAT，官网（含API说明）：http://elm-chan.org/fsw/ff/00index_e.html
+
+FATFS性格：
+	1、Filesystem type: FAT, FAT32(rev0.0) and exFAT(rev1.0).
+	2、Maximum volume size: 232 - 1 sectors in 32-bit LBA, virtually unlimited in 64-bit LBA with exFAT.
+	3、Maximum file size: 232 - 1 bytes on FAT volume, virtually unlimited on exFAT volume.
+	其他更多看官方手册中的 “FatFs module application note” 部分
+
+配置：
+	1、在 ffconf.h 文件里配置和剪裁FATFS（一般不用动）
+		若USE_LFN == 3（动态分配内存）
+			则需要在ffsystem.c里面已经用自实现的内存分配和释放函数，默认用STM32内部的RAM，如要使用外部RAM可去手动改为 ExRAM1（一般不用动）
+		若USE_LFN == 1，则为使用静态内存
+		
+	2、在diskio.c里面必须补齐的设备的底层函数：（底层函数，应用层不应调用）
+		定义有哪些设备，比如DEV_ExFLASH（外部FLASH，MMC/NAND/SPI FLASH等）、DEV_SD、DEV_SPI_SD、DEV_USB等等
+		DSTATUS disk_initialize (BYTE pdrv);
+		DSTATUS disk_status (BYTE pdrv);	//由于存储设备自己实现的读写函数内部含有忙判断，所以这个获取设备状态函数不用
+		DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);
+		DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);
+		DWORD get_fattime (void);
+		DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+			disk_ioctl函数需要实现的四个基本命令：
+				CTRL_SYNC、GET_SECTOR_COUNT、GET_BLOCK_SIZE、GET_SECTOR_SIZE
+注意：
+	1、默认没有支持相对路径，如需可在FATFS配置文件内打开
+		本模板推荐尽量用绝对路径，即直接寻址的方式找文件
+		而不用f_opendir()之类的文件夹操作API
+	2、默认配置支持4个文件设备，默认使用UTF-8编码
+	3、FATFS的配置文件里没有完全配置好：ffconf.h里在最后的RTOS支持
+	4、文件操作器件尽量不要被中断等打断！
+
+推荐的常用API：
+	关于 f_open() 的指令：
+		FA_READ					Specifies read access to the object. Data can be read from the file.
+		FA_WRITE				Specifies write access to the object. Data can be written to the file. Combine with FA_READ for read-write access.
+		FA_OPEN_EXISTING		Opens the file. The function fails if the file is not existing. (Default)
+		FA_CREATE_NEW			Creates a new file. The function fails with FR_EXIST if the file is existing.
+		FA_CREATE_ALWAYS		Creates a new file. If the file is existing, it will be truncated and overwritten.
+		FA_OPEN_ALWAYS			Opens the file if it is existing. If not, a new file will be created.
+		FA_OPEN_APPEND			Same as FA_OPEN_ALWAYS except the read/write pointer is set end of the file.
+		
+		Mode flags of POSIX fopen() corresponds to FatFs mode flags as follows:
+			"r"		FA_READ									（只读，用f_stat()确保有这个文件）
+			"r+"	FA_READ | FA_WRITE
+			"w"		FA_CREATE_ALWAYS | FA_WRITE				（创建一个新文件并写，用f_stat()确保之前没有这个文件）
+			"w+"	FA_CREATE_ALWAYS | FA_WRITE | FA_READ
+			"a"		FA_OPEN_APPEND | FA_WRITE				（尾部追加写，用f_stat()确保有这个文件）
+			"a+"	FA_OPEN_APPEND | FA_WRITE | FA_READ
+			"wx"	FA_CREATE_NEW | FA_WRITE
+			"w+x"	FA_CREATE_NEW | FA_WRITE | FA_READ
+	
+	f_open - Open/Create a file
+	f_close - Close an open file
+	f_read - Read data from the file
+	f_write - Write data to the file
+	
+	f_gets - Read a string
+	f_printf - Write a formatted string
+	
+	f_readdir - Read a directory item							（这三个API用于列出文件夹下的所有文件）
+	f_findfirst - Open a directory and read the first item matched
+	f_findnext - Read a next item matched
+	
+	f_stat - Check existance of a file or sub-directory			（检查一个文件是否存在，可根据这个API写接下来的程序行为）
+	f_rename - Rename/Move a file or sub-directory
+	f_mkdir - Create a sub-directory
+	
+	f_mount - Register/Unregister the work area of the volume	（挂载一个设备，同时也会调用disk_initialize()里对应的初始化函数，也可以将一个设备取消挂载）
+	f_mkfs - Create an FAT volume on the logical drive			（对一个没有FAT文件系统的设备创建文件系统）
+	f_getfree - Get free space on the volume
+	f_setlabel - Set volume label
+
+在 fatfs_app.h 里面提供高级封装的API：
+	u8 FATFS_Init(void);								//申请内存
+	u8 f_typetell(u8 *fname);							//识别文件类型
+	u8 fatfs_getfree(u8 *drv,u32 *total,u32 *free);		//得到磁盘总容量和剩余容量
+	u32 fatfs_fdsize(u8 *fdname);						//得到文件夹大小
+	u8 fatfs_copy(u8(*fcpymsg)(u8*pname,u8 pct,u8 mode),u8 *psrc,u8 *pdst,u32 totsize,u32 cpdsize,u8 fwmode);	   //文件复制
+	u8 fatfs_fdcopy(u8(*fcpymsg)(u8*pname,u8 pct,u8 mode),u8 *psrc,u8 *pdst,u32 *totsize,u32 *cpdsize,u8 fwmode);//文件夹复制	  
+	u16 fatfs_get_filetype_tnum(u8 *path,u8 type);		//得到path路径下,目标文件的总个数
+
+初始化流程：
+	1、
+		申请动态内存版本：（以下是u8 FATFS_Init(void);的内容）
+			FATFS *fs[_VOLUMES];	//创建设备句柄
+			FIL *file;	  			//文件1
+			FIL *ftemp;	  			//文件2
+			u8 *fatbuf;				//SD卡数据缓存区
+			
+			for(u8 i=0;i<_VOLUMES;i++)
+			{
+				fs[i]=(FATFS*)mymalloc(SRAMIN,sizeof(FATFS));	//为磁盘i工作区申请内存	
+				if(!fs[i])break;
+			}
+			file=(FIL*)mymalloc(SRAMIN,sizeof(FIL));		//为file申请内存
+			ftemp=(FIL*)mymalloc(SRAMIN,sizeof(FIL));		//为ftemp申请内存
+			fatbuf=(u8*)mymalloc(SRAMIN,512);				//为fatbuf申请内存
+			
+			if(i==_VOLUMES&&file&&ftemp&&fatbuf)return 0;  //申请有一个失败,即失败.
+			else return 1;
+		创建静态内存版本：（在本框架里有malloc，所以不推荐静态创建）
+			FATFS fs[_VOLUMES];		//创建设备句柄
+			FIL file;	  			//文件1
+			FIL ftemp;	  			//文件2
+			u8 fatbuf[512];			//SD卡数据缓存区
+	2、挂载设备（并自动调用设备初始化函数）
+		u8 res;
+		res = f_mount(fs[0],"0:",1); if(res != RES_OK){} 			//挂载SPI驱动的FLASH
+		res = f_mount(fs[1],"1:",1); if(res != RES_OK){} 			//挂载SDIO驱动的SD卡
+		res = f_mount(fs[1],"2:",1); if(res != RES_OK){} 			//挂载USB文件设备
+		res = f_mount(fs[2],"3:",1); if(res != RES_OK){} 			//挂载SPI驱动的SD卡
+
+创建文件系统：
+		res = f_mount(fs[1],"1:",1); 					//挂载SPI驱动的FLASH
+		if(res == 0X0D)									//FAT文件系统错误,重新格式化FLASH
+		{
+			MKFS_PARM mkf_opts = 							//格式化选项
+			{
+				.fmt = FM_FAT32 还是 FM_SFD 不清楚，后者为没有引导区
+				//其他都保持默认就好~
+			};
+			res = f_mkfs("1:",mkf_opts,NULL,4096);		//格式化FLASH。1：盘符；；NULL：动态申请内存；4096：8个扇区为1个簇即8*512
+			if(res==0) 									//格式化成功
+				f_setlabel((const TCHAR *)"1:Staok");	//设置Flash磁盘的名字为：Staok
+		}
+	
+	
+	更多文件操作可用参考原子FATFS历程里的 fattester.c 和 exfuns.c 里面的获取剩余空间、识别文件类型、得到文件夹大小、文件和文件夹复制等有用的API等等
+*/
+
+/*标有 & 符号的为作者自己实现的库*/
+/*_____________________________________\\\                               ///____________________________________________*
+ *_________________________________________________组件库说明___________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+
+/* 	
+_____________固定搭配组件_______________________________________
+
+&	sys_menu								提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！相当于io_ctrl，
+											推荐把所有需要用户输入（如按键、编码器、触屏等等）去控制的外设和器件都用标志量控制，放到OS任务或者裸机循环中
+											然后在此菜单模板中的实现菜单，并在菜单选项执行的函数中放入控制外设或器件的标志位，即可，有条有理
+											
+&	GPIO Config								在PeriphConfig.c文件里去配置用户GPIO
+	
+	FreeRTOS								启用宏：SYSTEM_SUPPORT_OS（在isUseFreeRTOS.h里）
+											版本：10.3.1，默认用于任务的RAM堆栈大小为30KB，按需修改，不要有没有语句的空任务！
+											在 FreeRTOSConfig.h文件内配置和剪裁（已经调好不建议轻易动）
+											启用后，任务编写和相关API说明在 TaskConfig.c 和 TaskConfig.h 文件内有详细说明
+											
+	malloc									借鉴的 内存管理 章节的源代码自实现的malloc和free，与stdlib.h里面的API用法无异
+											内存管理：先到malloc.h里面定义有几块RAM，RAM的标志位，和各个RAM给内存管理分配的空间
+											应用层API：（分配内存的数量以字节为单位）
+												my_mem_init(InrRAM);				//初始化内部内存池（系统自带）
+												my_mem_init(ExRAM1);				//初始化外部内存池（如果不开启SYSTEM_FSMC_use4SRAM则没有这句话）
+												
+												void myfree(u8 memx,void *ptr);  			//内存释放
+												void *mymalloc(u8 memx,u32 size);			//内存分配
+												void *myrealloc(u8 memx,void *ptr,u32 size);//重新分配内存
+	
+	printf									提供无依赖实现的printf和sprintf函数，开源仓库地址：https://github.com/mpaland/printf
+											经过修改，可以向指定串口发送字符串
+												int printf(const char* format, ...); 								不用
+												int printf_uart(unsigned char uart,const char* format, ...); 		用，可选发送串口
+																	串口选择可选：UART1/UART2/UART3，需要先使能相关串口
+												int sprintf(char* buffer, const char* format, ...); 				不带字节数量限制
+												int snprintf(char* buffer, size_t count, const char* format, ...); 	带字节数量限制，更安全
+												但是鉴于工程被三方开源库（LWIP,FATFS等）调用了string.h，为了保证是使用此开源库的API，可使用下面的API：
+												int sprintf_(char* buffer, const char* format, ...);
+												int snprintf_(char* buffer, size_t count, const char* format, ...);
+											
+	
+	ARM DSP LIB								ARM DSP LIB CMSIS 5.7.0，具体使用说明看本页的 “ARM CMSIS DSP库使用” 专题
+	
+	MyString								提供一个实现了string.h大部分字符操作函数的库
+												具体API看MyString.c文件里的注释
+												int mystrlen (const char *str);
+												char * mystrcat (char *dest, const char *src);
+												char * mystrncat (char *dest, const char *src, int n);
+												char * mystrcpy (char *dest, const char *src);
+												char * mystrncpy (char *dest, const char *src, int n);
+												int mystrcmp (const char *s1, const char *s2);
+												int mystrncmp (const char *s1, const char *s2, int n);
+												void * mymemset (void *s, int c, unsigned n);
+												void *mymemcpy(void *des,const void *src,size_t len);
+												char *mystrtok(char *s, const char *delim);
+	
+	lwrb（FIFO buf）						提供一个FIFO实现，github开源库地址：https://github.com/MaJerle/lwrb
+	
+&	零散函数								FaultASSERT			初始化等出现状况，暂停系统并打印信息
+																	传入参数：错误或者警告信息，故障代号，错误类别（可选flag_Fault或flag_Warning）
+											delay_us			阻塞式微妙延时
+											sys_GetsysRunTime	提供获取系统运行时间的函数，具体看源函数处注释
+											UIDw				保存STM32内部UID识别码，全球唯一识别码
+											sysCoreClock		获取HCLK频率，外设时钟均来自此再分频
+											myatoi				提供一个字符串转整形的实现
+											BCD2HEX				提供BCD转为HEX子程序
+											HEX2BCD				提供HEX转为BCD子程序
+											Curl_rand			提供实现伪随机数的函数
+
+_____________可选组件_______________________________________
+	LWIP									启用宏：SYS_SUPPORT_LWIP（在lwipopts.h的顶部）
+											版本：2.1.2，在 lwipopts.h 文件内配置和剪裁（已经调好不建议轻易动）
+											相关API和使用说明（裸机和OS），请详看 lwip的官方手册（本地有）
+											STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
+											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+											详细使用看本页的 “LWIP 2.1.2 使用” 专题
+											
+	FATFS									启用宏：SYSTEM_FATFS_ENABLE（在PeriphConfigCore.h的“组件选择”里）
+											版本：ff14，启动FATFS文件系统，管理SDIO驱动的SD卡，SPI驱动的SD卡，外部SPI FLASH，USB文件系统等等
+											FATSF支持FAT12/FAT16/FAT32/exFAT，官网（含API说明）：http://elm-chan.org/fsw/ff/00index_e.html
+												启用后，在初始化序列里加入FATFS的初始化和挂载相应的设备
+												需要启用相应的SDIO外设或者SPI外设和其相应的IO
+												到初始化序列中选择挂载哪些外设
+											详细使用看本页的 “FATFS ff14 使用” 专题
+											
+&	SYSTEM_SUPPORT_pid						启用宏：SYSTEM_SUPPORT_pid（在PeriphConfigCore.h的“组件选择”里）
+											提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面
+											里面另提供一个一阶低通滤波实现函数
+											详细使用说明看对应的.h文件注释
+											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+											
+	SYSTEM_SUPPORT_simuspi					启用宏：SYSTEM_SUPPORT_simuspi（在PeriphConfigCore.h的“组件选择”里）
+											提供软件模拟SPI，具体用法在其.h文件里介绍
+											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+	
+	SYSTEM_SUPPORT_simui2c					启用宏：SYSTEM_SUPPORT_simui2c（在PeriphConfigCore.h的“组件选择”里）
+											提供软件模拟I2C，具体用法在其.h文件里介绍
+											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+											
+_____________默认必开的固定搭配外设_______________________________________
+
+P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
+
+&	STSTEM_TIM4_ENABLE						使用通用定时器4，提供时基，默认10ms周期中断，时基为裸跑时提供周期运行标志位（BareConfig.c）
+	
+&	STSTEM_TIM3PWM_ENABLE					使用通用定时器3，提供四路PWM输出,默认不开启中断，默认向上计数，输出极性为LOW，PWM1模式，即设置为当计数值小于此值时输出低电平，默认引脚上拉
+											默认通道4给蜂鸣器做提示用，蜂鸣器低电平有效！
+											不需要PWM时可关
+											opt：
+												可选引脚部分重映射与全部重映射
+												可选使能的PWM通道
+												可选PWM输出频率
+												可选蜂鸣器通道
+												可选是否开启定时中断
+											API:
+												HAL_TIM_PWM_Start(&TIM3_Handler,TIM_CHANNEL_2);		开启TIM3的PWM通道2
+												HAL_TIM_PWM_Stop(&TIM3_Handler,TIM_CHANNEL_2);		关闭TIM3的PWM通道2，但看源码好像使所有通道都关闭了，待实验
+												
+												设置TIM3的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+												TIM3_set_Channel_Pulse(TIM3PWM_Channel_2,88.8);
+												
+												buzzer_bibi_once;			用户使用，蜂鸣器叫唤一声
+												define buzzer_bibi_on;		用户使用，蜂鸣器间歇叫唤开启
+												define buzzer_bibi_off;		用户使用，蜂鸣器间歇叫唤关闭
+*/
+
+/*_____________________________________\\\                               ///____________________________________________*
+ *_________________________________________________外设启用说明_________________________________________________________*
+ *_____________________________________///                               \\\____________________________________________*/
+/*
+
+&	SYSTEM_IWDG_ENABLE		开启独立看门狗，默认1S的喂狗周期，默认在TIM4定时中断里喂狗，用IWDG必开TIM4
+							注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态
+
+&	SYSTEM_MCO_PA8_OUT		设置PA8为MCO输出，默认时钟源为HSE（5M），五倍分频（最大分频）
+
+&	SYSTEM_RTC_ENABLE		配置使用RTC，确保LSE连接有36.768kHz的晶振，确保RTC有VBAT备用电源
+							默认不开启RTC闹钟中断，中断已预留，系统在待机模式下可选被闹钟唤醒，可以去配置处开启
+							API：
+								设置时分秒：HAL_StatusTypeDef HAL_RTC_SetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format);
+								读取时分秒：HAL_StatusTypeDef HAL_RTC_GetTime(RTC_HandleTypeDef *hrtc, RTC_TimeTypeDef *sTime, uint32_t Format);
+								设置年月日：HAL_StatusTypeDef HAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format);
+								读取年月日：HAL_StatusTypeDef HAL_RTC_GetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDate, uint32_t Format);
+								
+								设置闹钟：HAL_StatusTypeDef HAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sAlarm, uint32_t Format);
+								闹钟A的事件回调函数在.c里：void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+								例子：
+									RTC_TimeTypeDef RTC_RealTime = {
+										.Hours = xx,
+										.Minutes = xx,
+										.Seconds = xx,
+									};
+									RTC_DateTypeDef RTC_RealDate = {0}; //这两个和上面同理
+									RTC_AlarmTypeDef RTC_AlarmA = {0};
+									
+									HAL_RTC_SetTime(&RTC_Handler, &sTime, RTC_FORMAT_BCD); 		//设置时分秒
+									//日期不举例了，不常用
+									HAL_RTC_SetAlarm_IT(&RTC_Handler, &sAlarm, RTC_FORMAT_BCD); //设置闹钟
+									HAL_RTC_DeactivateAlarm(&RTC_Handler,RTC_ALARM_A);
+									
+								读取时间：
+									RTC_TimeTypeDef RTC_RealTime;
+									RTC_DateTypeDef	RTC_RealDate;
+									HAL_RTC_GetTime(&RTC_Handler, &RTC_RealTime, RTC_FORMAT_BIN);
+									HAL_RTC_GetDate(&RTC_Handler, &RTC_RealDate, RTC_FORMAT_BIN);
+									sprintf(RTC_buf,"%d-%d-%d-%d   %d-%d-%d\r\n",RTC_RealDate.Year + 1970,RTC_RealDate.Month,RTC_RealDate.Date,RTC_RealDate.WeekDay,RTC_RealTime.Hours,RTC_RealTime.Minutes,RTC_RealTime.Seconds);
+									printf_uart(UART1,"%s",RTC_buf);
+
+&	SYSTEM_RNG_ENABLE		硬件产生32位真随机数
+							API：
+								调用一次 HAL_RNG_GenerateRandomNumber_IT(&RNG_Handle); 来触发产生随机数
+								查询 GenerateRNG_Ready，当其为1时，可从 randomNum32bit 取32位随机数
+								随后把 GenerateRNG_Ready 清零
+
+&	SYSTEM_CRC_ENABLE		配置使用CRC循环冗余校验，这个CRC计算模块使用常见的、在以太网中使用的计算多项式：
+							X32 + X26 + X23 + X22 + X16 + X12 + X11 + X10 +X8 + X7 + X5 + X4 + X2 + X + 1，写成16进制就是：0x04C11DB7
+							API：
+								要CRC的数据量	#define BUFFER_SIZE    114
+								参数			const uint32_t aDataBuffer[BUFFER_SIZE];
+								计算			HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE); 	//返回值为uint32_t的计算结果
+								
+&	SYSTEM_UART1_ENABLE		使能串口1
+&	SYSTEM_UART2_ENABLE		使能串口2
+&	SYSTEM_UART3_ENABLE		使能串口3
+							默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断
+							注：串口2、3的接收回调函数没有补全，用时再补，和串口1的同理
+							opt：
+								可选是否引脚重映射
+								可自定波特率
+							API：
+								目前串口接收的问题就是一次涌入数据过多会崩，可能是存储数据时栈溢出，但是暂时找不到在哪里，小数据量接收没大问题
+								发送：
+									printf_uart(UART1,"Fault : %d\t",x);	参数：UART1~UART3
+									或者	sprintf(char* buffer, const char* format, ...); 				不带字节数量限制
+											snprintf(char* buffer, size_t count, const char* format, ...); 	带字节数量限制，更安全
+											来组合字符串，再发送
+									HAL库发送函数：
+										参数：UART1_Handler~UART3_Handler ， 发送数据的字符类型指针 ， 数据长度(字节数} ， 超时时间
+											HAL_UART_Transmit(&UART1_Handler,UART_BUF,12,10); 				发送函数
+											while(__HAL_UART_GET_FLAG(&UART1_Handler,UART_FLAG_TC)!=SET); 	等待发送结束
+								接收：
+									（以下只针对串口1说明）（一次接收字符不要超过200个字节，如果超出则丢弃200之前的数据）
+									接受协议设置(默认协议0)：USART1_SetMode(0);	关于两个协议0、1的接收细节，已经在sys_USART1_RX_Fetch()内实现，一般不用看
+										串口1接收协议：0为只接受以'\r\n'结尾的数据（数据以去掉\r\n保存）；1协议暂时使用FIFO接着数据，等以后加上可以解析别的协议如modbus等等
+										接受协议设置可用随时切换，切换后接收方式也随下面的说明换。
+									统一接收函数： 返回HAL_OK即有数据可以取，反之为HAL_ERROR；is_print：是否打印接收到的数据；buf用于存放接收到的数据，必须先给个足够大的容器
+										char sys_USART1_RX_Fetch(u8 is_print, char* buf)
+										用法例子：
+											u16 num4uart1;
+											char* buf4uart1 = mymalloc(InrRAM,(USART1_RX_BUF_MaxNum > USART1_RX_FIFO_MaxNum ? USART1_RX_BUF_MaxNum : USART1_RX_FIFO_MaxNum));
+											if(buf4uart1 != NULL)
+											{
+												if(sys_USART1_RX_Fetch(FALSE, buf4uart1,&num4uart1) == HAL_OK)
+												{
+													printf_uart(UART1,"%s-%d",buf4uart1,num4uart1);
+												}
+											}
+											myfree(InrRAM,buf4uart1);
+
+&	SYSTEM_CAN1_ENABLE		使用CAN1，默认不使用中断，默认帧：固定格式:ID为0X12,标准帧,数据帧
+							API:
+								发送： u8 CAN1_Send_Msg(u8* msg,u8 len); —————— msg:数据指针,最大为8个字节；len:数据长度(最大为8)，返回HAL_ERROR失败，返回HAL_OK成功
+								接收： u8 CAN1_Receive_Msg(u8 *buf);	 —————— buf:数据缓存区;返回值:0,无数据被收到,其他则为接收的数据长度;	
+
+&	SYSTEM_UseTIM5ForTiming_ENABLE		使用TIM5测量一个函数运行的时间，单位us
+										测量一个函数运行时间，返回单位为us的运行时间，没有超时退出机制，不适合在有操作系统的环境中用
+										最长可测量约4290s
+										API：
+											原型 u32 Timing(void (*FunctionForTiming)());
+
+&	STSTEM_TIM1PWM_ENABLE	高级定时器1，专门用于产生PWM信号：三路互补PWM输出、死区控制、刹车信号输入
+							默认并推荐不开启定时中断；引脚默认没有上下拉；初始化后默认没有打开相应通道的PWM输出，需要手动开启输出
+							定时器工作在向上计数时，PWM信号边缘对齐；定时器工作在向上和向下计数模式时，PWM信号中心对齐
+							opt：
+								是否启用BKIN刹车信号控制输入，默认低电平有效
+								选择每一个通道的有效电平和空闲电平（可能是刹车时的电平），默认死区3us，可修改
+								引脚部分重映射或者全部重映射（比较灵活，可以在配置文件处按照手册混搭更改）
+								使能哪些通道
+								输出PWM频率
+							API：
+								启动通道1~4的PWM输出
+								HAL_TIM_PWM_Start(&TIM1_Handler,TIM_CHANNEL_1);
+								
+								启动互补通道1~3的PWM输出
+								HAL_TIMEx_PWMN_Start(&TIM1_Handler,TIM_CHANNEL_1);
+								
+								关闭通道的PWM输出（通道选择同上）
+								HAL_TIM_PWM_Stop(&TIM1_Handler,TIM_CHANNEL_1);
+								HAL_TIMEx_PWMN_Stop(&TIM1_Handler,TIM_CHANNEL_1);
+								
+								设置TIM1的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+								TIM1_set_Channel_Pulse(TIM1PWM_Channel_2,88.8);
+
+& STSTEM_TIM8PWM_ENABLE		高级定时器8，专门用于产生PWM信号：三路互补PWM输出、死区控制、刹车信号输入
+							默认并推荐不开启定时中断；引脚默认没有上下拉；初始化后默认没有打开相应通道的PWM输出，需要手动开启输出
+							定时器工作在向上计数时，PWM信号边缘对齐；定时器工作在向上和向下计数模式时，PWM信号中心对齐
+							没有重映射功能
+							opt：
+								是否启用BKIN刹车信号控制输入，默认低电平有效
+								选择每一个通道的有效电平和空闲电平（可能是刹车时的电平），默认死区3us，可修改
+								使能哪些通道
+								输出PWM频率
+							API:
+								启动通道1~4的PWM输出
+								HAL_TIM_PWM_Start(&TIM8_Handler,TIM_CHANNEL_1);
+								
+								启动互补通道1~3的PWM输出
+								HAL_TIMEx_PWMN_Start(&TIM8_Handler,TIM_CHANNEL_1);
+								
+								关闭通道的PWM输出（通道选择同上）
+								HAL_TIM_PWM_Stop(&TIM8_Handler,TIM_CHANNEL_1);
+								HAL_TIMEx_PWMN_Stop(&TIM8_Handler,TIM_CHANNEL_1);
+								
+								设置TIM1的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+								TIM8_set_Channel_Pulse(TIM8PWM_Channel_2,88.8);
+
+
+&	STSTEM_TIM2_ENABLE		通过用定时器2：16位，四个独立通道可用于：输入捕获、输入比较、PWM、单脉冲，多种途径触发DMA中断
+							opt：
+								是否开启定时器2的定时中断
+								选择定时器2作为...
+									正交编码器的解码
+									普通定时器中断
+									输入捕获：可以获取高电平或者低电平的时间
+									PWM
+								输出PWM的频率
+								使能哪些PWM通道
+								输入捕获的电平，低、高或者双沿
+								用于输入捕获的通道
+								正交编码器的线数和电机减速比
+								API:
+									PWM:
+										HAL_TIM_PWM_Start(&TIM2_Handler,TIM_CHANNEL_2);		开启TIM2的PWM通道2
+										HAL_TIM_PWM_Stop(&TIM2_Handler,TIM_CHANNEL_2);		关闭TIM2的PWM通道2，但看源码好像使所有通道都关闭了，待实验
+										
+										设置TIM2的PWM通道2的占空比百分数为88.8%，值需在0~100.0之间。即88.8%的低电平时间（本模板规范：低电平有效，即用电器工作电压）
+										TIM2_set_Channel_Pulse(TIM2PWM_Channel_2,88.8);
+									输入捕获:
+										float Peek_TIM2_Cap_Val();		获取最近一次TIM2输入捕获的脉冲时间，单位 毫秒，float类型，按照设置的捕获沿进行，可以随时随地调用此函数
+									正交解码:
+										得到当前计数值：int32_t peek_TIM2_Encoder_Value(void); //用于表示编码器当前的绝对位置
+										速度：只需去定时器溢出中断函数HAL_TIM_PeriodElapsedCallback的TIM4中用一个速度变量接着 peek_TIM2_Encoder_Speed()返回的速度值 单位 转/秒
+
+&	STSTEM_TIM6_ENABLE		基本定时器6，只能用于定时中断，提供更多的ADC/DAC等的同步功能
+&	STSTEM_TIM7_ENABLE		基本定时器7，只能用于定时中断，提供更多的ADC/DAC等的同步功能
+							opt：
+								定时中断频率
+							API:
+								关闭定时中断：（先清除中断标志位，再关闭中断）
+								__HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);
+								HAL_TIM_Base_Stop_IT(&TIM6_Handler);
+								
+								__HAL_TIM_CLEAR_IT(&TIM76_Handler, TIM_IT_UPDATE);
+								HAL_TIM_Base_Stop_IT(&TIM7_Handler);
+								
+								注： __HAL_TIM_CLEAR_FLAG(&TIM6_Handler,TIM_FLAG_UPDATE);和
+									 __HAL_TIM_CLEAR_IT(&TIM6_Handler, TIM_IT_UPDATE);效果应该一样
+
+&	SYSTEM_DAC_OUT1_ENABLE	使能DAC1
+&	SYSTEM_DAC_OUT2_ENABLE	使能DAC2
+							DAC两个输出通道 PA4和PA5，默认初始化为12位右对齐，速度最快为250K左右，输出范围 0~Vref+，默认Vref+为3.3V，否则自行更改转换计算
+							对于ADC和DAC，如果Vref+连接到3.0V基准，则要修改程序！
+							opt：
+								可选输出 噪声波形 和 三角波波形 ，默认不适用外部触发，可选触发源在初始化函数中修改（有定时器中断和外部中断线9）
+							API：
+								void DAC_Set_Ch1_Vol(float vol)  设置通道1输出电压,vol:0~3.30V
+								void DAC_Set_Ch2_Vol(float vol)  设置通道2输出电压,vol:0~3.30V
+
+&	SYSTEM_ADC1_ENABLE		启否ADC1
+							STN32的ADC是12位逐次逼近型，分ADC1、2和3，其中ADC1和ADC2的引脚一样（除了内部通道）
+							参考电压 Vref-必须连到VSSA，Vref+可连到 2.4V~VDDA，ADC输入电压必须小于Vref+，默认Vref+为3.3V，否则自行更改转换计算
+							对于ADC和DAC，如果Vref+连接到3.0V基准，则要修改程序！
+							ADC1本质就是一个AD转换器加16路选择器，所以ADC1同一时刻采样值只能是一个，如果用在规则组中扫描模式，无法得知当前结果是哪一路的，一个AD模块一个值
+							最大速率1MHz，1us（在AD时钟14MHz（最高），采样时间为1.5个周期得到），总转换时间为 (采样时间 + 12.5个周期)，采样时间长则采样精度高
+							ADC1的通道与引脚映射：
+								通道：	0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	   16		     17
+								IO	：	A0	A1	A2	A3	A4	A5	A6	A7	B0	B1	C0	C1	C2	C3	C4	C5	内部温度	内部参考电压
+								标志：B1in16					  B8in16					  B15in16	 InrTemp 
+							opt：
+								是否自动扫描所有规则组
+								是否循环启动
+								启用的通道数量和哪些通道
+							API：返回值都是原始值
+								凡是启用 SYSTEM_ADC1_useScan 扫描模式，即调用一次启动API，自动扫描所有规则组里的通道一次！————适合快速
+													自动用DMA2 Stream0的通道0发送到adValue[]，并置位adValueDone
+									读取顺序：
+										调用 HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum); 一次则开启一次规则组全部通道的转换
+											调用1次则把规则组所有通道转换一遍，然后判断标志位adValueDone等着在adValue[]取数就行了
+										如果 SYSTEM_ADC1_useCircular 打开：只需要执行一次！一次 HAL_ADC_Start_DMA(&ADC1_Handler, (uint32_t*)&adValue,SYSTEM_ADC1_useChanlNum); 即可
+										
+										判断 adValueDone 是否为1，是则从 adValue[x] 读值即可，如果启用 内部温度 通道，其值保存在adValue[SYSTEM_ADC1_useChanlNum-1]
+										读取完后对 adValueDone 清零
+										停止转换为 HAL_ADC_Stop_DMA(&ADC1_Handler);
+									例子：
+										char ADC_buf[20];
+										if(adValueDone)
+										{
+											adValueDone = 0;
+											//HAL_ADC_Stop_DMA(&ADC1_Handler);
+											sprintf(ADC_buf,"adValue:%d %d %d",adValue[0],adValue[1],adValue[2]);
+											LCD_ShowString(10,180,16,(u8*)ADC_buf,0);
+										}
+								凡是没有启动 SYSTEM_ADC1_useScan 一次触发一个通道并手动取数————适合慢速
+									读取顺序：
+										调用 u32 Get_Adc_Average(u32 ch,u8 times); 返回值为本次ADC值
+										其中 ch 通道 形参选择想转换的通道，可选ADC_CHANNEL_0~15，可以为ADC_CHANNEL_TEMPSENSOR，其中result[0]保存本次本通道的转换结果
+									例子：
+										adValue[0] = (u16)Get_Adc_Average(ADC_CHANNEL_0,10);
+										adValue[1] = (u16)Get_Adc_Average(ADC_CHANNEL_3,10);
+										adValue[2] = (u16)Get_Adc_Average(ADC_CHANNEL_4,10);
+										sprintf(ADC_buf,"adValue:%d %d %d",adValue[0],adValue[1],adValue[2]);
+										LCD_ShowString(10,180,16,(u8*)ADC_buf,0);
+										
+								注意：采集温度通道返回的是ADC的原始值，用 float Get_Temprate(u32 adcx) 把原始值转换为实际温度值(float类型)
+							
+								
+&	SYSTEM_SPI1_ENABLE		开启硬件SPI1或者SPI2
+&	SYSTEM_SPI2_ENABLE
+							尽量只用其中一个，多个器件用多个SS使能端，不提供引脚重映射，默认一次发送八位bits数据，SS引脚用户单独定义！
+							master模式，MSB First，SS低电平选中器件
+							SCK空闲时刻为高电平(时钟极性CPOL=1)（默认）：
+								若使用第二跳变沿数据被采样(时钟相位CPHA=1)：数据线在 SCK 的偶数边沿采样（默认）
+								若使用第一跳变沿数据被采样(时钟相位CPHA=0)：数据线在 SCK 的奇数边沿采样
+								API：
+									用户自定SS引脚：
+										到PeriphConfig.c里面的
+											sys_SPI1_SS_io_Init();		自行更改
+											sys_SPI2_SS_io_Init();		自行更改
+										以及 到PeriphConfig.h里面的
+											#define	SPI1_CS PAout(4)	自行更改
+											#define	SPI2_CS PBout(12)	自行更改
+									写读函数：(目前只写了SPI1，SPI2如果要用的话同理)
+										u8 SPI1_ReadWriteByte_8Byte(u8 TxData) 		读写一个字节
+										u8 SPI1_ReadWriteByte_16Byte(u8* TxData) 	连写两个字节并读回，传入一个包含2字节的u8*指针
+										u8 SPI1_WriteByte_8Byte(u8 TxData)			写一个字节
+										u8 SPI1_WriteByte_16Byte(u8* TxData)		连写两个字节，传入一个包含2字节的u8*指针
+										例子：
+											u8 Max7219_adr_data[Max7219_regNum][2] = 
+											{
+												{0x09,0xFF},
+												{0x0A,0x08},
+												...
+											}
+											for(i = 0;i < Max7219_regNum;i++)
+												SPI1_WriteByte_16Byte(Max7219_adr_data[i]);
+									
+									设置SPI速度函数：参数可选：
+													SPI_BAUDRATEPRESCALER_2 SPI_BAUDRATEPRESCALER_4 SPI_BAUDRATEPRESCALER_8 SPI_BAUDRATEPRESCALER_16 
+													SPI_BAUDRATEPRESCALER_32 SPI_BAUDRATEPRESCALER_64 SPI_BAUDRATEPRESCALER_128 SPI_BAUDRATEPRESCALER_256
+										void SPI1_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI1由APB2(60M)分频得来
+										void SPI2_SetSpeed(u8 SPI_BaudRatePrescaler);	//SPI2由APB1(30M)分频得来
+
+& SYSTEM_StdbyWKUP_ENABLE	使用待机-低功耗模式，PA0为唤醒键，占用0线外部中断
+							看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态
+							当启用 SYSTEM_StdbyWKUP_ENABLE 后，PA0作为WKUP按键，默认长按3秒进入待机状态，再次按下则恢复，进入待机模式函数在PA0的外部中断里
+							对于PA0，按下为高电平，按下3s后松开，延时一秒（给时间做保存数据等关机前的准备）后进入待机状态（关机），再次按下开机
+							WKUP IO不用外接下拉电阻，在配置时STM32内部已经下拉
+							API：
+								当启用FreeRTOS时，是循环检测PA0是否为高电平持续3s，需要在任务里放一个检测函数：sys_CheckWKUP_4RTOS()，已经放了
+								当使用裸机时，PA0被设置为上升沿外部中断，在外部中断中执行检测高电平是否持续3s，外部中断线0中已经放了
+								需要在Sys_Enter_Standby()函数里放一些关机前的准备工作事务
+							STM32的低功耗模式说明：
+								睡眠： WFI操作进入，任意中断恢复，CPU时钟关，其他外设时钟维持																（不可用）
+								停止：HSI、HSE时钟关，电压调节器开关需设置，任一外部中断唤醒，典型电流值为20uA												（不可用）
+								待机：HSI、HSE时钟关，电压调节器关，SRAM和寄存器内容丢失，仅电源控制寄存器和备份区域不受影响
+										唤醒条件：WKUP按键上升沿，RTC警告事件，复位按键，看门狗复位（！），典型电流值为2uA，为三个模式中最低 	类似于开关机（可用）
+
+& SYSTEM_FSMC_ENABLE		是否启用FSMC，推荐用FSMC同时管理LCD和SRAM
+							（对于MCU来说，外部FLASH可以用SPI的FLASH当作文件系统使用（如存图、当USB U盘或者IAP等等），不用上NOR/NAND之流，那是对MPU的）
+							FSMC为16位数据线，分为四个256MB的块（28跟地址线）（地址从0x6000 0000开始，第二个块开始在0x7000 0000，以此类推），每一块分为四个64MB的区（BANK1~4）
+							第一个块用于NOR/SRAM，第二、三个块用于NAND，第四个块用于PC卡，块一属于NOR FLASH控制器，块二、三和四属于NAND FLASH控制器
+							
+							一般接法：（CE前面加一个N，表示CE低有效，其他同理）
+								FSMC			SRAM					LCD
+								NEx				NCE（低选中）			CS（低选中）
+								NOE				NOE（低使能输出）		RD（低读）
+								NWE				NWE（高读低写）			WR（低写）
+																		RS（高数据低命令）——可接至FSMC的一个地址脚如A10
+								NUB				NUB（低选高八位）
+								NLB				NLB（低选低八位）
+								A[x:0]			A[x:0]（地址，可乱序）
+								D[15:0]									D[15:0]（数据）
+							
+							原子的FSMC驱动LCD历程的解释：时序选择模式A，RS连接到了A10
+								typedef struct
+								{
+									vu16 LCD_REG;
+									vu16 LCD_RAM;	//&LCD_REG + 0x02
+								}LCD_TypeDef;
+								#define LCD_BASE        ((u32)(0x6C000000 | 0x000007FE))
+								#define LCD             ((LCD_TypeDef *) LCD_BASE)
+								
+								0x7FE为：	0111 1111 1110（因为FSMC选择了16位模式，实际地址脚为0x7FE再右移1）
+								右移之后    0011 1111 1111 此为LCD->LCD_REG的 实际地址脚 情况，此时A10为0，LCD->LCD_RAM的地址为LCD->LCD_REG地址+2
+								LCD->LCD_REG 的地址脚 0011 1111 1111		A10为0 	RS低地址
+								LCD->LCD_RAM 的地址脚 0100 0000 0001		A10为1	RS高数据
+								这样命令和数据就区分开了
+								
+								然后读写：（读写相关的CS、WR和RD脚等的电平由FSMC自动设置）
+									写：	LCD->LCD_REG = LCD_Reg;				//要写的寄存器地址 
+											LCD->LCD_RAM = LCD_RegValue;		//写入一个16位数据
+									读：	LCD_WR_REG(LCD_Reg);				//先写寄存器地址
+											vu16 LCD_RegValue = LCD->LCD_RAM;	//再读出一个16位数据
+							opt：
+								SYSTEM_FSMC_use4LCD		用FSMC驱动LCD
+								SYSTEM_FSMC_use4SRAM	用FSMC驱动外部SRAM
+							API：
+								用于LCD的部分：
+									可用API详看TFTLCD.h
+								用于SRAM的部分：
+									这里默认用的 块1（NORSRAM块）的区域3（区域4留给LCD喽~）（块1的区3和区4分别留给外部RAM和LCD，本模板默认，否则还得改地址）
+									默认用于驱动IS62WV51216，地址线范围为A0~A18，数据线范围D0~D15，（NUB、NLB、NWE、NOE、NCE五根控制线都对应接好）
+									底层API：（不推荐直接调用，使用自实现的malloc和free）（以字节为单位）
+										u32 testsram[250000] __attribute__((at(SRAM1_BANK3_ADDR))); 	//地址定义在外部SRAM中，实际不要这样用，所有外部SRAM数据用malloc管理！！
+										void FSMC_SRAM_WriteBuffer(u8 *pBuffer,u32 WriteAddr,u32 n); 	//写 参数：数据指针，外部SRAM内的地址(从0开始)，写入的字节数
+										void FSMC_SRAM_ReadBuffer(u8 *pBuffer,u32 ReadAddr,u32 n);   	//读 类似上
+
+& SYSTEM_FLASH_IAP_ENABLE	启用对内部FLASH储存空间编程
+							不同容量的FLASH组织方式：大容量：256个	2K字节/页
+							opt：
+								写使能
+								内部FLASH划分给FATFS文件系统的大小
+							API：
+								（下载程序时不要擦除 整个芯片FLASH，只擦除有程序的扇区）
+								注：当启用本功能后，在系统初始化序列中将加入读存开机次数的一个用例，一个u16的变量会储存在最后一个或倒数第二个页
+								读：	STMFLASH_Read(FLASH_SAVE_ADDR,	(u32*)&StartUpTimes,	getWordSize(StartUpTimes));
+								写：	STMFLASH_Write(FLASH_SAVE_ADDR,	(u32*)&StartUpTimes,	getWordSize(StartUpTimes));
+								
+& SYSTEM_SDIO_SD_ENABLE		启用SDIO接口驱动SD卡
+							注：上DMA的话还有中断处理，数据量大的话易前后混淆，增加程序复杂度，算啦
+							支持的四种卡：SD2.0 高容量卡（SDHC，最大32G），SD2.0 标准容量卡（SDSC，最大 2G），SD1.x 卡和 MMC 卡）
+							用HAL库初始化后获取到的卡信息存在：
+								1、SD卡信息结构体	HAL_SD_CardInfoTypeDef  SDCardInfo;
+										成员：
+											uint32_t CardType;             			卡类型：						Specifies the card Type
+																							CARD_SDSC					SD Standard Capacity
+																							CARD_SDHC_SDXC				SD High Capacity <32Go, SD Extended Capacity <2To
+																							CARD_SECURED
+											uint32_t CardVersion;                 	卡版本：CARD_V1_X、CARD_V2_X	Specifies the card version
+											uint32_t Class;                        	卡级别							Specifies the class of the card class 
+											uint32_t RelCardAdd;                  	卡相对地址						Specifies the Relative Card Address
+											uint32_t BlockNbr;                     	块数量（存储器内部的事）		Specifies the Card Capacity in blocks
+											uint32_t BlockSize;                   	块大小（存储器内部的事）		Specifies one block size in bytes
+											uint32_t LogBlockNbr;                 	逻辑块数量						Specifies the Card logical Capacity in blocks
+											uint32_t LogBlockSize;                	逻辑块大小（扇区数目）			Specifies logical block size in bytes
+											注：我们只需要关注逻辑块和逻辑块大小即可，其他是SD卡内部的事情，逻辑块和逻辑扇区一回事，一个逻辑块为了保证兼容都是512字节大小
+												BLOCK SIZE ： 8 即每个BLOCK有8个扇区（这个是存储器内部的事，用户不关心）
+												也就是我们只关心：
+													SECTOR SIZE ：一般为512字节
+													SECTOR COUNT：等于总容量字节数/512
+								
+								2、SD卡制造CID		HAL_SD_CardCIDTypeDef SDCard_CID;
+										成员：
+											__IO uint8_t  ManufacturerID;  制造商ID		Manufacturer ID
+											__IO uint16_t OEM_AppliID;     OEM/Application ID
+											__IO uint32_t ProdName1;       Product Name part1
+											__IO uint8_t  ProdName2;       Product Name part2
+											__IO uint8_t  ProdRev;         Product Revision
+											__IO uint32_t ProdSN;          Product Serial Number
+											__IO uint8_t  Reserved1;       Reserved1
+											__IO uint16_t ManufactDate;    Manufacturing Date
+											__IO uint8_t  CID_CRC;         CID CRC
+											__IO uint8_t  Reserved2;       Always 1
+							API：
+								（不推荐直接读写！要用文件系统FATFS按照文件读写，并且SDIO的SD初始化就在FATFS初始化里）
+								一个块的大小：SDCardInfo.LogBlockSize
+								SD卡块的数量：SDCardInfo.LogBlockNbr
+								u8 SD_ReadDisk(buf,secaddr,seccnt);			//读取从第secaddr块开始的seccnt个块的内容，返回地址到buf（大概率一个块为512KB，buf必须先准备好足够空间）
+																			//返回 HAL_OK （值为0） 为成功，其他为失败
+																					
+								u8 SD_WriteDisk(buf,secaddr,seccnt);		//把buf内的内容从secaddr块开始写入，连续写seccnt个块
+																			//返回 HAL_OK （值为0） 为成功，其他为失败
+								
+								void show_sdcard_info(void);				//通过串口1打印SD卡相关信息
+								
+								计算SD卡容（单位为字节）：
+									uint64_t CardCap = (uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);	 //计算SD卡容量（单位为字节）
+									CardCap>>20 //此为转换为MB单位
+
+& SYSTEM_SPI_SD_ENABLE		启用SPI接口驱动SD卡
+							详见 SPI_SDcard.c 文件
+
+
+
+
+
+
+
+
+
+*/

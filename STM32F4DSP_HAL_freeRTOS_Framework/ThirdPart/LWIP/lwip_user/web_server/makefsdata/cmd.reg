@@ -1,0 +1,5 @@
+Windows Registry Editor Version 5.00
+[HKEY_CLASSES_ROOT\folder\shell\cmd]
+@="在此位置打开CMD"
+[HKEY_CLASSES_ROOT\folder\shell\cmd\command]
+@="cmd.exe /k cd %1"

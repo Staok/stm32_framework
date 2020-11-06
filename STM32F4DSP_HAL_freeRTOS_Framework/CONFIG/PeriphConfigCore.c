@@ -63,7 +63,7 @@ void sys_MCU_Init_Seq(void)
 	#if SYSTEM_CRC_ENABLE
 		sys_CRC_ENABLE();
 		if(HAL_CRC_Accumulate(&hcrc, (uint32_t *)aDataBuffer, BUFFER_SIZE) == uwExpectedCRCValue)
-		{}else{FaultASSERT("AT : CRC init");}
+		{}else{FaultASSERT("CRC init",1,flag_Warning);}
 	#endif
 		
 	#if SYSTEM_RNG_ENABLE
@@ -131,6 +131,8 @@ void sys_MCU_Init_Seq(void)
 /*__________器件外设初始化，并开机自检_____________*/
 void sys_Device_Init_Seq(void)
 {
+	u8 init_return;
+	
 	/*用户应用的Device初始化序列——开始*/
 	
 	/*用户IO初始化，可选择初始化某个特定器件或者所有器件（ALL_Index）*/
@@ -145,6 +147,40 @@ void sys_Device_Init_Seq(void)
 		LCD_with_FSMC_init_LCD();
 	#else
 		LCD_Init_no_FSMC();
+	#endif
+	
+	/*FATFS ff14 初始化*/
+	#if SYSTEM_FATFS_ENABLE
+	init_return = FATFS_Init(); if(init_return != 0){ FaultASSERT("FATFS_Init()",init_return,flag_Fault);}
+
+//	init_return = f_mount(fs[0],"DEV_ExFLASH:",1);	//挂载外部SPI FLASH
+//		if(init_return == 0X0D)	//外部SPI FLASH磁盘的FAT文件系统错误，重新格式化
+//		{
+//			MKFS_PARM mkf_opts =	//格式化选项
+//			{ .fmt = FM_SFD 		//FM_FAT32 还是 FM_SFD 不清楚，后者为没有引导区
+//				//其他都保持默认就好~
+//			};
+//			init_return = f_mkfs("DEV_ExFLASH:",&mkf_opts,NULL,4096);//格式化FLASH,1,盘符;1,不需要引导区,8个扇区为1个簇
+//			if(init_return==0)
+//			{
+//				f_setlabel((const TCHAR *)"0:DEV_ExFLASH");						//设置Flash磁盘的名字
+//			}else FaultASSERT("f_mkfs DEV_ExFLASH",init_return,flag_Warning);	//格式化失败
+//			HAL_Delay(1000);
+//		}
+
+//	init_return = f_mount(fs[1],"DEV_SD:",1);		//挂载SDIO驱动的SD卡
+//		if(init_return != 0){ FaultASSERT("f_mount fs[1]",init_return,flag_Warning);}
+
+//	init_return = f_mount(fs[2],"DEV_USB:",1);		//挂载USB文件设备
+//		if(init_return != 0){ FaultASSERT("f_mount fs[2]",init_return,flag_Warning);}
+
+//	init_return = f_mount(fs[3],"DEV_SPI_SD:",1);	//挂载SPI驱动的SD卡
+//		if(init_return != 0){ FaultASSERT("f_mount fs[3]",init_return,flag_Warning);}
+	#endif
+	
+	/*LWIP 2.1.2 初始化*/
+	#if SYS_SUPPORT_LWIP
+
 	#endif
 	
 	/*OLED初始化*/
@@ -197,6 +233,8 @@ void sys_Device_Init_Seq(void)
 	#if SYSTEM_IWDG_ENABLE
 		sys_IWDG_ENABLE();
 	#endif
+	
+	
 	buzzer_bibi_once; //响一声表示初始化结束
 	printf_uart(UART1,"System init over\r\n");
 }
@@ -204,21 +242,47 @@ void sys_Device_Init_Seq(void)
 /*____________运行错误提示和打印______________________________*/
 /********************************
 *描述：表示某步骤运行有问题，串口提示，灯提示，声提示
-*参数：		FaultMessage:错误提示信息字符串
+*参数：		错误或者警告信息
+			故障代号
+			错误类别（可选flag_Fault或flag_Warning）
 *返回值：	1、NULL
 ********************************/
-void FaultASSERT(char* FaultMessage)
+void FaultASSERT(char* FaultMessage,u8 code,u8 flag)
 {
-	/*往串口1发送数据*/
-	printf_uart(UART1,"Fault Message : %s\r\n",FaultMessage);
-	printf_uart(UART1,"File&Line : %s,%d\r\n",__FILE__,__LINE__);
-	LCD_ShowString(5,0,16,(u8*)FaultMessage);
-	//灯提示，声提示
-	buzzer_bibi_on;
-	for(;;)
+	char* faultMessage_buf = (char*)mymalloc(InrRAM,100 * sizeof(char));
+	
+	switch(flag)
 	{
-		
+		case flag_Fault:
+			sprintf_(faultMessage_buf,"Fault: %s, code:%d\r\n",FaultMessage,code);
+			
+			/*往串口1发送数据*/
+			printf_uart(UART1,"%s",faultMessage_buf);
+			printf_uart(UART1,"File&Line: %s,%d\r\n",__FILE__,__LINE__);
+			POINT_COLOR = RED;
+			LCD_ShowString(5,0,16,(u8*)faultMessage_buf);
+			
+			myfree(InrRAM,faultMessage_buf);
+			//灯提示，声提示
+			buzzer_bibi_on;
+			for(;;)
+			{
+				//在错误的道路上，奔跑也没用，停止就是进步
+			}
+		case flag_Warning:
+			sprintf_(faultMessage_buf,"Warning: %s, code:%d\r\n",FaultMessage,code);
+			
+			printf_uart(UART1,"%s\r\n",faultMessage_buf);
+			printf_uart(UART1,"File&Line: %s,%d\r\n",__FILE__,__LINE__);
+			POINT_COLOR = YELLOW;
+			LCD_ShowString(5,0,16,(u8*)faultMessage_buf);
+			
+			myfree(InrRAM,faultMessage_buf);
+			buzzer_bibi_once;
+			break;
+		default:break;
 	}
+	myfree(InrRAM,faultMessage_buf);
 }
 
 /*_____________获取系统运行的时间________________________*/
@@ -353,6 +417,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		static u8 is_reversal = 0;
 		static u8 is_runOnce4bibi = 0;	//运行了一次置一，一次也没运行时置零
 		static u8 is_runOnce4biOnce = 0;
+	#endif
+	
+	#if SYSTEM_UseTIM5ForTiming_ENABLE
+		if(htim==(&TIM5_Handler))
+		{
+									//每 0.065536s中断一次
+			TIM5_InterruptTimes++;	//u16类型
+									//0.065536 * 65536 = 4,294.967296s，TIM5_InterruptTimes溢出
+		}
 	#endif
 	
 	/*注意：不要写入太多程序从而占用时间！*/
@@ -564,6 +637,19 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htim)
 				HAL_NVIC_SetPriority(TIM2_IRQn,3,0);
 				HAL_NVIC_EnableIRQ(TIM2_IRQn);
 			#endif
+		}
+	#endif
+		
+	#if SYSTEM_UseTIM5ForTiming_ENABLE
+		if(htim->Instance==TIM5)
+		{
+			__HAL_RCC_TIM5_CLK_ENABLE();            //使能TIM5时钟
+			
+			__HAL_TIM_CLEAR_IT(&TIM5_Handler, TIM_IT_UPDATE);  	// 清除更新中断标志位
+			__HAL_TIM_SET_COUNTER(&TIM5_Handler,0);				//清零TIM5定时器的计数器值
+			
+			HAL_NVIC_SetPriority(TIM5_IRQn,1,0);    //设置中断优先级，抢占优先级1
+			HAL_NVIC_EnableIRQ(TIM5_IRQn);          //开启ITM5中断   
 		}
 	#endif
 }
@@ -1044,6 +1130,56 @@ void TIM3_IRQHandler(void)
 
 
 
+#if SYSTEM_UseTIM5ForTiming_ENABLE
+
+	u16 TIM5_InterruptTimes = 0;
+
+	TIM_HandleTypeDef TIM5_Handler;
+	
+	void sys_TIM5_ENABLE(void)
+	{
+		TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+		TIM_MasterConfigTypeDef sMasterConfig = {0};
+		
+		TIM5_Handler.Instance=TIM5;                          		//通用定时器5
+		TIM5_Handler.Init.Prescaler=(84-1);                     	//分频系数		计数频率1Mkz,即1us
+		TIM5_Handler.Init.CounterMode=TIM_COUNTERMODE_UP;    		//向上计数器	0.065536s溢出一次
+		TIM5_Handler.Init.Period=(65536-1);                        	//自动装载值	
+		TIM5_Handler.Init.ClockDivision=TIM_CLOCKDIVISION_DIV1;		//时钟分频因子
+//		TIM5_Handler.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+		HAL_TIM_Base_Init(&TIM5_Handler);
+		
+		sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+		HAL_TIM_ConfigClockSource(&TIM5_Handler, &sClockSourceConfig);
+		
+		sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+		sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+		HAL_TIMEx_MasterConfigSynchronization(&TIM5_Handler, &sMasterConfig);
+		
+		HAL_TIM_Base_Start_IT(&TIM5_Handler); //使能定时器5和定时器5更新中断：TIM_IT_UPDATE 
+	}
+
+	//定时器5中断服务函数
+	void TIM5_IRQHandler(void)
+	{
+		HAL_TIM_IRQHandler(&TIM5_Handler);
+	}
+	
+	//测量(*FunctionForTiming)()函数运行时间，返回单位为us的运行时间，没有超时退出机制，不适合在有操作系统的环境中用
+	//最长可测量约4290s，0.065536 * 65536 = 4,294.967296s，TIM5_InterruptTimes溢出
+	u32 Timing(void (*FunctionForTiming)())
+	{
+		u32 FunctionRunTime_us;
+		
+		TIM5_InterruptTimes = 0;
+		__HAL_TIM_SET_COUNTER(&TIM5_Handler,0);
+		(*FunctionForTiming)();
+		FunctionRunTime_us = (u32)__HAL_TIM_GET_COUNTER(&TIM5_Handler) + (u32)TIM5_InterruptTimes * 65536;
+		
+		return FunctionRunTime_us;
+	}
+	
+#endif
 #if SYSTEM_UART1_ENABLE||SYSTEM_UART2_ENABLE||SYSTEM_UART3_ENABLE
 
 UART_HandleTypeDef UART1_Handler,UART2_Handler,UART3_Handler; //UART句柄
@@ -1598,7 +1734,7 @@ void sys_RTC_Enable(void)
 {
 	RTC_TimeTypeDef sTime = {0};
 	RTC_DateTypeDef sDate = {0};
-	RTC_AlarmTypeDef sAlarm = {0};
+//	RTC_AlarmTypeDef sAlarm = {0};
 	
 	RTC_Handler.Instance=RTC;
 	RTC_Handler.Init.HourFormat = RTC_HOURFORMAT_24;
@@ -1627,19 +1763,18 @@ void sys_RTC_Enable(void)
 		sDate.WeekDay = RTC_Get_Week(((u16)BCD2HEX(sDate.Year) + 1970),BCD2HEX(sDate.Month),BCD2HEX(sDate.Date));
 		HAL_RTC_SetDate(&RTC_Handler, &sDate, RTC_FORMAT_BCD);
 		
-		/** Enable the Alarm A
-		*/
-		sAlarm.AlarmTime.Hours	 = 	0x23;	//直接BCD格式写
-		sAlarm.AlarmTime.Minutes = 	0x31;
-		sAlarm.AlarmTime.Seconds = 	0x29;
-		sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-		sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-		sAlarm.AlarmMask = RTC_ALARMMASK_SECONDS;					//可选mask时分秒和所有
-		sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;	//可选日期和星期
-		sAlarm.AlarmDateWeekDay = 0x1;	//不懂..
-		sAlarm.Alarm = RTC_ALARM_A;
-		HAL_RTC_SetAlarm_IT(&RTC_Handler, &sAlarm, RTC_FORMAT_BCD); 
-		HAL_RTC_DeactivateAlarm(&RTC_Handler,RTC_ALARM_A);
+		/* Enable the Alarm A*/
+//		sAlarm.AlarmTime.Hours	 = 	0x23;	//直接BCD格式写
+//		sAlarm.AlarmTime.Minutes = 	0x31;
+//		sAlarm.AlarmTime.Seconds = 	0x29;
+//		sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+//		sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+//		sAlarm.AlarmMask = RTC_ALARMMASK_SECONDS;					//可选mask时分秒和所有
+//		sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;	//可选日期和星期
+//		sAlarm.AlarmDateWeekDay = 0x1;	//不懂..
+//		sAlarm.Alarm = RTC_ALARM_A;
+//		HAL_RTC_SetAlarm_IT(&RTC_Handler, &sAlarm, RTC_FORMAT_BCD); //默认不开启闹钟
+//		HAL_RTC_DeactivateAlarm(&RTC_Handler,RTC_ALARM_A);
 		
 		HAL_RTCEx_BKUPWrite(&RTC_Handler,RTC_BKP_DR1,0X5050);//标记已经初始化过了
 		
@@ -1809,6 +1944,23 @@ int myatoi(const char *str)
 	return s*(falg?-1:1);
 }
 
+
+/* 实现伪随机数的支持*/
+unsigned int Curl_rand(void)
+{
+	static unsigned int gtimes = 0; 	//记录被调用了多少次
+	static unsigned int randseed = 50; 	//随机数种子
+	
+	if(++gtimes > (randseed & 0x000f)) //当被调用(randseed & 0x000f)次后更新一下随机数种子
+	{
+		sys_GetsysRunTime(NULL,NULL,(u16*)&randseed);
+		gtimes = 0;
+	}
+	
+	/* 返回一个无符号32位整型的伪随机数. */
+	randseed = randseed * 3971038;
+	return (randseed << 7) | ((randseed >> 7) & 0xFFFF);
+}
 
 //THUMB指令不支持汇编内联
 //采用如下方法实现执行汇编指令WFI  

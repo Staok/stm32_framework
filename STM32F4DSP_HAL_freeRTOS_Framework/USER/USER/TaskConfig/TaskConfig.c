@@ -61,7 +61,7 @@ void Task_Begin(void)
     {
         vTaskStartScheduler();          //开启任务调度
     }else{
-		FaultASSERT("AT : Creating start_t failed,sys stoped");
+		FaultASSERT("Creating start_t failed,sys stoped",1,flag_Fault);
         for(;;){;}
     }
 }
@@ -114,7 +114,7 @@ void led0_task(void *pvParameters)
 			RTC_DateTypeDef	RTC_RealDate;
 			HAL_RTC_GetTime(&RTC_Handler, &RTC_RealTime, RTC_FORMAT_BIN);
 			HAL_RTC_GetDate(&RTC_Handler, &RTC_RealDate, RTC_FORMAT_BIN);
-			sprintf(RTC_buf,"%d-%d-%d-%d   %d-%d-%d\r\n",RTC_RealDate.Year + 1970,RTC_RealDate.Month,RTC_RealDate.Date,RTC_RealDate.WeekDay,RTC_RealTime.Hours,RTC_RealTime.Minutes,RTC_RealTime.Seconds);
+			sprintf_(RTC_buf,"%d-%d-%d-%d   %d-%d-%d\r\n",RTC_RealDate.Year + 1970,RTC_RealDate.Month,RTC_RealDate.Date,RTC_RealDate.WeekDay,RTC_RealTime.Hours,RTC_RealTime.Minutes,RTC_RealTime.Seconds);
 			printf_uart(UART1,"%s",RTC_buf);
 		#endif
     }

@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0052)http://192.168.1.112/STM32_LED_OFF_BEEP_OFF.shtml -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=GBK">
+
+<title>ALIENTEK 战舰STM32F103 V3开发板LWIP实例</title>
+<style type="text/css">
+
+.ul1{margin:0;padding:0; list-style:none;}
+.li1{margin:0;padding:0; list-style:none;}
+.menu{width:1000px;height:48px;margin:0 auto; background:url(image/tab.jpg) repeat-x; }
+.menu ul{width:1000px;float:left;height:48px;display:inline;}
+.menu ul li{width:200px;height:48px; line-height:48px; text-align:center; float:left;display:inline; }
+.menu ul li a{width:200px;height:48px; float:left;text-decoration:none; color:#fff; font-size:18px;font-weight:bold;}
+.menu ul li a:hover{ background:#FF0000 repeat-x; }		
+
+.logo{}
+.bodystyle{  margin:0 auto; width:1000px; background:#d5d5d7;}
+ 
+</style>
+  
+</head>
+<body class="bodystyle">
+<div style="background-color:#FFFFFF;">
+<div class="logo">
+ <img src="/image/head.jpg" alt="广州市星翼电子科技有限公司" title="广州市星翼电子科技有限公司" style="margin:20px 0px 0px 0px;">
+ 
+</div>
+ 
+<div class="menu">
+	<ul class="ul1">
+    	<li class="li1"><a href="/index.html">主页</a></li>
+        <li class="li1"><a href="STM32_LED_OFF_BEEP_OFF.shtml">LED/BEEP控制</a></li>
+        <li class="li1"><a href="STM32_ADC_TEMPERATE.shtml">ADC/内部温度传感器</a></li>
+        <li class="li1"><a href="STM32_RTC.shtml">RTC实时时钟</a></li>
+        <li class="li1"><a href="http://eboard.taobao.com/" target="_blank">联系我们</a></li>
+    </ul>
+</div>
+ 
+<div style="margin-top:30px;">
+此页面用来控制开发板上的LED和蜂鸣器,选择LED1或BEEP的状态，然后点击发送按钮。查看开发板上的对应的LED灯是或蜂鸣器否变化。 
+</div>
+<div style="width:1000px; background-color:#0066CC;color:#fff;margin-top:30px;  ">
+                <h3>
+                  <span style="text-align:center;">探索者网页LED控制</span>
+                </h3>
+</div>
+<div style="margin-top:30px; text-align:center;">
+<form method="get" action="/leds.cgi">
+   LED1:
+      <input type="radio" name="LED1" value="LED1ON" id="LED1_0">ON
+      <input name="LED1" type="radio" id="LED1_1" value="LED1OFF" checked="">OFF<br>
+<br>
+  <input type="submit" name="button2" id="button2" value="SEND">
+</form>
+</div>
+
+<div style="width:1000px; background-color:#0066CC;color:#fff; ">
+                <h3>
+                  <span style="text-align:center;">探索者网页BEEP蜂鸣器控制</span>
+                </h3>
+</div>
+
+<div style="margin-top:30px; text-align:center;">
+<form name="form1" method="get" action="/beep.cgi">
+  BEEP:
+ <input type="radio" name="BEEP" value="BEEPON" id="BEEP_0">ON 
+ <input name="BEEP" type="radio" id="BEEP_1" value="BEEPOFF" checked="">OFF<br> <br>
+    <input type="submit" name="button" id="button" value="SEND"> 
+    <br>
+</form>
+</div>
+
+</div>
+ <div align="center" style="margin-top:20px;margin-bottom:30px;">
+   
+         &#169; 开源电子网(OpenEdv.com) | <a href="http://www.alientek.com/" target="_blank">关于我们</a> | <a target="_blank" href="http://www.alientek.com/">官方网站</a> | <a href="http://weibo.com/u/2973019374" target="_blank">@新浪微博</a> |<a href="http://shop62057469.taobao.com/" target="_blank">官方淘宝店</a> |<a href="http://www.miitbeian.gov.cn/" target="_blank" style="color:#737573;text-decoration:none;">粤ICP备12000418号-1</a>                <br>          
+ </div>
+
+</body></html>

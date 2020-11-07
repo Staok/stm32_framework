@@ -18,6 +18,8 @@
 	
 	FreeRTOS任务编写在TaskConfig.c里
 	裸机程序任务编写在BareConfig.c里
+	
+	客制工程不会用到所有组件和外设，除了在PeriphconfigCore.h里面配置和剪裁之外，也可以删除不用的组件的源代码和文件，节省编译时间
  *_____________________________________///                               \\\____________________________________________*/
 
 /*
@@ -179,7 +181,7 @@ DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407417-stm32f4274
  *_____________________________________///                               \\\____________________________________________*/
 /*
 	只需确保 system_stm32f4xx.c 文件的 SystemInit()中的FPU初始化环节被启用；
-	一般来说MDK设置启用单精度(32bit)FPU就会开启相关宏，但是并没用...所以这里手动在SystemInit()函数中强行启用FPU初始化了
+	只需MDK设置启用单精度(32bit)FPU就会开启相关宏，调试模式看汇编代码确实调用了FPU相关的命令
 */
 
 /*_____________________________________\\\                               ///____________________________________________*
@@ -252,10 +254,9 @@ API使用：
  *_____________________________________///                               \\\____________________________________________*/
 /*
 启用宏：SYS_SUPPORT_LWIP（在lwipopts.h的顶部）
-版本：2.1.2，在 lwipopts.h 文件内配置和剪裁（已经调好不建议轻易动）
-相关API和使用说明（裸机和OS），请详看 lwip的官方手册（本地有）
-STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
-初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+	版本：2.1.2，在 lwipopts.h 文件内配置和剪裁（已经调好不建议轻易动）
+	相关API和使用说明（裸机和OS），请详看 lwip 的官方手册
+	STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
 
 初始化标程：
 	/*LWIP 2.1.2 初始化*/
@@ -263,14 +264,55 @@ STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
 	if(init_return != 0)
 	{
 		lwip_comm_destroy(&lwip_handle); //初始化失败时恢复原样
-		sprintf(init_return_buf,"AT:lwip_comm_init %d",init_return);
 		FaultASSERT("lwip_comm_init",init_return,flag_Warning);
 	}
 	
 	
 应用说明(Applications)：
 
-裸机：使用“RAW”API
+裸机：使用“RAW”API（NO_SYS == 1）
+
+	巡逻任务：（必要的）
+		以下代码10ms周期调用（默认已经放在了BareConfig.c的10ms周期调用中）
+		#if SYS_SUPPORT_LWIP && NO_SYS	//启用LWIP并且裸跑时才调用
+			lwip_periodic_handle();
+		#endif
+	
+	UDP：
+		创建连接：
+			//UDP初始化，输入参数：udp_pcb，选择 remoteip[3] ， 端口号
+			//返回0表成功，其他表失败
+			u8 UDP_init_test(struct udp_pcb *pcb, u8 remoteip_3, u16 udp_port)
+				例子：UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
+		关闭连接：
+			//关闭tcp连接
+			void UDP_connection_close(struct udp_pcb *upcb)
+		接收数据：
+			检查 udp_demo_flag，为1则表示收到数据，
+			从接收缓冲区 udp_demo_recvbuf 取出数据，
+			然后 udp_demo_flag 清零
+		发送数据：
+			先给 tcp_demo_sendbuf 填想要发的数据
+				sprintf_(tcp_demo_sendbuf,"stm32_framework - STM32F407 UDP demo send data\r\n");
+			//UDP服务器发送数据，发送 tcp_demo_sendbuf 字符数组所存的数据
+			void UDP_senddata_test(struct udp_pcb *upcb)
+		
+		接收缓冲区 udp_demo_recvbuf 和 发送缓冲区 tcp_demo_sendbuf 的空间各为 UDP_RX_BUFSIZE 和 UDP_TX_BUFSIZE 
+	
+	
+	Application layered TCP：
+	
+	
+	TCP server:
+	
+	TCP client:
+	
+	
+	DNS：
+	
+	
+	
+FreeRTOS：使用“Netconn”API
 	UDP：
 
 
@@ -280,13 +322,11 @@ STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
 	
 	
 	
-FreeRTOS：使用“NETCONN”API
-	
-	
-暂未计划实现的：
+暂未计划实现的应用：
 	HTTP client
-	Http server
+	HTTP server
 	MQTT client	
+	TFTP server
 */
 
 /*_____________________________________\\\                               ///____________________________________________*
@@ -645,11 +685,56 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 											}
 											myfree(InrRAM,buf4uart1);
 
-&	SYSTEM_CAN1_ENABLE		使用CAN1，默认不使用中断，默认帧：固定格式:ID为0X12,标准帧,数据帧
+&	SYSTEM_CAN1_ENABLE		使用CAN1,默认不使用中断，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据
+							默认发送只能用数据帧
+							默认引脚：	PB8     ------> CAN1_RX		可到源码处修改
+										PB9     ------> CAN1_TX		可以按照 stm32f407ze.pdf 手册的 62页 开始自行选择引脚，可选的还挺多的
+							opt:
+								可选是否使用接收中断
 							API:
-								发送： u8 CAN1_Send_Msg(u8* msg,u8 len); —————— msg:数据指针,最大为8个字节；len:数据长度(最大为8)，返回HAL_ERROR失败，返回HAL_OK成功
-								接收： u8 CAN1_Receive_Msg(u8 *buf);	 —————— buf:数据缓存区;返回值:0,无数据被收到,其他则为接收的数据长度;	
-
+								发送：不分是否使用中断
+									can发送一组数据			     
+									参数：msg:数据指针,最大为8个字节
+									参数：len:数据长度(最大为8)
+									参数：frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
+									参数：id:ID标识符，若frameType为0，则为标准标识符，若frameType为其他则为扩展标识符
+									默认消息类型为数据帧
+									返回值:0,成功;
+											其他,失败;
+									u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id);
+								接收：
+									不使用中断的死循环检测
+										can口接收数据查询，不使用中断方式时的使用
+										参数：buf:数据缓存区,最大为8个字节
+										参数：len:数据长度(最大为8)
+										参数：frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
+										参数：id:ID标识符，若frameType为0，则为标准标识符，若frameType为其他则为扩展标识符
+										返回值:0,有数据被收到;
+												其他,没有接收到数据;
+										u8 CAN1_Receive_Msg(u8* buf,u8* len,u8* frameType,u32* id);
+									使用中断（打开宏 CAN1_RX0_INT_ENABLE）
+										CAN_RxHeaderTypeDef	CAN1_IT_RxMessage;	CAN1从中断接收到数据的结构体，用于下面的信息获取
+										u8 CAN1_IT_Rxdata[8];					CAN1从中断接收到的数据，最多8个字节
+										u8 CAN1_IT_RxMessage_flag;				CAN1从中断接收到数据的标志，检查为1时可用取出数据，之后清零
+										信息：
+											帧类型：
+												CAN1_IT_RxMessage.RTR == CAN_RTR_DATA	数据帧
+												CAN1_IT_RxMessage.RTR == CAN_RTR_REMOTE	遥控帧
+												CAN1_IT_RxMessage.IDE == CAN_ID_STD		标准帧
+												CAN1_IT_RxMessage.IDE == CAN_ID_EXT		扩展帧
+											ID：
+												标准帧的ID	CAN1_IT_RxMessage.StdId
+												扩展帧的ID	CAN1_IT_RxMessage.ExtId
+											数据长度：
+												CAN1_IT_RxMessage.DLC
+								设置接收滤波器：硬件检测只接收特定类型帧和ID的数据（减轻MCU工作量）
+									设置期望接收特定的类型帧和ID的信息
+									参数：care：0表示任何ID都接收，1表示只接受与FilterId一致的ID的消息
+									参数：frameType：期望接收帧的类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
+									参数：FilterId：期望接收的ID
+									默认消息类型为数据帧
+									void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId);
+									
 &	SYSTEM_UseTIM5ForTiming_ENABLE		使用TIM5测量一个函数运行的时间，单位us
 										测量一个函数运行时间，返回单位为us的运行时间，没有超时退出机制，不适合在有操作系统的环境中用
 										最长可测量约4290s

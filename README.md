@@ -24,8 +24,8 @@ System init over!
 
 -   完成LWIP的移植和测试（包括外部MAC+PHY芯片版本（F1）和外部PHY芯片版本（F4）），LWIP协议栈正在调试中
 -   ~~完整移植、测试和API罗列F4的DSP库（ARM库），和F1的通用数学库（标准库）~~
--   完善CAN外设的通用化配置文件，看一看CANopen开源库的使用
--   内部FLASH和SPI FLASH划分文件系统（看下面TODO）
+-   ~~完善CAN外设的通用化配置文件，看一看CANopen开源库的使用~~
+-   FATFS划分文件系统（看下面TODO）
 -   IAP（看下面的TODO）
 -   测试DCMI和IO驱动OV7725和OV2640
 -   大V的USB的相关所有例程移植和测试（F1和F4）
@@ -43,40 +43,65 @@ System init over!
 
 ### STM32F4xx：
 
-目前主要完善的对象，已经完成大部分外设驱动，剩下的高级外设如：IAP、DCMI、ETH和USB会主要在此平台完成，前两个平台F1和F2会有延迟
+目前主要完善的对象，已经完成大部分外设驱动，剩下的高级外设如：IAP、DCMI和USB会主要在此平台完成，前两个平台F1和F2会有延迟
 
-## 计划组件
+## 计划外设和组件
 
 （加粗体为暂时尚未实现的外设或者组件）
 
--   大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB(HCD PCD)** \ CAN \ **Ethernet**）
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
--   FreeRTOS
--   **LittlevGL**
--   **LWIP**
--   FATFS
--   PID算法
--   软件ringbuf，FIFO缓冲
--   内存管理（malloc和free）
--   Menu框架
--   无依赖的string库和sprintf库
--   软件模拟I2C\SPI
--   **线性回归**
--   **常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）**
--   **音频编解码（MP3转PCM，外接一个功放直接播放）**
--   **Modbus协议**
--   **MQTT协议（包含cjson，LWIP应用）**
--   **HTTP协议（LWIP应用）**
--   **JPEG、GIF解码和BMP编解码**
 
-## 组件说明
+-   **暂时不会支持的组件：**
+
+    线性回归
+
+    常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）
+
+    音频编解码（MP3转PCM，外接一个功放直接播放）
+
+    Modbus协议
+
+    MQTT协议（包含cjson，LWIP应用）
+
+    HTTP协议（LWIP应用）
+
+    JPEG、GIF解码和BMP编解码
+
+-   已经支持的外设：
+
+    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB(HCD PCD)** \ CAN \ Ethernet）
+
+-   已经支持的组件：
+
+    FreeRTOS
+
+    **LittlevGL**
+
+    LWIP
+
+    FATFS
+
+    内存管理（malloc和free）
+
+    菜单框架
+
+    无依赖的string库和sprintf库
+
+    软件模拟I2C\SPI
+
+    软件ringbuf，FIFO缓冲
+
+    PID
+
+## 外设和组件说明
 
 （标为“缺省”的为暂未实现的，以后会加上- -，工作量好大的！ ）
 
--   **所有基础外设均在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里通过宏定义配置，每一个宏定义旁边均有使用说明的注释**，有详细注释，不看不会用
--   外设驱动代码分别在sys.c和periphconfig.c两个文件里，其所有的外设API声明均在sys.h里，所有的独立GPIO的API均在periphconfig.h里，用户程序调用外设控制API时，按需调用这两个文件即可
+-   **所有基础外设均在sys_config.h（F1）里或者PeriphConfigCore.h（F2和F4）里通过宏定义配置，每一个宏定义旁边均有使用说明的注释**，有详细注释，不看不会用
+-   外设驱动代码分别在sys_config.c和periphconfig.c两个文件里，其所有的外设API声明均在sys.h里，所有的独立GPIO的API均在periphconfig.h里，用户程序调用外设控制API时，按需调用这两个文件即可
 -   MCU外设配置的统一函数为void sys_MCU_Init_Seq(void)，一般无需改动；外接器件初始化统一函数为void sys_Device_Init_Seq(void)，需要自行按需修改
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里的上面
+-   F4模板请看Docs手册文档
 
 ### 裸跑或者FreeRTOS选择
 
@@ -95,18 +120,10 @@ System init over!
 -   LittlevGL：暂时缺省
 -   LWIP：已经添加，详情稍后更新（支持TCP server，TCP client和UDP通讯）
 -   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释（**TODO**：添加SPI FLASH驱动并写入FATFS底层（考虑这个开源库驱动SPI FLASH：https://github.com/armink/SFUD），添加MCU内部FLASH驱动并写入FATFS底层，并在实现写入字库的程序，参考普中等的字库例程）
--   DSP\FPU：已经添加，详情稍后更新
--   线性回归：暂时缺省
--   常用校验、加密算法：暂时缺省
--   音频编解码：暂时缺省
--   Modbus：暂时缺省
--   MQTT：LWIP应用，暂时缺省
--   HTTP协议：（LWIP应用）
--   JPEG、GIF解码和BMP编解码：暂时缺省
 
 ### 框架基础外设
 
-（再次说明，具体使用方法看相应宏定义旁的注释，均在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里）
+（再次说明，具体使用方法看相应宏定义旁的注释，均在sys_config.h（F1）里或者PeriphConfigCore.h（F2和F4）里）
 
 -   MCO：SYSTEM_MCO_PA8_OUT：设置PA8为MCO输出，默认时钟源为HSE
 -   RTC：SYSTEM_RTC_ENABLE：配置使用RTC
@@ -129,8 +146,9 @@ System init over!
 -   IAP：暂时缺省。**TODO**：提供用SD卡（SDIO（大容量芯片）或者SPI驱动）、串口（可选串口1、2、3）、USB（暂时缺省，以U盘形式或者USB传输）和SPI更新固件bin文件。在每次上电前会让用户选择固件索引（可以存在多个固件），再选择是更新还是运行此区域固件，如果是更新，则下载前会进行协议握手（专有协议+非对称加密握手，防止陌生固件下载），如果是下载，则在启动运行固件前会用硬件CRC进行一次固件校验（防止以存固件篡改）
 -   DMA：默认用于ADC1的多通道扫描模式DMA传送（如果开启SYSTEM_ADC1_useScan的话），另提供驱动代码的模板以供参考
 -   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改动；就不支持各种FLASH了，MCU毕竟程序写不大，就算大了就用SPI的FLASH，也节约IO口。LCD的相关API说明在TFTLCD.h里面，字库也可剪裁
--   CAN：目前仅提供简单测试的驱动例程
--   Ethernet：暂时缺省
+-   DSP\FPU：在F4模板中默认添加，可用直接调用相关API，详情看Docs手册文档的DSP专题
+-   CAN：SYSTEM_CAN1_ENABLE：提供设置接收时只关心的帧类型和ID，提供收发API，收发可用设置帧类型和ID，STM32的CAN目前只有数据帧和遥控帧两种，每种都可以设置是标准标识符还是扩展标识符，CAN有关的学习记录和手册在Tips文件夹内，不熟悉的可用阅读，人话挺多的
+-   Ethernet：F4的LWIP正在调试中，F1和F2会有延迟
 -   DCMI：暂时缺省
 -   USB：暂时缺省
 

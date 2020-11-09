@@ -23,9 +23,7 @@ System init over!
 在开发过程中会上传以下正在测试的半成品代码，所以关于以下内容的代码先不要用~望谅解
 
 -   完成LWIP的移植和测试（包括外部MAC+PHY芯片版本（F1）和外部PHY芯片版本（F4）），LWIP协议栈正在调试中
--   ~~完整移植、测试和API罗列F4的DSP库（ARM库），和F1的通用数学库（标准库）~~
--   ~~完善CAN外设的通用化配置文件，看一看CANopen开源库的使用~~
--   FATFS划分文件系统（看下面TODO）
+-   FATFS从SD读取字库写入SPI FLASH
 -   IAP（看下面的TODO）
 -   测试DCMI和IO驱动OV7725和OV2640
 -   大V的USB的相关所有例程移植和测试（F1和F4）
@@ -51,7 +49,7 @@ System init over!
 
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 
--   **暂时不会支持的组件：**
+-   **暂时没有支持的组件：**
 
     线性回归
 
@@ -69,7 +67,7 @@ System init over!
 
 -   已经支持的外设：
 
-    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB(HCD PCD)** \ CAN \ Ethernet）
+    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB** \ CAN \ Ethernet）
 
 -   已经支持的组件：
 
@@ -118,8 +116,8 @@ System init over!
 -   软件ringbuf，FIFO缓冲：由于应对大数据传输时，一个开源FIFO库
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
--   LWIP：已经添加，详情稍后更新（支持TCP server，TCP client和UDP通讯）
--   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO写好底层驱动（需要打开SYSTEM_SDIO_SD_ENABLE），另还可以驱动SPI FLASH，内部FLASH等等，具体用法看宏定义旁边的注释（**TODO**：添加SPI FLASH驱动并写入FATFS底层（考虑这个开源库驱动SPI FLASH：https://github.com/armink/SFUD），添加MCU内部FLASH驱动并写入FATFS底层，并在实现写入字库的程序，参考普中等的字库例程）
+-   LWIP：已经添加，详情稍后更新
+-   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO SD、SPI SD和SPI FLASH写好底层驱动
 
 ### 框架基础外设
 

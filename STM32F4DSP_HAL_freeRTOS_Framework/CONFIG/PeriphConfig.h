@@ -31,8 +31,9 @@ extern u8 key_Down_Interrupted;
 #define key_Down_ReadIn	PAin(2)
 //继续：再去外部中断回调函数HAL_GPIO_EXTI_Callback()中填写IO的外部中断标志为置位
 
-#define	SPI1_CS PAout(4)  		//SPI1的片选信号
-#define	SPI2_CS PBout(12)  		//SPI2的片选信号
+#define	SPI1_CS PAout(4)  		//SPI1的片选信号0
+#define	SPI1_CS1 PAout(4)  		//SPI1的片选信号1
+#define	SPI2_CS PBout(12)  		//SPI2的片选信号0
 
 #define TestLED_Ctrl	PFout(9)
 #define TestLED2_Ctrl	PFout(10)

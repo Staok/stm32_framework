@@ -22,9 +22,8 @@ __align(4) ETH_DMADescTypeDef *DMATxDscrTab;	//以太网DMA发送描述符数据结构体指针
 __align(4) uint8_t *Rx_Buff; 					//以太网底层驱动接收buffers指针 
 __align(4) uint8_t *Tx_Buff; 					//以太网底层驱动发送buffers指针
 
-
-
 extern u8_t *ram_heap;					//LWIP的总内存堆ram_heap，在mem.c里面定义，内存池mem_pool在opt.h里面被配置为从内存堆ram_heap获取
+
 /*LWIP源文件修改记录：
 	仅仅把mem.c里面的
 		349行的
@@ -32,6 +31,16 @@ extern u8_t *ram_heap;					//LWIP的总内存堆ram_heap，在mem.c里面定义，内存池mem_
 		371行的
 			这两个宏搬到了mem.h里面
 	关于lwip的mem精彩解析：https://blog.csdn.net/ZCShouCSDN/article/details/80282907
+*/
+
+/*lwip数据传输链捋顺：（下面的代码已经配置好，不要乱动）
+	发送：		|→			       lwip 2.x内部调用				 ←| |→用户要完成的发送底层←|
+				etharp_output → ethernet_output → netif->linkoutput，low_level_output → 网口
+				
+	接收：		|→	    lwip 2.x内部调用	 ←| |→			用户要完成的接收底层		  ←|
+				etharp_input  ← ethernet_input  ← ethernetif_input  ← low_level_input ← 网口
+				
+				要循环调用或者从接收中断调用 ethernetif_input，从底层 low_level_input 读入数据，数据送出到 ethernet_input 并调用
 */
 
 #define LWIP_MAX_DHCP_TRIES		4   //DHCP服务器最大重试次数
@@ -44,7 +53,7 @@ extern u8_t *ram_heap;					//LWIP的总内存堆ram_heap，在mem.c里面定义，内存池mem_
 __lwip_dev lwip_inf = 
 {
 	/*用户自定：
-		远程IP地址，IP地址，子网掩码，网关 （MAC地址在NetCard.c文件里面定义）
+		远程IP地址，IP地址，子网掩码，网关 （MAC地址在 lwip_comm_init() 里面定义）
 	*/
 	
 	//默认远端IP为:192.168.1.100
@@ -330,9 +339,7 @@ struct netif lwip_handle;					//定义一个全局的网络接口句柄
 //单独调用 lwip_comm_init(&lwip_handle);
 u8 lwip_comm_init(struct netif *netif)
 {
-	//为lwip的memp和mem申请内存，默认让lwip自己管理，所以无需申请
-	
-	//TODO：ETH的内存的申请和释放试试能不能换成CCM，这样内部SRAM就省了
+	//为lwip的memp和mem申请内存
 	if(ETH_Mem_Malloc())return 1;		//内存申请失败
 	if(lwip_comm_mem_malloc())return 1;	//内存申请失败
 	
@@ -395,6 +402,23 @@ u8 lwip_comm_init(struct netif *netif)
 	
 	struct netif *Netif_Init_Flag;		//调用netif_add()函数时的返回值,用于判断网络初始化是否成功
 	Netif_Init_Flag = netif_add(netif,&ipaddr,&netmask,&gw,NULL,&ethernetif_init,&ethernet_input);//向网卡列表中添加一个网口
+	
+	/*
+		上句完成后，netif的结构：（固定的形式不要乱动）
+			.input 			= ethernet_input()		lwip内部函数
+			.output 		= etharp_output()		lwip内部函数
+			.linkoutput 	= low_level_output()	用户自定
+			.init			= ethernetif_init()		用户自定
+		
+		lwip数据传输链捋顺：
+		发送：		|→			       lwip 2.x内部调用				 ←| |→用户要完成的发送底层←|
+					etharp_output → ethernet_output → netif->linkoutput，low_level_output → 网口
+					
+		接收：		|→	    lwip 2.x内部调用	 ←| |→			用户要完成的接收底层		  ←|
+					etharp_input  ← ethernet_input  ← ethernetif_input  ← low_level_input ← 网口
+					
+					要循环调用或者从接收中断调用 ethernetif_input，从底层 low_level_input 读入数据，数据送出到 ethernet_input 并调用
+	*/
 	
 	if(Netif_Init_Flag==NULL)return 3;	//网卡添加失败 
 	

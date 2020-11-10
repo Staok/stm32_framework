@@ -21,7 +21,9 @@
 		未开启LWIP时编译信息：	Program Size: Code=28206 RO-data=4298 RW-data=1156 ZI-data=144076  
 		开启LWIP时编译信息：	Program Size: Code=73258 RO-data=4790 RW-data=1344 ZI-data=145568  
 		
-	不推荐LWIP占用CCM内存，因为CCM内存不能被DMA访问！
+	严重注意：不推荐LWIP占用CCM内存，因为CCM内存不能被DMA访问！
+	严重注意：使用下载到SRAM模式调试程序时不能开启 SYS_SUPPORT_LWIP ，
+				因为..留给程序的空间不够...如果多分配一些给程序空间那内存数据空间又不够了..
 */
 #define SYS_SUPPORT_LWIP		0
 

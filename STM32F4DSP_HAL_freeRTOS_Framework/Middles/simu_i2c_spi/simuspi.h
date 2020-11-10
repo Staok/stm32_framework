@@ -14,6 +14,7 @@
 
 **********************************************************************************/
 
+
 //###########################【定义】###########################
 typedef struct _SimuSPI{		//SPI接口类型
 	void (*PinSetMOSI)(unsigned char);	//MOSI引脚设置电平函数
@@ -21,7 +22,19 @@ typedef struct _SimuSPI{		//SPI接口类型
 	unsigned char (*PinGetMISO)();		//MISO引脚读取电平函数
 	void (*Delayus)(unsigned int);		//us延时函数
 	unsigned int IntervalTime;			//延时时间(us)
-}SimuSPI;			
+}SimuSPI;
+
+/*_____________________________公用部分_____________________________________*/
+
+extern SimuSPI simuSPI_Handle;		//simuSPI公用句柄
+
+/*simuSPI 公用的数据线，用户修改*/
+#define simuSPI_SCK 	PBout(3) 	//simuSPI的SCK线
+#define simuSPI_MOSI 	PBout(5) 	//simuSPI的MOSI线
+#define simuSPI_MISO 	PBin(4) 	//simuSPI的MISO线
+
+void simuSPI_IO_init(void);			//三个公用IO初始化，用户修改
+
 
 //###########################【API】###########################
 unsigned char SimuSPI_ReadWriteByte(SimuSPI *SimuSPI_Struct,unsigned char data);		//模拟SPI传输字符

@@ -254,49 +254,44 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 /*_________________________________________以下外设的声明代码均放在了PeriphConfigCore.h的最下面_________________________________________________________*/
 #if SYSTEM_CAN1_ENABLE
 
-
-CAN_TxHeaderTypeDef	TxHeader;      //发送
-CAN_RxHeaderTypeDef	RxHeader;      //接收
-
 CAN_HandleTypeDef CAN1_Handler;
 
-/* CAN1 init function */
-void MX_CAN1_Init(void)
+void sys_CAN1_Init(void)
 {
 
-  CAN1_Handler.Instance = CAN1;
-  CAN1_Handler.Init.Prescaler = 3; 					//1~1024，分频自APB1 30MHZ
-  CAN1_Handler.Init.Mode = CAN_MODE_NORMAL;			//无需动
-  CAN1_Handler.Init.SyncJumpWidth = CAN_SJW_2TQ;	//CAN_SJW_1TQ ~ CAN_SJW_4TQ
-  CAN1_Handler.Init.TimeSeg1 = CAN_BS1_10TQ;		//CAN_BS1_1TQ ~ CAN_BS1_16TQ
-  CAN1_Handler.Init.TimeSeg2 = CAN_BS2_8TQ;			//CAN_BS2_1TQ ~ CAN_BS2_8TQ
-	//CAN1工作在 500Kbps
-	
-  CAN1_Handler.Init.TimeTriggeredMode = DISABLE;	//非时间触发通信模式
-  CAN1_Handler.Init.AutoBusOff = DISABLE;			//软件自动离线管理
-  CAN1_Handler.Init.AutoWakeUp = DISABLE;			//睡眠模式通过软件唤醒
-  CAN1_Handler.Init.AutoRetransmission = ENABLE;	//报文自动传送
-  CAN1_Handler.Init.ReceiveFifoLocked = DISABLE;	//报文不锁定,新的覆盖旧的
-  CAN1_Handler.Init.TransmitFifoPriority = DISABLE;//优先级由报文标识符决定
-  
-  HAL_CAN_Init(&CAN1_Handler);
+	CAN1_Handler.Instance = CAN1;
+	CAN1_Handler.Init.Prescaler = 6; 					//1~1024，分频自APB1 42MHZ
+	CAN1_Handler.Init.Mode = CAN_MODE_NORMAL;			//无需动
+
+	//在CAN外设频率为42Mhz时，推荐分频系数(brp+1)为6，三段分别为：1tq\7tq\6tq，CAN1工作在 500Kbps
+	CAN1_Handler.Init.SyncJumpWidth = CAN_SJW_1TQ;		//CAN_SJW_1TQ ~ CAN_SJW_4TQ
+	CAN1_Handler.Init.TimeSeg1 = CAN_BS1_7TQ;			//CAN_BS1_1TQ ~ CAN_BS1_16TQ
+	CAN1_Handler.Init.TimeSeg2 = CAN_BS2_6TQ;			//CAN_BS2_1TQ ~ CAN_BS2_8TQ
+
+	CAN1_Handler.Init.TimeTriggeredMode = DISABLE;	//非时间触发通信模式
+	CAN1_Handler.Init.AutoBusOff = DISABLE;			//软件自动离线管理
+	CAN1_Handler.Init.AutoWakeUp = DISABLE;			//睡眠模式通过软件唤醒
+	CAN1_Handler.Init.AutoRetransmission = ENABLE;	//报文自动传送，不用动
+		//ENABLE：CAN hardware will automatically retransmit the message until it has been successfully transmitted according to the CAN standard.
+	CAN1_Handler.Init.ReceiveFifoLocked = DISABLE;	//报文不锁定,新的覆盖旧的
+	CAN1_Handler.Init.TransmitFifoPriority = DISABLE;//优先级由报文标识符决定
+
+	HAL_CAN_Init(&CAN1_Handler);
   
 }
+
 void CAN_Config(void);
+
 void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   if(canHandle->Instance==CAN1)
   {
-  /* USER CODE BEGIN CAN1_MspInit 0 */
-
-  /* USER CODE END CAN1_MspInit 0 */
     /* CAN1 clock enable */
     __HAL_RCC_CAN1_CLK_ENABLE();
 
-    __HAL_RCC_GPIOI_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**CAN1 GPIO Configuration
     PB8     ------> CAN1_RX
     PB9     ------> CAN1_TX
@@ -315,20 +310,42 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-    /* CAN1 interrupt Init */
-//    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 2, 0);
-//    HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-//    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 2, 0);
-//    HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+	#if CAN1_RX0_INT_ENABLE
+		/* CAN1 interrupt Init */
+		HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 2, 0);	//默认使用FIFO0，所以启用FIFO0接收中断
+		HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+//		HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 2, 0);	//默认不启用FIFO1接收中断
+//		HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+	#endif
 	
 	CAN_Config();
   }
 }
 
-//void CAN1_RX0_IRQHandler(void)
-//{
-//  HAL_CAN_IRQHandler(&CAN1_Handler);
-//}
+#if CAN1_RX0_INT_ENABLE
+	CAN_RxHeaderTypeDef	CAN1_IT_RxMessage;	//CAN1从中断接收到数据的结构体
+	u8 CAN1_IT_Rxdata[8];					//CAN1从中断接收到的数据
+	u8 CAN1_IT_RxMessage_flag;				//CAN1从中断接收到数据的标志
+	
+	//FIFO0消息挂号中断，RX0中断服务函数
+	void CAN1_RX0_IRQHandler(void)
+	{
+		HAL_CAN_IRQHandler(&CAN1_Handler);
+	}
+	
+	//Receive FIFO 0 message pending interrupt
+	void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+	{
+		if(hcan == (&CAN1_Handler))
+		{
+			CAN1_IT_RxMessage_flag = 1;
+			HAL_CAN_GetRxMessage(&CAN1_Handler, CAN_RX_FIFO0, &CAN1_IT_RxMessage, CAN1_IT_Rxdata);
+		}
+	}
+	
+	
+#endif
+
 //void CAN1_RX1_IRQHandler(void)
 //{
 //  HAL_CAN_IRQHandler(&CAN1_Handler);
@@ -336,94 +353,165 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
 
 void CAN_Config(void)
 {
-  CAN_FilterTypeDef  sFilterConfig;
+	CAN_FilterTypeDef  sFilterConfig;
 
-  /*配置CAN过滤器*/
-  sFilterConfig.FilterBank = 0;                     //过滤器0
-  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  sFilterConfig.FilterIdHigh = 0x0000;              //32位ID
-  sFilterConfig.FilterIdLow = 0x0000;
-  sFilterConfig.FilterMaskIdHigh = 0x0000;          //32位MASK
-  sFilterConfig.FilterMaskIdLow = 0x0000;
-  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;//过滤器0关联到FIFO0
-  sFilterConfig.FilterActivation = ENABLE;          //激活滤波器0
-  sFilterConfig.SlaveStartFilterBank = 14;
-  
-  //过滤器配置
-  if (HAL_CAN_ConfigFilter(&CAN1_Handler, &sFilterConfig) != HAL_OK)
-  {
-	  FaultASSERT("HAL_CAN_ConfigFilter",1,flag_Fault);
-  }
+	/*配置CAN过滤器*/
+	sFilterConfig.FilterBank = 0;                     //过滤器0
+	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;	//屏蔽位模式
+	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	sFilterConfig.FilterIdHigh = 0x0000;              //32位ID
+	sFilterConfig.FilterIdLow = 0x0000;
+	sFilterConfig.FilterMaskIdHigh = 0x0000;          //32位MASK，都是0表示不关心特定的接收ID
+	sFilterConfig.FilterMaskIdLow = 0x0000;
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;//过滤器0关联到FIFO0
+	sFilterConfig.FilterActivation = ENABLE;          //激活滤波器0
+	sFilterConfig.SlaveStartFilterBank = 14;
 
-  //启动CAN外围设备
-  if (HAL_CAN_Start(&CAN1_Handler) != HAL_OK)
-  {
-    FaultASSERT("HAL_CAN_Start",1,flag_Fault);
-  }
+	//过滤器配置
+	HAL_CAN_ConfigFilter(&CAN1_Handler, &sFilterConfig);
 
-  //激活可以RX通知
-  if (HAL_CAN_ActivateNotification(&CAN1_Handler, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-  {
-    FaultASSERT("HAL_CAN_ActivateNotification",1,flag_Fault);
-  }
-  
-  /*配置传输过程*/
-  TxHeader.StdId = 0x321;
-  TxHeader.ExtId = 0x01;
-  TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.IDE = CAN_ID_STD;
-  TxHeader.DLC = 2;
-  TxHeader.TransmitGlobalTime = DISABLE;
+	//启动CAN外围设备
+	HAL_CAN_Start(&CAN1_Handler);
+
+	#if CAN1_RX0_INT_ENABLE
+		//激活RX通知，即使能中断
+		HAL_CAN_ActivateNotification(&CAN1_Handler, CAN_IT_RX_FIFO0_MSG_PENDING);
+	#endif
 }
-//can发送一组数据(固定格式:ID为0X12,标准帧,数据帧)	
-//len:数据长度(最大为8)				     
-//msg:数据指针,最大为8个字节.
+
+//设置期望接收特定的类型帧和ID的信息
+//care：0表示任何ID都接收，1表示只接受与FilterId一致的ID的消息
+//frameType：期望接收帧的类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
+//FilterId：期望接收的ID
+//默认消息类型为数据帧
+void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId)
+{
+	CAN_FilterTypeDef  sFilterConfig;		//配置过滤器
+	if(care == 0)
+	{
+		sFilterConfig.FilterBank = 0;                     //过滤器0
+		sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;	//屏蔽位模式
+		sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+		sFilterConfig.FilterIdHigh = 0x0000;              //32位ID
+		sFilterConfig.FilterIdLow = 0x0000;
+		sFilterConfig.FilterMaskIdHigh = 0x0000;          //32位MASK，都是0表示不关心特定的接收ID
+		sFilterConfig.FilterMaskIdLow = 0x0000;
+		sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;//过滤器0关联到FIFO0
+		sFilterConfig.FilterActivation = ENABLE;          //激活滤波器0
+		sFilterConfig.SlaveStartFilterBank = 14;
+		HAL_CAN_ConfigFilter(&CAN1_Handler, &sFilterConfig);
+	}else
+	{
+		if(frameType == CAN_ID_STD)		//只接受标准数据帧
+		{
+			sFilterConfig.FilterBank=0;
+			sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;
+			sFilterConfig.FilterScale=CAN_FILTERSCALE_32BIT;
+			sFilterConfig.FilterIdHigh = ((FilterId << 21) & 0xffff0000) >> 16;
+			sFilterConfig.FilterIdLow = ((FilterId << 21) | CAN_ID_STD | CAN_RTR_DATA) & 0xffff;
+			sFilterConfig.FilterMaskIdHigh = 0xFFFF;	
+			sFilterConfig.FilterMaskIdLow = 0xFFFF;
+			sFilterConfig.FilterFIFOAssignment=CAN_RX_FIFO0;
+			sFilterConfig.FilterActivation=ENABLE;
+			HAL_CAN_ConfigFilter(&CAN1_Handler, &sFilterConfig);
+		}else							//只接受扩展数据帧
+		{
+			sFilterConfig.FilterBank=0;
+			sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;
+			sFilterConfig.FilterScale=CAN_FILTERSCALE_32BIT;
+			sFilterConfig.FilterIdHigh = ((FilterId << 3) & 0xffff0000) >> 16;
+			sFilterConfig.FilterIdLow = ((FilterId << 3) | CAN_ID_EXT | CAN_RTR_DATA) & 0xffff;
+			sFilterConfig.FilterMaskIdHigh = 0xFFFF;	
+			sFilterConfig.FilterMaskIdLow = 0xFFFF;
+			sFilterConfig.FilterFIFOAssignment=CAN_RX_FIFO0;
+			sFilterConfig.FilterActivation=ENABLE;
+			HAL_CAN_ConfigFilter(&CAN1_Handler, &sFilterConfig);
+		}
+
+	}
+}
+
+
+//can发送一组数据			     
+//msg:数据指针,最大为8个字节
+//len:数据长度(最大为8)
+//frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
+//id:ID标识符，若frameType为0，则为标准标识符，若frameType为其他则为扩展标识符
+//默认消息类型为数据帧
 //返回值:0,成功;
 //		 其他,失败;
-u8 CAN1_Send_Msg(u8* msg,u8 len)
-{	
-    u8 i=0;
-	u32 TxMailbox;
+u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id)
+{
+	u16 i;
 	u8 message[8];
-    TxHeader.StdId=0X12;        //标准标识符
-    TxHeader.ExtId=0x12;        //扩展标识符(29位)
-    TxHeader.IDE=CAN_ID_STD;    //使用标准帧
-    TxHeader.RTR=CAN_RTR_DATA;  //数据帧
-    TxHeader.DLC=len;                
-    for(i=0;i<len;i++)
-    {
-		message[i]=msg[i];
+	CAN_TxHeaderTypeDef	TxHeader;      //发送数据结构体
+	u32 TxMailbox;
+	
+	if((msg == NULL) || (len == 0) || (len > 8)) return HAL_ERROR;
+	
+	if(frameType == CAN_ID_STD)
+	{
+		TxHeader.IDE = CAN_ID_STD;	// 使用标准标识符
+		TxHeader.StdId = id;	 	// 设置标准标识符	（11位）
+	}else{
+		TxHeader.IDE = CAN_ID_EXT;	// 使用扩展标识符
+		TxHeader.ExtId = id;	 	// 设置扩展标示符	（29位）
 	}
-    if(HAL_CAN_AddTxMessage(&CAN1_Handler, &TxHeader, message, &TxMailbox) != HAL_OK)//发送
+    
+	TxHeader.RTR = CAN_RTR_DATA;  	//数据帧
+    TxHeader.DLC = len;
+	TxHeader.TransmitGlobalTime = DISABLE;
+	
+	for(i = 0;i < len;i++)
+		message[i] = msg[i];
+	
+    if(HAL_CAN_AddTxMessage(&CAN1_Handler, &TxHeader, message, &TxMailbox) != HAL_OK)
 	{
 		return HAL_ERROR;
 	}
-	while(HAL_CAN_GetTxMailboxesFreeLevel(&CAN1_Handler) != 3) {}
+	i = 0;
+	while((HAL_CAN_GetTxMailboxesFreeLevel(&CAN1_Handler) != 3)&&(i < 0xffff)) {i++;}
     return HAL_OK;
 }
 
-//can口接收数据查询
-//buf:数据缓存区;	 
-//返回值:0,无数据被收到;
-//		 其他,接收的数据长度;
-u8 CAN1_Receive_Msg(u8 *buf)
+//can口接收数据查询，不使用中断方式时的使用
+//buf:数据缓存区,最大为8个字节
+//len:数据长度(最大为8)
+//frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
+//id:ID标识符，若frameType为0，则为标准标识符，若frameType为其他则为扩展标识符
+//返回值:0,有数据被收到;
+//		 其他,没有接收到数据;
+u8 CAN1_Receive_Msg(u8* buf,u8* len,u8* frameType,u32* id)
 {
- 	u32 i;
+	CAN_RxHeaderTypeDef RxHeader;
+ 	u8 i;
 	u8	RxData[8];
-
-	if(HAL_CAN_GetRxFifoFillLevel(&CAN1_Handler, CAN_RX_FIFO0) != 1)
+	
+	if(HAL_CAN_GetRxFifoFillLevel(&CAN1_Handler, CAN_RX_FIFO0) == 0)	//没有接收到数据,直接退出
 	{
-		return 0xF1;
+		return HAL_ERROR;
 	}
 
 	if(HAL_CAN_GetRxMessage(&CAN1_Handler, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
 	{
-		return 0xF2;
+		return HAL_ERROR;
 	}
+	
     for(i=0;i<RxHeader.DLC;i++)
-    buf[i]=RxData[i];
-	return RxHeader.DLC;
+		buf[i]=RxData[i];
+	
+	*len = RxHeader.DLC;
+	
+	if(RxHeader.IDE == CAN_ID_STD)
+	{
+		*frameType = CAN_ID_STD;
+		*id = RxHeader.StdId;
+	}else{
+		*frameType = 1;
+		*id = RxHeader.ExtId;
+	}
+	
+	return HAL_OK;
 }
 
 #endif
@@ -723,7 +811,6 @@ void sys_SPI1_ENABLE(void)
 	
     __HAL_SPI_ENABLE(&SPI1_Handler);                    //使能SPI1
 	
-    //SPI1_ReadWriteByte(0Xff);                           //启动传输
 }
 
 //SPI速度设置函数
@@ -811,7 +898,6 @@ void sys_SPI2_ENABLE(void)
 	
     __HAL_SPI_ENABLE(&SPI2_Handler);                    //使能SPI2
 	
-    //SPI2_ReadWriteByte(0Xff);                           //启动传输
 }
 
 //SPI速度设置函数

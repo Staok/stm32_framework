@@ -2,7 +2,6 @@
 #define __TFTLCD_H__
 
 #include "PeriphConfigCore.h"
-#include "PeriphConfig.h"
 
 /*
   ËµÃ÷ºÍAPI£º

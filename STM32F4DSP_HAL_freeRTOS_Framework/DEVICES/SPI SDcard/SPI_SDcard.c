@@ -27,35 +27,39 @@ SPI_SD_CardInfo SPI_SDcardInfo;	//SD卡信息（初始化时自动获取）
 	如果用硬件SPI，则去打开一个硬件SPI，再到PeriphConfig.c里面定义使能CS引脚的接口和初始化
 */
 
-#define Use_simuSPI_or_hardwareSPI	0	
+#define SPI_SD_Use_simuSPI_or_hardwareSPI	0	
 
 
-#if (Use_simuSPI_or_hardwareSPI == 0)
+#if (SPI_SD_Use_simuSPI_or_hardwareSPI == 0)
 	//接口定义，用户修改
 	
-	SimuSPI spi_SDcard;				//模拟spi的句柄
+	#define SDcard_simuSPI_CS 	PBout(14) 		//simuSPI的CS线
+	#define SDcard_simuSPI_SCK 	simuSPI_SCK		//simuSPI的SCK线
+	#define SDcard_simuSPI_MOSI simuSPI_MOSI 	//simuSPI的MOSI线
+	#define SDcard_simuSPI_MISO simuSPI_MISO 	//simuSPI的MISO线
 	
-	#define SDcard_SPI_CS 	PCout(11) 	//SPI的CS线
-	#define SDcard_SPI_SCK 	PCout(12) 	//SPI的SCK线
-	#define SDcard_SPI_MOSI PDout(2) 	//SPI的MOSI线
-	#define SDcard_SPI_MISO PCin(8) 	//SPI的MISO线
-	#define CS_H SDcard_SPI_CS = IO_High
-	#define CS_L SDcard_SPI_CS = IO_Low
+	#define CS_H SDcard_simuSPI_CS = IO_High
+	#define CS_L SDcard_simuSPI_CS = IO_Low
 	
-	#define SPI_ReadWrite_Byte(x) SimuSPI_ReadWriteByte(&spi_SDcard,x) //SPI发读函数接口定义
+	#define SPI_ReadWrite_Byte(x) SimuSPI_ReadWriteByte(&simuSPI_Handle,x) //SPI发读函数接口定义
 	
-	void SDcard_SPI_SetMOSI(unsigned char sta)
-	{	SDcard_SPI_MOSI = sta;}
-
-	void SDcard_SPI_SetSCLK(unsigned char sta)
-	{	SDcard_SPI_SCK = sta;}
-
-	unsigned char SDcard_SPI_GetMISO(void)
-	{	return SDcard_SPI_MISO;}
+	void SDcard_simuSPI_CS_IO_init(void)
+	{
+		//simuSPI的CS引脚初始化，用户修改
+		GPIO_InitTypeDef GPIO_Initure;
+		
+		__HAL_RCC_GPIOB_CLK_ENABLE();	
+		
+		GPIO_Initure.Pin = GPIO_PIN_14;
+		GPIO_Initure.Mode = GPIO_MODE_OUTPUT_PP;  	//推挽输出
+		GPIO_Initure.Pull=GPIO_PULLUP;          	//上拉
+		GPIO_Initure.Speed=GPIO_SPEED_HIGH;     	//高速
+		HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+	}
 
 #endif
 
-#if (Use_simuSPI_or_hardwareSPI == 1)
+#if (SPI_SD_Use_simuSPI_or_hardwareSPI == 1)
 	//接口定义，用户修改
 	#define CS_H SPI1_CS = IO_High
 	#define CS_L SPI1_CS = IO_Low
@@ -69,31 +73,19 @@ SPI_SD_CardInfo SPI_SDcardInfo;	//SD卡信息（初始化时自动获取）
 
 #endif
 
+/*下面是固定不变的部分*/
 //IO初始化
 void SDcard_SPI_Init(void)
 {
-	#if (Use_simuSPI_or_hardwareSPI == 0)
-		//SPI的四个IO口初始化，用户修改
-//		GPIO_InitTypeDef GPIO_Initure;
-//		__HAL_RCC_GPIOF_CLK_ENABLE();           //开启GPIOF时钟
-//		
-//		GPIO_Initure.Pin=GPIO_PIN_9|GPIO_PIN_10; //PF9,10
-//		GPIO_Initure.Mode=GPIO_MODE_OUTPUT_PP;  //推挽输出
-//		GPIO_Initure.Pull=GPIO_PULLUP;          //上拉
-//		GPIO_Initure.Speed=GPIO_SPEED_HIGH;     //高速
-//		HAL_GPIO_Init(GPIOF,&GPIO_Initure);
-	
-		/*下面是固定不变的部分*/
-		spi_SDcard.PinSetMOSI=SDcard_SPI_SetMOSI;
-		spi_SDcard.PinSetSCLK=SDcard_SPI_SetSCLK;
-		spi_SDcard.PinGetMISO=SDcard_SPI_GetMISO;
-		spi_SDcard.Delayus=delay_us;
-		spi_SDcard.IntervalTime = 5;
+	#if (SPI_SD_Use_simuSPI_or_hardwareSPI == 0)
 		
+		simuSPI_IO_init();
+		SDcard_simuSPI_CS_IO_init();
+
 		HAL_Delay(10);
 	#endif
 	
-	#if (Use_simuSPI_or_hardwareSPI == 1)
+	#if (SPI_SD_Use_simuSPI_or_hardwareSPI == 1)
 		//硬件SPI初始化，用户修改
 		sys_SPI1_ENABLE();
 		HAL_Delay(10);

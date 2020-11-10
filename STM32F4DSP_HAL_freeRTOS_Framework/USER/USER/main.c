@@ -10,14 +10,7 @@
  *_____________________________________//              //   \\             \\____________________________________________*/
 /*_____________________________________\\              \\   //             //____________________________________________*
 简单使用说明：
-	外设剪裁和配置在PeriphconfigCore.h里
-	
-	初始化函数均在PeriphconfigCore.c里
-	所有外设API均在PeriphconfigCore.h，新文件使用时请调用
-	所有GPIO的API均在Periphconfig.h，新文件使用时请调用
-	
-	FreeRTOS任务编写在TaskConfig.c里
-	裸机程序任务编写在BareConfig.c里
+	查看本工程的说明手册：docs.bin
  *_____________________________________///                               \\\____________________________________________*/
 
 #include "PeriphconfigCore.h" /*所有头文件均放在这里面*/
@@ -31,9 +24,9 @@ int main(void)
 	while(1)
 	{
 		#if SYSTEM_SUPPORT_OS
-			Task_Begin(); 			/*开始跑FreeRTOS*/
+			Task_Begin(); 				/*开始跑FreeRTOS*/
 		#else
-			Bare_Begin();			/*开始跑裸机*/
+			Bare_Begin();				/*开始跑裸机*/
 		#endif
 	}
 }

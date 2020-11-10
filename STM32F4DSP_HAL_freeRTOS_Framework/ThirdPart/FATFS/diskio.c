@@ -53,8 +53,9 @@ DSTATUS disk_initialize (
 	
 	switch (pdrv) {
 		case DEV_ExFLASH : 	/*外部flash初始化*/
-			//stat = W25QXX_Init(); //或者MMC/NAND等等
-
+			#if SYSTEM_SUPPORT_SFUD
+				stat = (DRESULT)sfud_device_init(sfud_get_device(SFUD_BY25Q128ASSIG_DEVICE_INDEX));
+			#endif
 			return stat;
 
 		case DEV_SD : 		/*SDIO SD卡初始化*/
@@ -97,7 +98,14 @@ DRESULT disk_read (
 	switch (pdrv) {
 		
 			case DEV_ExFLASH : 	/*外部flash读*/
-				
+				#if SYSTEM_SUPPORT_SFUD
+					for(;count>0;count--)
+					{
+						res = (DRESULT)sfud_read(sfud_get_device(SFUD_BY25Q128ASSIG_DEVICE_INDEX), sector * ExFLASH_SECTOR_SIZE, ExFLASH_SECTOR_SIZE, buff);
+						sector++;
+						buff += ExFLASH_SECTOR_SIZE;
+					}
+				#endif
 				return res;
 
 			case DEV_SD : 		/*SDIO SD卡读*/
@@ -152,7 +160,14 @@ DRESULT disk_write (
 	switch (pdrv) {
 		
 			case DEV_ExFLASH : /*外部flash写*/
-				
+				#if SYSTEM_SUPPORT_SFUD
+					for(;count>0;count--)
+					{
+						res = (DRESULT)sfud_write(sfud_get_device(SFUD_BY25Q128ASSIG_DEVICE_INDEX), sector * ExFLASH_SECTOR_SIZE, ExFLASH_SECTOR_SIZE, buff);
+						sector++;
+						buff += ExFLASH_SECTOR_SIZE;
+					}
+				#endif
 				return res;
 
 			case DEV_SD : 	/*SDIO SD卡写*/

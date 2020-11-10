@@ -108,6 +108,10 @@ void sys_MCU_Init_Seq(void)
 		sys_SPI2_ENABLE();
 	#endif
 	
+	#if SYSTEM_CAN1_ENABLE
+		sys_CAN1_Init();
+	#endif
+	
 	#if SYSTEM_StdbyWKUP_ENABLE
 		/*使能待机-低功耗模式，默认长按PA0(WKUP)3秒关开机*/
 		sys_StdbyWKUP_ENABLE();
@@ -180,7 +184,12 @@ void sys_Device_Init_Seq(void)
 	
 	/*LWIP 2.1.2 初始化*/
 	#if SYS_SUPPORT_LWIP
-
+		init_return = lwip_comm_init(&lwip_handle);
+		if(init_return != 0)
+		{
+			lwip_comm_destroy(&lwip_handle); //初始化失败时恢复原样
+			FaultASSERT("lwip_comm_init",init_return,flag_Warning);
+		}
 	#endif
 	
 	/*OLED初始化*/

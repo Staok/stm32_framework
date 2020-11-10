@@ -369,7 +369,7 @@ void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const i
 	int menu_deepth = deepth; //记录当前在第几层
 	int i; //万年不变的i
 	POINT_COLOR = RED;
-	sprintf(buf,"Menu View : %d %d %d",menuid[0],menuid[1],menuid[2]);
+	sprintf_(buf,"Menu View : %d %d %d",menuid[0],menuid[1],menuid[2]);
 	LCD_ShowString(50,20,16,(u8*)buf);
 	for(i = 0;i < 5;i++)
 	{
@@ -379,19 +379,19 @@ void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const i
 			if((MenuItemNow + menuid[menu_deepth])->Childrenms !=NULL)	//如果本菜单条目下没有子菜单
 			{
 				if(menuid[menu_deepth] == i)
-					 sprintf(buf,"%-15s * -->",((MenuItemNow + i)->DisplayString));	
-				else sprintf(buf,"%-15s   -->",((MenuItemNow + i)->DisplayString));	//左对齐
+					 sprintf_(buf,"%-15s * -->",((MenuItemNow + i)->DisplayString));	
+				else sprintf_(buf,"%-15s   -->",((MenuItemNow + i)->DisplayString));	//左对齐
 			}else
 			{
 				if(menuid[menu_deepth] == i)
-					 sprintf(buf,"%-15s * Ctl",((MenuItemNow + i)->DisplayString));	
-				else sprintf(buf,"%-15s   Ctl",((MenuItemNow + i)->DisplayString));
+					 sprintf_(buf,"%-15s * Ctl",((MenuItemNow + i)->DisplayString));	
+				else sprintf_(buf,"%-15s   Ctl",((MenuItemNow + i)->DisplayString));
 			}
 			
 			LCD_ShowString(10,40 + i*20,16,(u8*)buf);						//显示当前菜单页中每一条菜单项
 		}else
 		{
-			sprintf(buf,"%-15s      ",' ');	
+			sprintf_(buf,"%-15s      "," ");	
 			LCD_ShowString(10,40 + i*20,16,(u8*)buf);	//清空多余区域
 		}
 
@@ -409,14 +409,14 @@ void Locate(const struct MenuItem *MenuItemNow,const char * const menuid,const i
 //	{
 //		if(MenuItemNow->Parentms->Parentms !=NULL)
 //		{
-//					sprintf(index_strbuf,"/->%s->%s->\n",(MenuItemNow->Parentms->Parentms + menuid[0])->DisplayString,
+//					sprintf_(index_strbuf,"/->%s->%s->\n",(MenuItemNow->Parentms->Parentms + menuid[0])->DisplayString,
 //																		(MenuItemNow->Parentms + menuid[1])->DisplayString);
-//		}else {	sprintf(index_strbuf,"/->%s->\n",		 MenuItemNow->Parentms + menuid[0])->DisplayString);}
+//		}else {	sprintf_(index_strbuf,"/->%s->\n",		 MenuItemNow->Parentms + menuid[0])->DisplayString);}
 //	}else{		mystrcpy(index_strbuf, "/->\n");}
 //	
 //	for(i = 0;i < MenuItemNow.MenuCount;i++)
 //	{
-//		sprintf(tem_strbuf,"%s\n",MenuItemNow[i]->DisplayString);
+//		sprintf_(tem_strbuf,"%s\n",MenuItemNow[i]->DisplayString);
 //		mystrcat(item_strbuf,tem_strbuf);
 //	}
 //	mystrcat(index_strbuf,item_strbuf);

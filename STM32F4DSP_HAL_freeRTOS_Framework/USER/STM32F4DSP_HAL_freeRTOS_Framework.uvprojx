@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>STM32F4DSP_Framework</TargetName>
+      <TargetName>FLASH</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
@@ -134,11 +134,11 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>-1</DriverSelection>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,__CC_ARM</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\NetCard;..\DEVICES\SPI FLASH;..\ThirdPart\FreeRTOS\include;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\Middles\malloc;..\Middles\lwrb;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\web_server;..\DEVICES\FATFS plus;..\DEVICES\SPI SDcard</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\NetCard;..\DEVICES\SPI FLASH;..\ThirdPart\FreeRTOS\include;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\Middles\malloc;..\Middles\lwrb;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\web_server;..\DEVICES\FATFS plus;..\DEVICES\SPI SDcard;..\DEVICES\SPI FLASH SFUD\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -536,6 +536,21 @@
               <FileName>SPI_SDcard.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\SPI SDcard\SPI_SDcard.c</FilePath>
+            </File>
+            <File>
+              <FileName>sfud.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\SPI FLASH SFUD\src\sfud.c</FilePath>
+            </File>
+            <File>
+              <FileName>sfud_sfdp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\SPI FLASH SFUD\src\sfud_sfdp.c</FilePath>
+            </File>
+            <File>
+              <FileName>sfud_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\SPI FLASH SFUD\port\sfud_port.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -888,16 +903,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_crc.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_cryp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_cryp.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_cryp_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_cryp_ex.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_dac.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_dac.c</FilePath>
@@ -933,11 +938,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_dma_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_dma2d.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_dma2d.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_eth.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_eth.c</FilePath>
@@ -963,21 +963,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_flash_ramfunc.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_fmpi2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_fmpi2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_fmpi2c_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_fmpi2c_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_fmpsmbus.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_fmpsmbus.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_gpio.c</FilePath>
@@ -986,26 +971,6 @@
               <FileName>stm32f4xx_hal_hcd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_hcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2c_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2c_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2s.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2s.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2s_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2s_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_iwdg.c</FileName>
@@ -1031,11 +996,6 @@
               <FileName>stm32f4xx_hal_pwr_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_pwr_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_qspi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_qspi.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_rcc.c</FileName>
@@ -1073,16 +1033,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_sdram.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_smbus.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_smbus.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_spdifrx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_spdifrx.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_spi.c</FilePath>
@@ -1111,11 +1061,6 @@
               <FileName>stm32f4xx_hal_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_usart.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_wwdg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_wwdg.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_ll_adc.c</FileName>
@@ -1233,18 +1178,19 @@
           <GroupName>Docs</GroupName>
           <Files>
             <File>
-              <FileName>docs.txt</FileName>
+              <FileName>docs.bin</FileName>
               <FileType>5</FileType>
-              <FilePath>..\Docs\docs.txt</FilePath>
+              <FilePath>..\Docs\docs.bin</FilePath>
             </File>
           </Files>
         </Group>
       </Groups>
     </Target>
     <Target>
-      <TargetName>STM32F4DSP_Framework_TO_SRAM</TargetName>
+      <TargetName>SRAM</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -1368,11 +1314,11 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>-1</DriverSelection>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -1492,27 +1438,27 @@
                 <Size>0x0</Size>
               </XRAM>
               <OCR_RVCT1>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT1>
               <OCR_RVCT2>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT2>
               <OCR_RVCT3>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <StartAddress>0x20000000</StartAddress>
+                <Size>0x10000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
-                <Type>0</Type>
+                <Type>1</Type>
                 <StartAddress>0x0</StartAddress>
                 <Size>0x0</Size>
               </OCR_RVCT5>
@@ -1533,8 +1479,8 @@
               </OCR_RVCT8>
               <OCR_RVCT9>
                 <Type>0</Type>
-                <StartAddress>0x20000000</StartAddress>
-                <Size>0x20000</Size>
+                <StartAddress>0x20010000</StartAddress>
+                <Size>0x10000</Size>
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
@@ -1546,7 +1492,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>4</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -1559,7 +1505,7 @@
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
-            <uGnu>1</uGnu>
+            <uGnu>0</uGnu>
             <useXO>0</useXO>
             <v6Lang>1</v6Lang>
             <v6LangP>1</v6LangP>
@@ -1570,9 +1516,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define></Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,__CC_ARM,VECT_TAB_SRAM</Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\menu;.\USER\TaskConfig;..\CONFIG;..\CORE;..\DEVICES\FATFS plus;..\DEVICES\MAX7219;..\DEVICES\MPU6050;..\DEVICES\NetCard;..\DEVICES\OLED;..\DEVICES\SPI FLASH SFUD\inc;..\DEVICES\SPI SDcard;..\DEVICES\TFTLCD;..\HAL\Inc;..\Middles\lwrb;..\Middles\malloc;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\ThirdPart\FreeRTOS\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1770,6 +1716,21 @@
               <FileName>SPI_SDcard.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\DEVICES\SPI SDcard\SPI_SDcard.c</FilePath>
+            </File>
+            <File>
+              <FileName>sfud.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\SPI FLASH SFUD\src\sfud.c</FilePath>
+            </File>
+            <File>
+              <FileName>sfud_sfdp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\SPI FLASH SFUD\src\sfud_sfdp.c</FilePath>
+            </File>
+            <File>
+              <FileName>sfud_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\DEVICES\SPI FLASH SFUD\port\sfud_port.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2122,16 +2083,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_crc.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_cryp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_cryp.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_cryp_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_cryp_ex.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_dac.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_dac.c</FilePath>
@@ -2167,11 +2118,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_dma_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_dma2d.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_dma2d.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_eth.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_eth.c</FilePath>
@@ -2197,21 +2143,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_flash_ramfunc.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_fmpi2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_fmpi2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_fmpi2c_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_fmpi2c_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_fmpsmbus.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_fmpsmbus.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_gpio.c</FilePath>
@@ -2220,26 +2151,6 @@
               <FileName>stm32f4xx_hal_hcd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_hcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2c.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2c_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2c_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2s.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2s.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_i2s_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_i2s_ex.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_iwdg.c</FileName>
@@ -2265,11 +2176,6 @@
               <FileName>stm32f4xx_hal_pwr_ex.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_pwr_ex.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_qspi.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_qspi.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_rcc.c</FileName>
@@ -2307,16 +2213,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_sdram.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_smbus.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_smbus.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_spdifrx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_spdifrx.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_spi.c</FilePath>
@@ -2345,11 +2241,6 @@
               <FileName>stm32f4xx_hal_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_usart.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_wwdg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_wwdg.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_ll_adc.c</FileName>
@@ -2467,9 +2358,9 @@
           <GroupName>Docs</GroupName>
           <Files>
             <File>
-              <FileName>docs.txt</FileName>
+              <FileName>docs.bin</FileName>
               <FileType>5</FileType>
-              <FilePath>..\Docs\docs.txt</FilePath>
+              <FilePath>..\Docs\docs.bin</FilePath>
             </File>
           </Files>
         </Group>

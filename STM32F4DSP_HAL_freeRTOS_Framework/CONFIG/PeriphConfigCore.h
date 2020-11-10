@@ -79,16 +79,23 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 		#include "pid.h"
 	#endif
 
-#define SYSTEM_SUPPORT_simuspi	0				/*是否调用软件模拟SPI，具体用法在其.h文件里介绍*/
-	#if SYSTEM_SUPPORT_simuspi
-		#include "simuspi.h"
+#define SYSTEM_SUPPORT_simuspi	0				/*是否调用软件模拟SPI，具体用法在其.h文件里介绍，或者看Docs手册，更详细*/
+	#if SYSTEM_SUPPORT_simuspi					
+		#include "simuspi.h"					
 	#endif
 	
-#define SYSTEM_SUPPORT_simui2c	0				/*是否调用软件模拟I2C，具体用法在其.h文件里介绍*/
+#define SYSTEM_SUPPORT_simui2c	0				/*是否调用软件模拟I2C，具体用法在其.h文件里介绍，或者看Docs手册，更详细*/
 	#if SYSTEM_SUPPORT_simui2c
 		#include "simui2c.h"
 	#endif
-
+	
+#define SYSTEM_SUPPORT_SFUD		0				/*是否支持SPI串行FLASH，使用开源库https://github.com/armink/SFUD，驱动SPI FLASH*/
+												/*配置SPI FLASH型号和具体使用看 sfud_cfg.h，配置底层在 sfud_port.c*/
+	#if SYSTEM_SUPPORT_SFUD
+		#include "sfud.h"
+	#endif
+	
+	
 /*DEVICES所有头文件*/
 #include "TFTLCD.h"
 //#include "OLED.h"
@@ -132,9 +139,11 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 											/*默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断*/
 											/*注：串口2、3的接收回调函数没有补全，用时再补，和串口1的同理*/
 											
-#define SYSTEM_CAN1_ENABLE			0		/*使用CAN1,默认不使用中断，引脚默认上拉
-											PB8     ------> CAN1_RX
-											PB9     ------> CAN1_TX  可以按照 stm32f207ie.pdf 手册的 59页 开始自行选择引脚，可选的还挺多的*/
+#define SYSTEM_CAN1_ENABLE			0		/*使用CAN1,默认不使用中断，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据*/
+	#define CAN1_RX0_INT_ENABLE		1		/*CAN1接收中断使能*/
+											/*更多API详看docs.txt*/
+											/*默认引脚：	PB8     ------> CAN1_RX		可到源码处修改
+															PB9     ------> CAN1_TX		可以按照 stm32f407ze.pdf 手册的 62页 开始自行选择引脚，可选的还挺多的*/
 
 #define SYSTEM_UseTIM5ForTiming_ENABLE	1			/*使用TIM5测量一个函数运行的时间，单位us*/
 
@@ -277,12 +286,12 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 #define SYSTEM_StdbyWKUP_ENABLE	1			/*使用待机-低功耗模式，PA0为唤醒键，占用0线外部中断*/
 											/*注：看门狗和低功耗待机模式不能同时开启，因为看门狗不能关闭，看门狗复位会唤醒低功耗状态*/
 
-#define SYSTEM_FSMC_ENABLE	0				//是否启用FSMC
+#define SYSTEM_FSMC_ENABLE			0		//是否启用FSMC
 	#define SYSTEM_FSMC_use4LCD		0		//启用FSMC用于驱动LCD，则相关代码被编译，相关API可用
 	#define SYSTEM_FSMC_use4SRAM	1		//启用FSMC用于驱动SRAM，则相关代码被编译，相关API可用
 
-#define SYSTEM_FLASH_IAP_ENABLE	0			/*启用对内部FLASH储存空间编程*/
-	#define STM32_FLASH_WREN	1			/*启用写功能，否则只读不写*/
+#define SYSTEM_FLASH_IAP_ENABLE		0		/*启用对内部FLASH储存空间编程*/
+	#define STM32_FLASH_WREN		0		/*启用写功能，否则只读不写*/
 	#define FLASH_SAVE_FATFS_SIZE	124		/*内部FLASH给FATFS划分的大小，单位KB*/
 												/*以下不用动了！！*/
 	#define STM32F407ZG_FLASH_SIZE 	1024 		/*所选STM32的FLASH容量大小(单位为KB)*/
@@ -292,10 +301,10 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 	#define FLASH_SAVE_ADDR  		(STM32_FLASH_BASE + (u32)((STM32F407ZG_FLASH_SIZE - FLASH_SAVE_FATFS_SIZE - 2)*1024)) //留2KB作为参数保存
 
 
-#define SYSTEM_SDIO_SD_ENABLE	1				//启用SDIO接口驱动SD卡
-												/*引脚：PC8/SDIO_D0，PC9/SDIO/D1，PC10/SDIO_D2，PC11/SDIO_D3，PC12/SDIO_CK，PD2/SDIO_CMD*/
+#define SYSTEM_SDIO_SD_ENABLE	1				/*启用SDIO接口驱动SD卡，引脚：PC8/SDIO_D0，PC9/SDIO/D1，PC10/SDIO_D2，PC11/SDIO_D3，PC12/SDIO_CK，PD2/SDIO_CMD*/
+	#define SD_DMA_MODE    		0				/*1：DMA模式，0：查询模式 */  
 
-#define SYSTEM_SPI_SD_ENABLE	1				//启用SPI接口驱动SD卡
+#define SYSTEM_SPI_SD_ENABLE	1				/*启用SPI接口驱动SD卡*/
 												/*详见 SPI_SDcard.c 文件*/
 
 /*_____________系统变量和函数（莫要乱动撒）_______________*/
@@ -412,8 +421,16 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 
 /*_______________________________CAN1___________________________________*/
 #if SYSTEM_CAN1_ENABLE
-	u8 CAN1_Receive_Msg(u8 *buf);
-	u8 CAN1_Send_Msg(u8* msg,u8 len);
+	u8 CAN1_Receive_Msg(u8* buf,u8* len,u8* frameType,u32* id);
+	u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id);
+	void sys_CAN1_Init(void);
+	void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId);
+	
+	#if CAN1_RX0_INT_ENABLE
+		extern CAN_RxHeaderTypeDef	CAN1_IT_RxMessage;	//CAN1从中断接收到数据的结构体
+		extern u8 CAN1_IT_Rxdata[8];					//CAN1从中断接收到的数据
+		extern u8 CAN1_IT_RxMessage_flag;				//CAN1从中断接收到数据的标志
+	#endif
 #endif
 /*_______________________________MCO___________________________________*/
 #if SYSTEM_MCO_PA8_OUT
@@ -615,8 +632,6 @@ void sys_SPI2_SS_io_Init(void);
 	#define SD_TRANSFER_OK     	((uint8_t)0x00)
 	#define SD_TRANSFER_BUSY   	((uint8_t)0x01)
 
-	#define SD_DMA_MODE    		0						//1：DMA模式，0：查询模式   
-
 	extern SD_HandleTypeDef        SDCARD_Handler;     	//SD卡句柄
 	extern HAL_SD_CardInfoTypeDef  SDCardInfo;         	//SD卡信息结构体
 
@@ -663,7 +678,7 @@ void sys_SPI2_SS_io_Init(void);
 #endif
 
 
-#define Version_of_stm32_framework "2.4"
+#define Version_of_stm32_framework "2.5"
 
 /*Author:		MaxwellXyao*/
 #define BIT(n) 					(1 << n) 				//位mask

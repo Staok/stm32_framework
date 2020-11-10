@@ -127,10 +127,14 @@
 #define configQUEUE_REGISTRY_SIZE				8                       //不为0时表示启用队列记录，具体的值是可以
                                                                         //记录的队列和信号量最大数目
 /***************************************************************************************************************/
-/*                                FreeRTOS与内存申请有关配置选项                                                */
+/*                                FreeRTOS与内存申请有关配置选项                                               */
 /***************************************************************************************************************/
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       //支持动态内存申请
-#define configTOTAL_HEAP_SIZE					((size_t)(30*1024))     //系统所有总的堆大小
+#if VECT_TAB_SRAM	/*程序下载到SRAM内DEBUG，最大程序64KB，内存数据64KB*/
+	#define configTOTAL_HEAP_SIZE					((size_t)(10*1024))     //FreeRTOS系统所有总的堆大小	10KB
+#else				/*程序下载到FLASH内固定，最大程序1024KB，内存数据128KB*/
+	#define configTOTAL_HEAP_SIZE					((size_t)(30*1024))     //FreeRTOS系统所有总的堆大小	30KB
+#endif
 //->等待设置<-
 /*
 STN32F207IET6：内部容量

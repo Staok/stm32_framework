@@ -140,24 +140,21 @@ DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407417-stm32f4274
 /*
 优先级分组为4，只有0~15的16级抢占优先级
 
+TODO：需要优化优先级分配，一部分不重要的放到5以后，小于5的只有少数
 
 优先级	0			1				2				3				4				5				...
 	   保留	    TIM4(时基)	 	按键外部中断	按键外部中断	TIM6(辅助时基)
-				TIM5(测时)		  TIM3（PWNM）	TIM7(辅助时基)
-											    TIM2（多功能）   
+				TIM5(测时)		TIM3（PWNM）	TIM7(辅助时基)	
+								CAN1接收		TIM2（多功能）   
 */
 
 /*_____________________________________\\\                               ///____________________________________________*
  *_________________________________________________内部空间划分_________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
 /*
-   	CPU内部 FLASH  			【0x0800 0000 - 0x080F FFFF】,容量512K(0x80000)字节
-	CPU内部 SRAM1  			【0x2000 0000 - 0x2000 FFFF】,容量128K(0x20000)字节
+	STM32F407ZGT6 空间：
+   	CPU内部 FLASH  			【0x0800 0000 - 0x080F FFFF】,容量 1024K(0x100000) 字节
 	
-	外部扩展SRAM 在块1区3   【0x6800 0000 - 0x681F FFFF】,容量1MB(0x100000)字节（512K个16bit）
-	TFT LCD 地址 在块1区4   【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）TODO：改为A0
-	
-	STM32F407ZGT6内存空间：
 	普通内存：
 		主要内存：		地址从：0X2000 0000 开始，共 128KB），这部分内存任何外设都可以访问。
 		辅助内存CCM：	地址从：0X1000 0000 开始，共 64KB，这部分内存仅 CPU 可以访问，DMA 之类的不可以直接访问，使用时得特别注意！！
@@ -169,11 +166,92 @@ DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407417-stm32f4274
 		辅助内存 CCM：			划分：60*1024字节	标志：InrCCM	（推荐DSP等需要高速访问的大量数据用CCM）
 		外扩内存 SRAM:			划分：960*1024字节	标志：ExRAM1
 	
+	外部扩展SRAM 在块1区3   【0x6800 0000 - 0x681F FFFF】,容量1MB(0x100000)字节（512K个16bit）
+	TFT LCD 地址 在块1区4   【0x6C000000 | 0x000007FE,  +2】, 仅占用2个端口地址（使用A10连接RS引脚）TODO：改为A0
+	
 	LWIP 		默认吃 30*1024 字节的 InrRAM			（不推荐LWIP占用CCM内存，因为CCM内存不能被DMA访问！）
 	FreeRTOS 	默认吃 30*1024 字节的 主要内存 SRAM1
 	
 	综上：		SRAM1 	上电后的默认 占用比 （70+30/128）
 				InrRAM 	上电后的默认 占用比 （30/70）
+*/
+/*
+TODO:把F1模板里的命名规范、变成规范和默认事项搬过来
+*/
+
+/*
+	特殊说明：
+	1、由于历史遗留原因，本MDK工程编码位GB2312，所以用外部文件写程序时请选用GB2312编码来写
+		但是如果已经使用UTF-8等编码编写了很多内容时，只需用notepad软件新建一个新文件，选择GB2312编码，然后复制原来UTF-8等编码格式的原文进来，就自动转为GB2312编码了
+		或者应win自带的文本文件保存格式选择GB2312即可
+		不过推荐以后都按照UTF-8格式！
+		
+	改芯片的步骤：
+	1、在 Device 里改芯片型号
+	2、在 C/C++ 里面改 Symbols 到相应芯片型号，可选：
+		STM32F405xx 
+		STM32F415xx
+		STM32F407xx（当前）
+		STM32F417xx
+		....等等等等，详情看stm32f4xx.h文件
+	3、（第一步完成后这里就自动改了，再检查一下）在 Debug 里面的 下载Settings 里面的 Flash Download 里面改相应的小、中大容量下载算法
+	4、在当前工程的CORE文件夹里 只保留 相应的startup.s文件，F4的各个型号启动文件在.\USER\SYS\Inc里
+
+*/
+/*
+增加把程序下载到SRAM调试的功能：
+	前情说明：
+		BOOT设置的效果：
+			BOOT1	BOOT0		启动区域
+			x		  0			FLASH 		复位从FLASH运行，Target为'SRAM'时，按"下载"后，复位启动还是FLASH，
+																			   按MCU的复位按键还是从FLASH运行
+																			   只有按"调试"后，才会从MCU的内部SRAM运行
+																				但是还得按下"顺序执行"才会跑起来
+			1		  1			SRAM		复位从SRAM运行，Target为'SRAM'时，按"下载"后，从内部SRAM运行，
+																			  按MCU的复位按键从内部SRAM运行
+																			  按"调试"后，从内部SRAM运行
+																				但是还得按下"顺序执行"才会跑起来
+			结论：如果下载验证的频次很高，推荐还是改一下BOOT0和1为1为好
+		计算把MCU的内部SRAM分给程序空间和数据空间的大小：
+			可用把MCU内部的SRAM对半分，也可以任意定；
+			如MCU的内部SRAM有128KB，一半的大小 1024*128/2，其16进制为 0x10000
+	
+	配置过程：（下面都以128KB的SRAM对半分给程序空间和数据空间为例子）
+		1、Project Targets 里面增加一个 'SRAM' 选项
+		2、Select Target 选择 'SRAM' 选项，让工程切换到此配置的环境中
+		3、打开 Options for Target：
+			在 Target栏 填入 	IROM1：0x20000000（八位）			0x10000（分64KB给程序空间）
+								IRAM1：0x20010000（IROM1 + 其size）	0x10000（分64KB给数据空间）
+			在 C/C++栏 的	Define 里面添加 VECT_TAB_SRAM 宏
+			在 Debug栏 	勾选 "Load Application at startup"
+						创建一个 "Dbg_RAM.ini" 文件，放在工程文件的同目录里
+						在 Initialization File栏添加 ".\Dbg_RAM.ini"，
+							这个文件的具体内容在最后附上
+			在 Debug栏	进入Settings 
+									在 Debug栏 的右下角的 Download Options的两个都选上
+									在Flash Download栏  选择 "Do not Erase"，
+														在RAM for Algorithm 里面保持与上面的 IRAM1 的一致
+														在Programming Algorithm 里面的
+															右下角的两个框框保持与上面的 IROM1 的一致
+		4、Over!				
+	
+	Dbg_RAM.ini内容：					
+		FUNC void Setup (void) {
+		  SP = _RDWORD(0x20000000);             // Setup Stack Pointer
+		  PC = _RDWORD(0x20000004);             // Setup Program Counter
+		  XPSR = 0x01000000;                    // Set Thumb bit
+		  _WDWORD(0xE000ED08, 0x20000000);      // Setup Vector Table Offset Register
+		}
+
+		FUNC void OnResetExec (void) {
+			Setup();
+		}
+
+		LOAD .\Objects\STM32F4DSP_HAL_freeRTOS_Framework.axf INCREMENTAL	// 这个是 OBJ里 axf文件的路径，用户要改，其他莫动~
+
+		Setup();
+
+		g, main
 */
 
 /*_____________________________________\\\                               ///____________________________________________*
@@ -558,12 +636,24 @@ _____________可选组件_______________________________________
 											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
 											
 	SYSTEM_SUPPORT_simuspi					启用宏：SYSTEM_SUPPORT_simuspi（在PeriphConfigCore.h的“组件选择”里）
-											提供软件模拟SPI，具体用法在其.h文件里介绍
-											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+											提供软件模拟SPI
+											需要修改其.c文件里公用的三个数据脚（SCK,MISO,MOSI）和其.h文件里的宏定义
+											然后初始化调用 simuSPI_IO_init() ，用户需要自己初始化CS片选脚
+											具体例子请看 SPI_SDcard.c 和 sfud_port.c
 	
 	SYSTEM_SUPPORT_simui2c					启用宏：SYSTEM_SUPPORT_simui2c（在PeriphConfigCore.h的“组件选择”里）
 											提供软件模拟I2C，具体用法在其.h文件里介绍
-											初始化和相关API没有被任何地方调用，需要手动调用初始化程序和相关API实现用户功能
+											具体例子请看本模板自带的 mpu6050.c 的写法
+	
+	SYSTEM_SUPPORT_SFUD						启用宏：SYSTEM_SUPPORT_SFUD（在PeriphConfigCore.h的“组件选择”里）
+											是否支持SPI串行FLASH，使用开源库https://github.com/armink/SFUD，驱动SPI FLASH
+											配置SPI FLASH型号和具体使用看 sfud_cfg.h，配置底层在 sfud_port.c
+											初始化在sfud_cfg.h中定义的指定设备：sfud_device_init(sfud_get_device(SFUD_BY25Q128ASSIG_DEVICE_INDEX));
+											可选使用硬件SPI还是软件模拟SPI
+											已经配置为用FATFS管理
+											SPI FLASH空间分配：以W25Q128为例
+												一共16MB，分为4096各扇区，一个扇区4KB，分为16个页，一个页256Byte，
+												一般一个扇区为最小擦除单位（4KB = 4096Byte），不同型号之间的区别是扇区数量的多少，其他不变（知道就行）
 											
 _____________默认必开的固定搭配外设_______________________________________
 
@@ -686,7 +776,7 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 											myfree(InrRAM,buf4uart1);
 
 &	SYSTEM_CAN1_ENABLE		使用CAN1,默认不使用中断，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据
-							默认发送只能用数据帧
+							默认发送只能用数据帧，默认初始化为500k位/s
 							默认引脚：	PB8     ------> CAN1_RX		可到源码处修改
 										PB9     ------> CAN1_TX		可以按照 stm32f407ze.pdf 手册的 62页 开始自行选择引脚，可选的还挺多的
 							opt:
@@ -1000,6 +1090,7 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 								写：	STMFLASH_Write(FLASH_SAVE_ADDR,	(u32*)&StartUpTimes,	getWordSize(StartUpTimes));
 								
 & SYSTEM_SDIO_SD_ENABLE		启用SDIO接口驱动SD卡
+							已经配置为用FATFS管理
 							注：上DMA的话还有中断处理，数据量大的话易前后混淆，增加程序复杂度，算啦
 							支持的四种卡：SD2.0 高容量卡（SDHC，最大32G），SD2.0 标准容量卡（SDSC，最大 2G），SD1.x 卡和 MMC 卡）
 							用HAL库初始化后获取到的卡信息存在：
@@ -1051,6 +1142,9 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 									CardCap>>20 //此为转换为MB单位
 
 & SYSTEM_SPI_SD_ENABLE		启用SPI接口驱动SD卡
+							已经配置为用FATFS管理
+							opt:
+								使用硬件SPI还是软件模拟SPI
 							详见 SPI_SDcard.c 文件
 
 

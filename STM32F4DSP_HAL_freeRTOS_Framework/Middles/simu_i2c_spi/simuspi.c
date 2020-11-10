@@ -12,6 +12,44 @@
 **********************************************************************************/
 #include "simuspi.h"		//模拟SPI协议
 
+#include "PeriphConfigCore.h"
+
+SimuSPI simuSPI_Handle;					//simuSPI公用句柄
+
+
+void simuSPI_SetMOSI(unsigned char sta)
+{	simuSPI_MOSI = sta;}
+
+void simuSPI_SetSCLK(unsigned char sta)
+{	simuSPI_SCK = sta;}
+
+unsigned char simuSPI_GetMISO(void)
+{	return simuSPI_MISO;}
+	
+void simuSPI_IO_init(void)
+{
+	//simuSPI的三个公用数据IO口初始化，用户修改
+	GPIO_InitTypeDef GPIO_Initure;
+	
+	__HAL_RCC_GPIOB_CLK_ENABLE();	
+	
+	GPIO_Initure.Pin = GPIO_PIN_3|GPIO_PIN_5;
+	GPIO_Initure.Mode = GPIO_MODE_OUTPUT_PP;  	//推挽输出
+	GPIO_Initure.Pull=GPIO_PULLUP;          	//上拉
+	GPIO_Initure.Speed=GPIO_SPEED_HIGH;     	//高速
+	HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+	
+	GPIO_Initure.Pin = GPIO_PIN_4;
+	GPIO_Initure.Mode = GPIO_MODE_INPUT;		//MISO 输入
+	HAL_GPIO_Init(GPIOB,&GPIO_Initure);
+	
+	simuSPI_Handle.PinSetMOSI=simuSPI_SetMOSI;
+	simuSPI_Handle.PinSetSCLK=simuSPI_SetSCLK;
+	simuSPI_Handle.PinGetMISO=simuSPI_GetMISO;
+	simuSPI_Handle.Delayus=delay_us;
+	simuSPI_Handle.IntervalTime = 5;
+}
+
 //###########################【函数】###########################
 /*****************************************************************
 *Function:	SimuSPI_ReadWriteByte

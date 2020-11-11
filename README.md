@@ -25,7 +25,7 @@ System init over!
 -   完成LWIP的移植和测试（包括外部MAC+PHY芯片版本（F1）和外部PHY芯片版本（F4）），LWIP协议栈正在调试中
 -   FATFS从SD读取字库写入SPI FLASH
 -   IAP（看下面的TODO）
--   测试DCMI和IO驱动OV7725和OV2640
+-   测试DCMI和IO驱动OV7725、OV2640和OV5650
 -   大V的USB的相关所有例程移植和测试（F1和F4）
 -   搞完这些，UP主就要先去搞FPGA了，有缘再更新这里
 

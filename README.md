@@ -23,11 +23,18 @@ System init over!
 在开发过程中会上传以下正在测试的半成品代码，所以关于以下内容的代码先不要用~望谅解
 
 -   完成LWIP的移植和测试（包括外部MAC+PHY芯片版本（F1）和外部PHY芯片版本（F4）），LWIP协议栈正在调试中
--   FATFS从SD读取字库写入SPI FLASH
+
+-   完善LCD支持屏幕种类和中文字库支持，FATFS从SD读取字库写入SPI FLASH
+
+-   ~~测试DCMI和IO驱动OV7725、OV2640和OV5650~~（摄像头就不弄了，以后用到再弄）
+
 -   IAP（看下面的TODO）
--   测试DCMI和IO驱动OV7725、OV2640和OV5650
+
 -   大V的USB的相关所有例程移植和测试（F1和F4）
--   搞完这些，UP主就要先去搞FPGA了，有缘再更新这里
+
+    搞完这些，UP主就要先去搞FPGA了，有缘再更新这里
+
+    理解了原理的东西，通用性低的东西，就不用时间去走一遍前人走过的路了，就酱
 
 ## 各个进展
 
@@ -147,8 +154,8 @@ System init over!
 -   DSP\FPU：在F4模板中默认添加，可用直接调用相关API，详情看Docs手册文档的DSP专题
 -   CAN：SYSTEM_CAN1_ENABLE：提供设置接收时只关心的帧类型和ID，提供收发API，收发可用设置帧类型和ID，STM32的CAN目前只有数据帧和遥控帧两种，每种都可以设置是标准标识符还是扩展标识符，CAN有关的学习记录和手册在Tips文件夹内，不熟悉的可用阅读，人话挺多的
 -   Ethernet：F4的LWIP正在调试中，F1和F2会有延迟
--   DCMI：暂时缺省
--   USB：暂时缺省
+-   DCMI：暂时没有计划去支持
+-   USB：不久的将来支持
 
 如果觉得好用，使用时还请别忘加上本仓库的地址哦：https://github.com/Staok/stm32_framework
 

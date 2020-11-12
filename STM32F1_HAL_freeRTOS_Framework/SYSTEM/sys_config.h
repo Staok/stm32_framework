@@ -153,11 +153,62 @@ STM32F
 	3、（第一步完成后这里就自动改了，再检查一下）在 Debug 里面的 下载Settings 里面的 Flash Download 里面改相应的小、中大容量下载算法
 	4、在当前工程的CORE文件夹里 只保留 相应的startup.s文件，对于中容量为startup_stm32f103xb.s，以此类推
 */
-
 /*
-	C编译器中的预定义宏
-		VECT_TAB_SRAM         - 增加这个符号表示中断向量表定位在CPU内部RAM （针对在CPU内部RAM运行的工程才需要添加，一般都不用）
+增加把程序下载到SRAM调试的功能：
+	前情说明：
+		BOOT设置的效果：
+			BOOT1	BOOT0		启动区域
+			x		  0			FLASH 		复位从FLASH运行，Target为'SRAM'时，按"下载"后，复位启动还是FLASH，
+																			   按MCU的复位按键还是从FLASH运行
+																			   只有按"调试"后，才会从MCU的内部SRAM运行
+																				但是还得按下"顺序执行"才会跑起来
+			1		  1			SRAM		复位从SRAM运行，Target为'SRAM'时，按"下载"后，从内部SRAM运行，
+																			  按MCU的复位按键从内部SRAM运行
+																			  按"调试"后，从内部SRAM运行
+																				但是还得按下"顺序执行"才会跑起来
+			结论：如果下载验证的频次很高，推荐还是改一下BOOT0和1为1为好
+		计算把MCU的内部SRAM分给程序空间和数据空间的大小：
+			可用把MCU内部的SRAM对半分，也可以任意定；
+			如MCU的内部SRAM有128KB，一半的大小 1024*128/2，其16进制为 0x10000
+	
+	配置过程：（下面都以128KB的SRAM对半分给程序空间和数据空间为例子）
+		1、Project Targets 里面增加一个 'SRAM' 选项
+		2、Select Target 选择 'SRAM' 选项，让工程切换到此配置的环境中
+		3、打开 Options for Target：
+			在 Target栏 填入 	IROM1：0x20000000（八位）			0x10000（分64KB给程序空间）
+								IRAM1：0x20010000（IROM1 + 其size）	0x10000（分64KB给数据空间）
+			在 C/C++栏 的	Define 里面添加 VECT_TAB_SRAM 宏
+			在 Debug栏 	勾选 "Load Application at startup"
+						创建一个 "Dbg_RAM.ini" 文件，放在工程文件的同目录里
+						在 Initialization File栏添加 ".\Dbg_RAM.ini"，
+							这个文件的具体内容在最后附上
+			在 Debug栏	进入Settings 
+									在 Debug栏 的右下角的 Download Options的两个都选上
+									在Flash Download栏  选择 "Do not Erase"，
+														在RAM for Algorithm 里面保持与上面的 IRAM1 的一致
+														在Programming Algorithm 里面的
+															右下角的两个框框保持与上面的 IROM1 的一致
+		4、Over!				
+	
+	Dbg_RAM.ini内容：					
+		FUNC void Setup (void) {
+		  SP = _RDWORD(0x20000000);             // Setup Stack Pointer
+		  PC = _RDWORD(0x20000004);             // Setup Program Counter
+		  XPSR = 0x01000000;                    // Set Thumb bit
+		  _WDWORD(0xE000ED08, 0x20000000);      // Setup Vector Table Offset Register
+		}
+
+		FUNC void OnResetExec (void) {
+			Setup();
+		}
+
+		LOAD .\Objects\STM32F4DSP_HAL_freeRTOS_Framework.axf INCREMENTAL	// 这个是 OBJ里 axf文件的路径，用户要改，其他莫动~
+
+		Setup();
+
+		g, main
 */
+
 /*________________________________________DSP使用_________________________________________*/
 /*	ARM	CMSIS 5.7.0 DSP Lib
 P.S：	每个版本的 Cube 软件包都会携带 CMSIS 文件夹，只是版本比较老，不推荐

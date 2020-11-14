@@ -2,6 +2,10 @@
 #include "usart.h"
 
 
+/*
+CAN 		TX:PH13 		RX:PI9
+*/
+
 
 //CAN初始化
 //tsjw:重新同步跳跃时间单元.范围:CAN_SJW_1tq~ CAN_SJW_4tq
@@ -10,34 +14,34 @@
 //brp :波特率分频器.范围:1~1024; tq=(brp)*tpclk1
 //波特率=Fpclk1/((tbs1+1+tbs2+1+1)*brp);
 //mode:CAN_Mode_Normal,普通模式;CAN_Mode_LoopBack,回环模式;
-//Fpclk1的时钟在初始化的时候设置为42M,如果设置CAN1_Mode_Init(CAN_SJW_1tq,CAN_BS2_6tq,CAN_BS1_7tq,6,CAN_Mode_LoopBack);
+//Fpclk1的时钟在初始化的时候设置为42M,如果设置CAN1_Mode_Init(CAN_SJW_1tq,CAN_BS2_7tq,CAN_BS1_6tq,6,CAN_Mode_Normal);
 //则波特率为:42M/((6+7+1)*6)=500Kbps
 void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-	CAN_InitTypeDef        CAN_InitStructure;
-	CAN_FilterInitTypeDef  CAN_FilterInitStructure;
+	GPIO_InitTypeDef 		GPIO_InitStructure;
+	CAN_InitTypeDef        	CAN_InitStructure;
+	CAN_FilterInitTypeDef  	CAN_FilterInitStructure;
 	
-	#if CAN1_RX0_INT_ENABLE 
-		NVIC_InitTypeDef  NVIC_InitStructure;
-	#endif
 	
 	
 	//使能相关时钟
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);//使能PORTA时钟	                   											 
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH | RCC_AHB1Periph_GPIOI, ENABLE);//使能PORTA时钟	                   											 
   	RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);//使能CAN1时钟	
 	
 	//引脚复用映射配置
-	GPIO_PinAFConfig(GPIOA,GPIO_PinSource11,GPIO_AF_CAN1); //GPIOA11复用为CAN1
-	GPIO_PinAFConfig(GPIOA,GPIO_PinSource12,GPIO_AF_CAN1); //GPIOA12复用为CAN1
+	GPIO_PinAFConfig(GPIOH,GPIO_PinSource13,GPIO_AF_CAN1); //复用为CAN1
+	GPIO_PinAFConfig(GPIOI,GPIO_PinSource9,GPIO_AF_CAN1);
 		
 	//初始化GPIO
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11| GPIO_Pin_12;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;//复用功能
     GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;//推挽输出
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;//100MHz
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;//上拉
-    GPIO_Init(GPIOA, &GPIO_InitStructure);//初始化PA11,PA12
+    GPIO_Init(GPIOH, &GPIO_InitStructure);
+	
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+	GPIO_Init(GPIOI, &GPIO_InitStructure);
 	
 	//CAN单元设置
    	CAN_InitStructure.CAN_TTCM=DISABLE;		//非时间触发通信模式   	0=时间触发通讯不使用，保持默认
@@ -70,8 +74,24 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
   	CAN_FilterInitStructure.CAN_FilterActivation=ENABLE; //激活过滤器0
   	CAN_FilterInit(&CAN_FilterInitStructure);//滤波器初始化
 	
-	#if CAN1_RX0_INT_ENABLE
-		CAN_ITConfig(CAN1,CAN_IT_FMP0,ENABLE);						//FIFO0消息挂号中断允许，FIFO 0 message pending Interrupt
+	#if CAN1_RX0_INT_ENABLE || CAN1_TX_INT_ENABLE
+		
+		NVIC_InitTypeDef  NVIC_InitStructure;
+		
+		#if CAN1_RX0_INT_ENABLE && CAN1_TX_INT_ENABLE
+			
+			//FIFO 0 message pending Interrupt
+			//Transmit mailbox empty Interrupt
+			CAN_ITConfig(CAN1,CAN_IT_FMP0 | CAN_IT_TME,ENABLE);
+		#elif CAN1_RX0_INT_ENABLE
+			//FIFO 0 message pending Interrupt
+			CAN_ITConfig(CAN1,CAN_IT_FMP0,ENABLE);
+		
+		#elif CAN1_TX_INT_ENABLE
+			//Transmit mailbox empty Interrupt
+			CAN_ITConfig(CAN1,CAN_IT_TME,ENABLE);
+		
+		#endif
 		
 		NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX0_IRQn;
 		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;	// 主优先级为1
@@ -82,9 +102,10 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 }
 
 #if CAN1_RX0_INT_ENABLE
-CanRxMsg CAN1_IT_RxMessage;
-u8 CAN1_IT_RxMessage_flag;
-	//FIFO0消息挂号中断，RX0中断服务函数			    
+	CanRxMsg CAN1_IT_RxMessage;
+	u8 CAN1_IT_RxMessage_flag;
+	//FIFO0消息挂号中断，RX0中断服务函数	
+	//FIFO 0 message pending Interrupt
 	void CAN1_RX0_IRQHandler(void)
 	{
 //		if(CAN_GetITStatus(CAN1,CAN_IT_FMP0) == SET) //FIFO 0 message pending Interrupt 
@@ -99,8 +120,30 @@ u8 CAN1_IT_RxMessage_flag;
 	}
 #endif
 
-	
-	
+#if CAN1_TX_INT_ENABLE
+//	u8 CAN1_IT_TxMessage_flag;
+	u8 CAN1_IT_TxMessage_data[8];	//用于发送中断的8位数据
+	u32 CAN1_IT_TxMessage_id;		//用于发送中断的id
+	//CAN1发送邮箱空中断
+	//Transmit mailbox empty Interrupt
+	void CAN1_TX_IRQHandler(void)
+	{
+		CanTxMsg CAN1_IT_TxMessage;
+		
+		//默认发送数据帧扩展帧 发送 CAN1_IT_TxMessage_data的8字节数据 和 CAN1_IT_TxMessage_id 29位id
+		CAN1_Set_Msg(&CAN1_IT_TxMessage,CAN1_IT_TxMessage_data,8,CAN_Id_Extended,CAN1_IT_TxMessage_id);  
+		CAN_Transmit(CAN1, &CAN1_IT_TxMessage);
+		
+		//关闭发送中断，等待用户填好数据手动开启
+		CAN_ITConfig(CAN1,CAN_IT_TME,DISABLE);
+//		CAN1_IT_TxMessage_flag = 0;
+		
+		CAN_ClearITPendingBit(CAN1,CAN_IT_TME);
+	}
+#endif
+
+
+
 //设置期望接收特定的类型帧和ID的信息
 //care：0表示任何ID都接收，1表示只接受与FilterId一致的ID的消息
 //frameType：期望接收帧的类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
@@ -152,8 +195,34 @@ void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId)
 	}
 }
 
+/*
+给 *TxMessage设置内容，不发送
+返回：0正确，其他错误
+*/
+u8 CAN1_Set_Msg(CanTxMsg* TxMessage,u8* msg,u8 len,u8 frameType,u32 id)
+{
+	u16 i=0;
+	if(len > 8)return 1;
+	
+	if(frameType == CAN_Id_Standard)
+	{
+		TxMessage->IDE=CAN_Id_Standard;		// 使用标准标识符
+		TxMessage->StdId = id;	 			// 设置标准标识符	（11位）
+	}else{
+		TxMessage->IDE=CAN_Id_Extended;		// 使用扩展标识符
+		TxMessage->ExtId = id;	 			// 设置扩展标示符	（29位）
+	}
+	TxMessage->RTR=CAN_RTR_Data;		  	// 消息类型为数据帧	（数据帧或者遥控帧：CAN_RTR_Data 或者 CAN_RTR_Remote）
 
-//can发送一组数据			     
+	TxMessage->DLC=len;						// 发送几字节信息	（小于等于8）
+	for(i=0;i<len;i++)
+		TxMessage->Data[i]=msg[i];
+	
+	return 0;
+}
+
+
+//无中断模式，can发送一组数据			     
 //msg:数据指针,最大为8个字节
 //len:数据长度(最大为8)
 //frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
@@ -166,6 +235,9 @@ u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id)
 	u8 mbox;
 	u16 i=0;
 	CanTxMsg TxMessage;
+	
+	if(len > 8)return 1;
+	
 	if(frameType == CAN_Id_Standard)
 	{
 		TxMessage.IDE=CAN_Id_Standard;		// 使用标准标识符
@@ -176,18 +248,17 @@ u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id)
 	}
 	TxMessage.RTR=CAN_RTR_Data;		  		// 消息类型为数据帧	（数据帧或者遥控帧：CAN_RTR_Data 或者 CAN_RTR_Remote）
 	
-	if(len > 8)return 1;
 	TxMessage.DLC=len;						// 发送几字节信息	（小于等于8）
 	for(i=0;i<len;i++)
 		TxMessage.Data[i]=msg[i];   
-	mbox= CAN_Transmit(CAN1, &TxMessage);   
+	mbox= CAN_Transmit(CAN1, &TxMessage);
 	i=0;
 	while((CAN_TransmitStatus(CAN1, mbox)==CAN_TxStatus_Failed)&&(i<0XFFF))i++;	//等待发送结束
 	if(i>=0XFFF)return 2;
 	return 0;
 }
 
-//can口接收数据查询，不使用中断方式时的使用
+//无中断模式，can口接收数据查询
 //buf:数据缓存区;
 //frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
 //id:ID标识符，若frameType为0，则为标准标识符，若frameType为其他则为扩展标识符

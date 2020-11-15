@@ -1,12 +1,16 @@
 #ifndef __TCP_CLIENT_DEMO_H
 #define __TCP_CLIENT_DEMO_H
-#include "system.h"
+#include "lwip_comm.h"
+#include "PeriphConfigCore.h"
+#include "PeriphConfig.h"
+
+
 #include "lwip/debug.h"
 #include "lwip/stats.h"
 #include "lwip/tcp.h"
 #include "lwip/memp.h"
 #include "lwip/mem.h"
-#include "lwip_comm.h"
+
 
 
 #define TCP_CLIENT_RX_BUFSIZE	200		//定义tcp client最大接收数据长度

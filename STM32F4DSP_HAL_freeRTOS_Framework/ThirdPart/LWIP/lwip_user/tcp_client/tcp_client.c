@@ -1,12 +1,4 @@
-#include "tcp_client_demo.h" 
-#include "SysTick.h"
-#include "usart.h"
-#include "led.h"
-#include "key.h"
-#include "tftlcd.h"
-#include "malloc.h"
-#include "stdio.h"
-#include "string.h" 
+#include "tcp_client.h" 
 
 
 

@@ -25,10 +25,11 @@
 	严重注意：使用下载到SRAM模式调试程序时不能开启 SYS_SUPPORT_LWIP ，
 				因为..留给程序的空间不够...如果多分配一些给程序空间那内存数据空间又不够了..
 */
-#define SYS_SUPPORT_LWIP		0
+#define SYS_SUPPORT_LWIP		1
 
 #define SYS_Test_LWIP			1	//当只测试LWIP的运行但不做任何TCP/UDP通讯时打开，否则关闭
 									//打开时，TCP,UDP,HTTP等APP相关代码不会被编译
+									//TODO：用LWIP_TCP等控制相关代码是否编译，SYS_Test_LWIP取消不要了，先查一下都哪些地方用了
 
 #define SYS_LIGHTWEIGHT_PROT    0
 

@@ -337,7 +337,7 @@ API使用：
 	STM32F407系列的LWIP2.1.2的主要配置程序在lwip_comm.c里面
 
 初始化标程：
-	/*LWIP 2.1.2 初始化*/
+	//LWIP 2.1.2 初始化
 	u8 init_return = lwip_comm_init(&lwip_handle);
 	if(init_return != 0)
 	{
@@ -348,7 +348,7 @@ API使用：
 	
 应用说明(Applications)：
 
-裸机：使用“RAW”API（NO_SYS == 1）
+裸机：使用 "RAW" API（NO_SYS == 1）
 
 	巡逻任务：（必要的）
 		以下代码10ms周期调用（默认已经放在了BareConfig.c的10ms周期调用中）
@@ -357,31 +357,53 @@ API使用：
 		#endif
 	
 	UDP：
-		创建连接：
-			//UDP初始化，输入参数：udp_pcb，选择 remoteip[3] ， 端口号
-			//返回0表成功，其他表失败
-			u8 UDP_init_test(struct udp_pcb *pcb, u8 remoteip_3, u16 udp_port)
-				例子：UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
-		关闭连接：
-			//关闭tcp连接
-			void UDP_connection_close(struct udp_pcb *upcb)
-		接收数据：
-			检查 udp_demo_flag，为1则表示收到数据，
-			从接收缓冲区 udp_demo_recvbuf 取出数据，
-			然后 udp_demo_flag 清零
-		发送数据：
-			先给 tcp_demo_sendbuf 填想要发的数据
-				sprintf_(tcp_demo_sendbuf,"stm32_framework - STM32F407 UDP demo send data\r\n");
-			//UDP服务器发送数据，发送 tcp_demo_sendbuf 字符数组所存的数据
-			void UDP_senddata_test(struct udp_pcb *upcb)
-		
-		接收缓冲区 udp_demo_recvbuf 和 发送缓冲区 tcp_demo_sendbuf 的空间各为 UDP_RX_BUFSIZE 和 UDP_TX_BUFSIZE 
+					创建连接：
+						//UDP初始化，输入参数：udp_pcb，选择 remoteip[3] ， 端口号
+						//初始化例子 ： UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
+						//返回0表成功，其他表失败
+						u8 UDP_init_test(struct udp_pcb *pcb, u8 remoteip_3, u16 udp_port)
+							例子：UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
+					关闭连接：
+						//关闭tcp连接
+						void UDP_connection_close(struct udp_pcb *upcb)
+					接收数据：
+						检查 udp_demo_recv_flag，为1则表示收到数据，
+						从接收缓冲区 udp_demo_recvbuf 取出数据，
+						然后 udp_demo_recv_flag 清零
+					发送数据：
+						先给 tcp_demo_sendbuf 填想要发的数据，需要以 '\0'为结尾！
+							例如：sprintf_(tcp_demo_sendbuf,"stm32_framework - STM32F407 UDP demo send data\r\n");
+						//UDP服务器发送数据，发送 tcp_demo_sendbuf 字符数组所存的数据
+						void UDP_senddata_test(struct udp_pcb *upcb)
+
+					接收缓冲区 udp_demo_recvbuf 和 发送缓冲区 tcp_demo_sendbuf 的空间各为 UDP_RX_BUFSIZE 和 UDP_TX_BUFSIZE 
 	
 	
 	Application layered TCP：
 	
 	
 	TCP server:
+					创建连接：
+						//TCP Server 初始化，输入参数：tcp_pcb，选择 remoteip[3] ， 端口号
+						//初始化例子： tcp_server_init_test(TCP_Server_PCB_test,TCP_Server_PCBCONN_test,TCP_SERVER_PORT_test);
+						//创建成功后，本地IP即TCP Server的IP，lwip_inf.remoteip 即写入远程连接上的IP
+						//返回0成功，其他失败
+						u8 tcp_server_init_test(struct tcp_pcb* tcppcbnew,struct tcp_pcb* tcppcbconn,u16_t tcp_server_port)
+					查询是否有客户端连接上：
+						一直循环检查 TCP_Server_IS_CONN_Flag 宏是否为真，若从机失连后这里系统将其变0
+					关闭连接：
+						//关闭tcp server连接
+						void TCP_Server_connection_close(struct tcp_pcb* tspcb,struct tcp_pcb* tspcbconn)
+					接收数据：
+						检查 TCP_Server_IS_RECV_Flag 宏是否为真，为真则表示收到数据，
+						从接收缓冲区 tcp_server_recvbuf 取出数据，
+						然后调用 TCP_Server_Clear_RECV_Flag; 宏 清零接收标志位
+					发送数据：
+						先给 tcp_server_sendbuf 填想要发的数据，需要以 '\0'为结尾！
+							例如：sprintf_(tcp_server_sendbuf,"stm32_framework - STM32F407 TCP Server demo send data\r\n");
+						然后调用 TCP_Server_SET_SEND_Flag; 宏 设置发送标志位，系统会自动发送 tcp_server_sendbuf 的数据
+
+					接收缓冲区 tcp_server_recvbuf 和 发送缓冲区 tcp_server_sendbuf 的空间各为 TCP_SERVER_RX_BUFSIZE 和 TCP_SERVER_TX_BUFSIZE 
 	
 	TCP client:
 	
@@ -421,11 +443,26 @@ FATFS性格：
 	3、Maximum file size: 232 - 1 bytes on FAT volume, virtually unlimited on exFAT volume.
 	其他更多看官方手册中的 “FatFs module application note” 部分
 
-配置：
-	1、在 ffconf.h 文件里配置和剪裁FATFS（一般不用动）
-		若USE_LFN == 3（动态分配内存）
-			则需要在ffsystem.c里面已经用自实现的内存分配和释放函数，默认用STM32内部的RAM，如要使用外部RAM可去手动改为 ExRAM1（一般不用动）
-		若USE_LFN == 1，则为使用静态内存
+配置：（下面的步骤严格照之，都是坑，试好的路子，否则...）
+	0、大前提，FF_CODE_PAGE 为 936 ，字库必须带着
+	1、在 ffconf.h 文件里配置和剪裁FATFS（本工程已经配置好，一般不用动）
+		有malloc内存管理的时候：
+			设FF_USE_LFN == 3（动态分配内存）
+				另需要在ffsystem.c里面已经用自实现的内存分配和释放函数，默认用STM32内部的RAM，如要使用外部RAM可去手动改为 ExRAM1（已经配置好，一般不用动）
+			这时候 设备句柄的定义用指针！然后用malloc为其申请实体空间
+				定义：		
+					FATFS* fs[_VOLUMES];
+				申请空间：	
+					for(i=0;i<_VOLUMES;i++)
+					{
+						fs[i]=(FATFS*)mymalloc(SRAMIN,sizeof(FATFS));	//为磁盘i工作区申请内存	
+						if(!fs[i])break;
+					}
+		没有malloc内存管理的时候：
+			设FF_USE_LFN == 1，使用静态内存
+			这时候，设备句柄的定义不能为指针，直接定义实体！
+				定义：	
+					FATFS fs[_VOLUMES];
 		
 	2、在diskio.c里面必须补齐的设备的底层函数：（底层函数，应用层不应调用）
 		定义有哪些设备，比如DEV_ExFLASH（外部FLASH，MMC/NAND/SPI FLASH等）、DEV_SD、DEV_SPI_SD、DEV_USB等等
@@ -514,7 +551,7 @@ FATFS性格：
 			
 			if(i==_VOLUMES&&file&&ftemp&&fatbuf)return 0;  //申请有一个失败,即失败.
 			else return 1;
-		创建静态内存版本：（在本框架里有malloc，所以不推荐静态创建）
+		创建静态内存版本：（在本框架里有malloc，所以不推荐静态创建，工程内除非清除全部自实现的malloc相关的内容，否则可能在malloc初始化卡住）
 			FATFS fs[_VOLUMES];		//创建设备句柄
 			FIL file;	  			//文件1
 			FIL ftemp;	  			//文件2
@@ -530,7 +567,7 @@ FATFS性格：
 		res = f_mount(fs[1],"1:",1); 					//挂载SPI驱动的FLASH
 		if(res == 0X0D)									//FAT文件系统错误,重新格式化FLASH
 		{
-			MKFS_PARM mkf_opts = 							//格式化选项
+			MKFS_PARM mkf_opts = 						//格式化选项
 			{
 				.fmt = FM_FAT32 还是 FM_SFD 不清楚，后者为没有引导区
 				//其他都保持默认就好~
@@ -539,6 +576,18 @@ FATFS性格：
 			if(res==0) 									//格式化成功
 				f_setlabel((const TCHAR *)"1:Staok");	//设置Flash磁盘的名字为：Staok
 		}
+
+打开或者创建，并追加写流程，例子：（不是覆盖写！）
+		新版本：
+			f_open(&ftemp0,"0:TEXT/demo01.txt",FA_OPEN_APPEND | FA_WRITE);		//"a"	FA_OPEN_APPEND | FA_WRITE	（尾部追加写，用f_stat()确保有这个文件）
+			f_write...
+			f_close...
+		没有 FA_OPEN_APPEND 的时候（老版本）：
+			f_open(&ftemp0,"0:TEXT/demo01.txt",FA_OPEN_ALWAYS | FA_WRITE);
+			f_lseek(&ftemp0, f_size(&ftemp0));	// 写/读指针移动到文件最后
+			f_write(&ftemp0,fatbuf,readCount,&writeCount);
+				printf("demo01.txt已经写入数据个数 %d\r\n",writeCount);
+			f_close(&ftemp0);
 	
 	
 	更多文件操作可用参考原子FATFS历程里的 fattester.c 和 exfuns.c 里面的获取剩余空间、识别文件类型、得到文件夹大小、文件和文件夹复制等有用的API等等

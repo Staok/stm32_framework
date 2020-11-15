@@ -652,6 +652,16 @@
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\LWIP\lwip_user\udp\udp.c</FilePath>
             </File>
+            <File>
+              <FileName>tcp_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\tcp_server\tcp_server.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\tcp_client\tcp_client.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1831,6 +1841,16 @@
               <FileName>udp.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\LWIP\lwip_user\udp\udp.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\tcp_server\tcp_server.c</FilePath>
+            </File>
+            <File>
+              <FileName>tcp_client.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\tcp_client\tcp_client.c</FilePath>
             </File>
           </Files>
         </Group>

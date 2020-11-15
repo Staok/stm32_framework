@@ -3,6 +3,11 @@
 #include "NetCard.h" 
 #include "netif/etharp.h"
 
+/*引用应用层的头文件*/
+#include "udp.h"
+#include "tcp_server.h"
+#include "tcp_client.h" 
+
 //extern ETH_HandleTypeDef ETH_Handler;             //以太网句柄
 //extern ETH_DMADescTypeDef *DMARxDscrTab;			//以太网DMA接收描述符数据结构体指针
 //extern ETH_DMADescTypeDef *DMATxDscrTab;			//以太网DMA发送描述符数据结构体指针 

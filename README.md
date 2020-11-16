@@ -52,7 +52,7 @@ System init over!
 
 ## 计划外设和组件
 
-（加粗体为暂时尚未实现的外设或者组件）
+（加**粗体**为暂时尚未实现的外设或者组件）
 
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 
@@ -97,6 +97,8 @@ System init over!
     软件ringbuf，FIFO缓冲
 
     PID
+    
+    工程添加下载到RAM执行的功能
 
 ## 外设和组件说明
 
@@ -123,8 +125,8 @@ System init over!
 -   软件ringbuf，FIFO缓冲：由于应对大数据传输时，一个开源FIFO库
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
--   LWIP：已经添加，详情稍后更新
--   FATFS：SYSTEM_FATFS_ENABLE：已经默认为SDIO SD、SPI SD和SPI FLASH写好底层驱动
+-   LWIP：在lwipopt.h里面进行配置，支持UDP、TCP Server、TCP Client，**还差HTTP**
+-   FATFS：SYSTEM_FATFS_ENABLE：已经支持SDIO SD卡，SPI SD卡，和SPI FLASH，**还差USB文件系统**
 
 ### 框架基础外设
 

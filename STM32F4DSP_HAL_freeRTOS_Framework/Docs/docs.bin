@@ -363,8 +363,18 @@ API使用：
 						//返回0表成功，其他表失败
 						u8 UDP_init_test(struct udp_pcb *pcb, u8 remoteip_3, u16 udp_port)
 							例子：UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
+					查询连接：
+						查询标志位 UDP_IS_CONN_Flag 是否为真，lwip没有提供专门的API，
+						本工程只有在没有接收到udp数据时才会设 UDP_IS_CONN_Flag 为0
+					注意：
+						不可连续一次以上调用初始化API，在调用 关闭连接API 之前只能调用一次！
+						初始化并且连接上后，周期检查 UDP_IS_CONN_Flag，如果失连，
+						先调用	UDP_connection_close(UDP_PCB_test);
+						再调用	UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
+
 					关闭连接：
 						//关闭tcp连接
+						//例子：UDP_connection_close(UDP_PCB_test);
 						void UDP_connection_close(struct udp_pcb *upcb)
 					接收数据：
 						检查 udp_demo_recv_flag，为1则表示收到数据，
@@ -376,8 +386,7 @@ API使用：
 						//UDP服务器发送数据，发送 tcp_demo_sendbuf 字符数组所存的数据
 						void UDP_senddata_test(struct udp_pcb *upcb)
 
-					接收缓冲区 udp_demo_recvbuf 和 发送缓冲区 tcp_demo_sendbuf 的空间各为 UDP_RX_BUFSIZE 和 UDP_TX_BUFSIZE 
-	
+					接收缓冲区 udp_demo_recvbuf 和 发送缓冲区 tcp_demo_sendbuf 的空间各为 UDP_RX_BUFSIZE 和 UDP_TX_BUFSIZE
 	
 	Application layered TCP：
 	
@@ -391,9 +400,16 @@ API使用：
 						u8 tcp_server_init_test(struct tcp_pcb* tcppcbnew,struct tcp_pcb* tcppcbconn,u16_t tcp_server_port)
 					查询是否有客户端连接上：
 						一直循环检查 TCP_Server_IS_CONN_Flag 宏是否为真，若从机失连后这里系统将其变0
+					注意：
+						不可连续一次以上调用初始化API，在调用 关闭连接API 之前只能调用一次！
+						初始化并且连接上后，周期检查 TCP_Server_IS_CONN_Flag 宏，如果失连，
+						先调用	tcp_server_close(TCP_Server_PCB_test,TCP_Server_PCBCONN_test);
+						再调用	tcp_server_init_test(TCP_Server_PCB_test,TCP_Server_PCBCONN_test,TCP_SERVER_PORT_test);
+
 					关闭连接：
 						//关闭tcp server连接
-						void TCP_Server_connection_close(struct tcp_pcb* tspcb,struct tcp_pcb* tspcbconn)
+						//例子：tcp_server_close(TCP_Server_PCB_test,TCP_Server_PCBCONN_test);
+						void tcp_server_close(struct tcp_pcb* tspcb,struct tcp_pcb* tspcbconn)
 					接收数据：
 						检查 TCP_Server_IS_RECV_Flag 宏是否为真，为真则表示收到数据，
 						从接收缓冲区 tcp_server_recvbuf 取出数据，
@@ -406,7 +422,33 @@ API使用：
 					接收缓冲区 tcp_server_recvbuf 和 发送缓冲区 tcp_server_sendbuf 的空间各为 TCP_SERVER_RX_BUFSIZE 和 TCP_SERVER_TX_BUFSIZE 
 	
 	TCP client:
-	
+					创建连接：
+						//TCP Client 初始化
+						//lwip_inf.remoteip 为远程主机Server的IP，lwip_inf.ip为本地客户端的IP
+						//初始化例子 ： tcp_client_test(TCP_Client_PCB_test,100,TCP_CLIENT_PORT);
+						//返回0成功，其他失败
+						u8 tcp_client_test(struct tcp_pcb *tcppcb, u8 remoteip_3, u16 tcp_client_port)
+					查询是否有客户端连接上：
+						一直循环检查 TCP_Client_IS_CONN_Flag 宏是否为真，若主机失连后这里系统将其变0
+					注意：
+						不可连续一次以上调用初始化API，在调用 关闭连接API 之前只能调用一次！
+						初始化并且连接上后，周期检查 TCP_Client_IS_CONN_Flag 宏，如果失连，
+						先调用	tcp_client_close(TCP_Client_PCB_test,0);
+						再调用	tcp_client_init_test(TCP_Client_PCB_test,100,TCP_CLIENT_PORT);
+					关闭连接：
+						//关闭tcp server连接
+						//例子：tcp_client_close(TCP_Client_PCB_test,0);
+						void tcp_client_close(struct tcp_pcb* tspcb,struct tcp_pcb* tspcbconn);
+					接收数据：
+						检查 TCP_Client_IS_RECV_Flag 宏是否为真，为真则表示收到数据，
+						从接收缓冲区 tcp_client_recvbuf 取出数据，
+						然后调用 TCP_Client_Clear_RECV_Flag; 宏 清零接收标志位
+					发送数据：
+						先给 tcp_client_sendbuf 填想要发的数据，需要以 '\0'为结尾！
+							例如：sprintf_(tcp_client_sendbuf,"stm32_framework - STM32F407 TCP Client demo send data\r\n");
+						然后调用 TCP_Client_SET_SEND_Flag; 宏 设置发送标志位，系统会自动发送 tcp_client_sendbuf 的数据
+
+					接收缓冲区 tcp_client_recvbuf 和 发送缓冲区 tcp_client_sendbuf 的空间各为 TCP_CLIENT_RX_BUFSIZE 和 TCP_CLIENT_TX_BUFSIZE 
 	
 	DNS：
 	

@@ -31,15 +31,15 @@ extern char* tcp_server_sendbuf;		//需要以 '\0'为结尾！
 extern u8 tcp_server_flag;
 
 //设置发送标志，系统将自动发送 tcp_server_sendbuf 的内容
-#define TCP_Server_SET_SEND_Flag	tcp_server_flag|=0x80	
+#define TCP_Server_SET_SEND_Flag	(tcp_server_flag|=0x80)	
 
 //查询是否有数据被接收到，为真则可以从 tcp_server_recvbuf 取内容
-#define TCP_Server_IS_RECV_Flag		tcp_server_flag&0x40
+#define TCP_Server_IS_RECV_Flag		(tcp_server_flag&0x40)
 //要保持查询后随手清标志位的好习惯呦~
-#define TCP_Server_Clear_RECV_Flag	tcp_server_flag&=(~0x40)
+#define TCP_Server_Clear_RECV_Flag	(tcp_server_flag&=(~0x40))
 
 //查询当前连接是否有效，若从机失连后这里系统将其变0，应该一直查询
-#define TCP_Server_IS_CONN_Flag		tcp_server_flag&0x20	
+#define TCP_Server_IS_CONN_Flag		(tcp_server_flag&0x20)	
 
 
 extern struct tcp_pcb *TCP_Server_PCB_test;  		//定义一个TCP服务器控制块
@@ -67,7 +67,7 @@ struct tcp_server_struct
 //返回0成功，其他失败
 u8 tcp_server_init_test(struct tcp_pcb* tcppcbnew,struct tcp_pcb* tcppcbconn,u16_t tcp_server_port);
 //关闭tcp server连接，用户调用
-void TCP_Server_connection_close(struct tcp_pcb* tspcb,struct tcp_pcb* tspcbconn);
+void tcp_server_close(struct tcp_pcb* tspcb,struct tcp_pcb* tspcbconn);
 //err_t tcp_server_accept(void *arg,struct tcp_pcb *newpcb,err_t err);
 //err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err);
 //void tcp_server_error(void *arg,err_t err);

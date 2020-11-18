@@ -662,6 +662,21 @@
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\LWIP\lwip_user\tcp_client\tcp_client.c</FilePath>
             </File>
+            <File>
+              <FileName>fs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\web_server\fs.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\web_server\httpd.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd_cgi_ssi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\web_server\httpd_cgi_ssi.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1851,6 +1866,21 @@
               <FileName>tcp_client.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\LWIP\lwip_user\tcp_client\tcp_client.c</FilePath>
+            </File>
+            <File>
+              <FileName>fs.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\web_server\fs.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\web_server\httpd.c</FilePath>
+            </File>
+            <File>
+              <FileName>httpd_cgi_ssi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\LWIP\lwip_user\web_server\httpd_cgi_ssi.c</FilePath>
             </File>
           </Files>
         </Group>

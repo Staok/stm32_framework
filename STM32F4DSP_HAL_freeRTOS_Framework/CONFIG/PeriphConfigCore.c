@@ -190,6 +190,11 @@ void sys_Device_Init_Seq(void)
 			lwip_comm_destroy(&lwip_handle); //初始化失败时恢复原样
 			FaultASSERT("lwip_comm_init",init_return,flag_Warning);
 		}
+		
+		#if LWIP_HTTP
+			httpd_init();	//Web Server
+		#endif
+		
 	#endif
 	
 	/*OLED初始化*/

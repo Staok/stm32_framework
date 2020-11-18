@@ -357,6 +357,7 @@ API使用：
 		#endif
 	
 	UDP：
+					关闭宏 SYS_Test_LWIP，打开宏 LWIP_UDP
 					创建连接：
 						//UDP初始化，输入参数：udp_pcb，选择 remoteip[3] ， 端口号
 						//初始化例子 ： UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);
@@ -392,6 +393,7 @@ API使用：
 	
 	
 	TCP server:
+					关闭宏 SYS_Test_LWIP，打开宏 LWIP_TCP
 					创建连接：
 						//TCP Server 初始化，输入参数：tcp_pcb，选择 remoteip[3] ， 端口号
 						//初始化例子： tcp_server_init_test(TCP_Server_PCB_test,TCP_Server_PCBCONN_test,TCP_SERVER_PORT_test);
@@ -422,6 +424,7 @@ API使用：
 					接收缓冲区 tcp_server_recvbuf 和 发送缓冲区 tcp_server_sendbuf 的空间各为 TCP_SERVER_RX_BUFSIZE 和 TCP_SERVER_TX_BUFSIZE 
 	
 	TCP client:
+					关闭宏 SYS_Test_LWIP，打开宏 LWIP_TCP
 					创建连接：
 						//TCP Client 初始化
 						//lwip_inf.remoteip 为远程主机Server的IP，lwip_inf.ip为本地客户端的IP
@@ -454,6 +457,20 @@ API使用：
 	
 	
 	
+	HTTP server （Webserver）：
+		关闭宏 SYS_Test_LWIP，打开宏 LWIP_TCP 和 LWIP_HTTP
+		制作html网页，放入 工程的 .\ThirdPart\LWIP\lwip_user\web_server\makefsdata\fs 文件夹内
+		使用 makefsdata 文件夹内的 makefsdata.exe：用cmd打开其所在目录，键入 makefsdata -i，
+			生成的 fsdata.c 文件即是结构化的可被MCU读取的网页数据文件，替换上一级目录下的同名文件
+		在 httpd_cgi_ssi.c文件内 编写CGI（网址名信息解析协议）和SSI（服务器和网页间动态传递数据的协议）的底层功能实现函数
+			其内已经有简单样板
+		在初始化序列调用 httpd_init(); 便开启了HTTP服务，在浏览器键入MCU端的IP地址即可
+		
+		最后注意！有的文件可能带有 ST 的 COPYRIGHT，比如 httpd_cgi_ssi.c ，要很注意！
+	
+	
+	
+	
 FreeRTOS：使用“Netconn”API
 	UDP：
 
@@ -465,8 +482,6 @@ FreeRTOS：使用“Netconn”API
 	
 	
 暂未计划实现的应用：
-	HTTP client
-	HTTP server
 	MQTT client	
 	TFTP server
 */

@@ -292,8 +292,13 @@ u8 lwip_comm_mem_malloc(void)
 {
 	u32 ram_heap_size; 
 	
+	/*
+		opt.h里面配置 MEMP_MEM_MALLOC 设为 1 （默认，就不要动了）
+		即为 让memp的内存从mem.h（ram_heap）里面获取
+	*/
+	
 	ram_heap_size = MEM_SIZE_ALIGNED + (2 * SIZEOF_STRUCT_MEM);
-	ram_heap = mymalloc(InrRAM,ram_heap_size);	//为ram_heap申请内存 
+	ram_heap = mymalloc(InrRAM,ram_heap_size);	//为ram_heap申请内存
 	
 	if(!(u32)&ram_heap)//有申请失败的
 	{
@@ -386,11 +391,11 @@ u8 lwip_comm_init(struct netif *netif)
 	
 	lwip_init();			//初始化LWIP内核
 
+	ip4_addr_t ipaddr;  //ip地址
+	ip4_addr_t netmask; //子网掩码
+	ip4_addr_t gw;      //默认网关
+	
 	#if LWIP_DHCP			//使用动态IP
-		ip4_addr_t ipaddr;  //ip地址
-		ip4_addr_t netmask; //子网掩码
-		ip4_addr_t gw;      //默认网关 
-		
 		ipaddr.addr = 0;
 		netmask.addr = 0;
 		gw.addr = 0;

@@ -37,7 +37,7 @@
 
 */
 
-#if (LWIP_UDP == 1)			//如果使用UDP时
+#if ((NO_SYS == 1) && (LWIP_UDP == 1))		//如果不使用操作系统并且使用UDP时
 
 //UDP接收数据缓冲区
 char* udp_demo_recvbuf;
@@ -50,9 +50,7 @@ u8 udp_demo_recv_flag = 0;		//成功接收到一次数据的标志位，用于判断，若为1则可从 
 u8 UDP_IS_CONN_Flag = 0;		//是否连接上标志位，只可查询不可修改
 
 u8 UDP_inited = 0; 				//udp的初始化标志位，用于防止连续一次以上调用初始化函数，系统调用，用户勿用
-#endif
 
-#if ((NO_SYS == 1) && (LWIP_UDP == 1))		//如果不使用操作系统并且使用UDP时
 
 //UDP服务器回调函数，自动把接收的字符串写到 udp_demo_recvbuf 字符串数组里
 void UDP_recv_test(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -112,11 +110,6 @@ void UDP_connection_close(struct udp_pcb *upcb)
 	UDP_inited = 0;			//标记反初始化了
 	UDP_IS_CONN_Flag = 0;
 }
-
-#endif
-
-#if (LWIP_UDP == 1)
-
 
 //UDP初始化，输入参数：udp_pcb，选择 remoteip[3] ， 端口号
 //初始化例子 ： UDP_init_test(UDP_PCB_test,100,UDP_PORT_test);

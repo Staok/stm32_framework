@@ -92,7 +92,7 @@ DRESULT disk_read (
 )
 {
 	DRESULT res = RES_ERROR;
-	
+	static u8 errCount = 0;
 	if (!count)return RES_PARERR;
 
 	switch (pdrv) {
@@ -113,9 +113,11 @@ DRESULT disk_read (
 					res = (DRESULT)SD_ReadDisk(buff,sector,count);
 					while(res)	//读出错
 					{
+						if(++errCount > 10) {errCount = 0; break;}
 						SD_Init();	//重新初始化SD卡
 						res = (DRESULT)SD_ReadDisk(buff,sector,count);	
 					}
+					errCount = 0;
 				#endif
 				return res;
 
@@ -128,9 +130,11 @@ DRESULT disk_read (
 					res = (DRESULT)SPI_SD_ReadDisk2(buff,sector,count);
 					while(res)//读出错
 					{
+						if(++errCount > 10) {errCount = 0; break;}
 						SPI_SD_Init();	//重新初始化SD卡
 						res = (DRESULT)SPI_SD_ReadDisk2(buff,sector,count);
 					}
+					errCount = 0;
 				#endif
 				return res;
 	}
@@ -154,7 +158,7 @@ DRESULT disk_write (
 )
 {
 	DRESULT res = RES_ERROR;
-	
+	static u8 errCount = 0;
 	if (!count)return RES_PARERR;
 
 	switch (pdrv) {
@@ -175,9 +179,11 @@ DRESULT disk_write (
 					res = (DRESULT)SD_WriteDisk((u8*)buff,sector,count);
 					while(res)	//写出错
 					{
+						if(++errCount > 10) {errCount = 0; break;}
 						SD_Init();	//重新初始化SD卡
 						res = (DRESULT)SD_WriteDisk((u8*)buff,sector,count);	
 					}
+					errCount = 0;
 				#endif
 				return res;
 
@@ -190,9 +196,11 @@ DRESULT disk_write (
 					res = (DRESULT)SPI_SD_WriteDisk2((u8*)buff,sector,count);
 					while(res)//写出错
 					{
+						if(++errCount > 10) {errCount = 0; break;}
 						SPI_SD_Init();	//重新初始化SD卡
 						res = (DRESULT)SPI_SD_WriteDisk2((u8*)buff,sector,count);	
 					}
+					errCount = 0;
 				#endif
 				return res;
 	}

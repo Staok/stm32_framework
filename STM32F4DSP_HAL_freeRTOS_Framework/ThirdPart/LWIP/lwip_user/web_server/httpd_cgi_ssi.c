@@ -35,8 +35,8 @@
 #include "lwip_comm.h"
 #include <string.h>
 #include <stdlib.h>
-#include "led.h" 
-#include "adc.h"
+
+#if LWIP_HTTP
 
 tSSIHandler ADC_Page_SSI_Handler;
 uint32_t ADC_not_configured=1;
@@ -49,7 +49,10 @@ char const** TAGS=&TAGCHAR;
 const char * LEDS_CGI_Handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
 
 /* Html request for "/leds.cgi" will start LEDS_CGI_Handler */
-const tCGI LEDS_CGI={"/leds.cgi", LEDS_CGI_Handler};
+const tCGI LEDS_CGI=
+{
+	"/leds.cgi", LEDS_CGI_Handler
+};
 
 /* Cgi call table, only one CGI used */
 tCGI CGI_TAB[1];
@@ -59,6 +62,8 @@ tCGI CGI_TAB[1];
 /**
   * @brief  ADC_Handler : SSI handler for ADC page 
   */
+/* 通过 SSI 技术将这些值嵌入到网页中 */
+/* 更多详细用法直接看原子的 LWIP 例程即可，写的设备比较多*/
 u16_t ADC_Handler(int iIndex, char *pcInsert, int iInsertLen)
 {
   /* We have only one SSI handler iIndex = 0 */
@@ -70,12 +75,12 @@ u16_t ADC_Handler(int iIndex, char *pcInsert, int iInsertLen)
      /* configure ADC if not yet configured */
      if (ADC_not_configured ==1)       
      {
-        ADCx_Init();
+//        ADCx_Init();
         ADC_not_configured=0;
      }
      
      /* get ADC conversion value */
-     ADCVal = Get_ADC_Value(ADC_CHANNEL_5,10);
+//     ADCVal = Get_ADC_Value(ADC_CHANNEL_5,10);
      
      /* convert to Voltage,  step = 0.8 mV */
      ADCVal = (uint32_t)(ADCVal*3300/4096);  
@@ -110,30 +115,47 @@ const char * LEDS_CGI_Handler(int iIndex, int iNumParams, char *pcParam[], char 
   {
     
     /* Check cgi parameter : example GET /leds.cgi?led=2&led=4 */
-    for (i=0; i<iNumParams; i++)
-    {
+    for (i=0; i<iNumParams; i++)	/*遍历每一个参数项*/
+    {								/*比如 example GET /leds.cgi?led=2&led=4 中就有两个参数项*/
       /* check parameter "led" */
-      if (strcmp(pcParam[i] , "led")==0)   
-      {
-        /* switch led1 ON if 1 */
-        if(strcmp(pcValue[i], "1") ==0)
+		if (strcmp(pcParam[i] , "led")==0)	/*如果参数名为 led*/
 		{
-			LED1=0;
+			/* switch led1 ON if 1 */
+			if(strcmp(pcValue[i], "1") ==0)		/*如果参数名为 led 后面 的参数为 "1" 的话*/
+			{
+//			  			LED1=0;					/*执行相应的动作*/
+			}
+			/* switch led2 ON if 2 */
+			else if(strcmp(pcValue[i], "LED2ON") ==0) /*如果参数名为 led 后面 的参数为 "LED2ON" 的话*/
+			{
+//			  			LED2=0;        
+			}
+			/* switch led OFF if 3 */
+			else if(strcmp(pcValue[i], "LED2Off") ==0) 
+			{
+//			  			LED1=1;
+//			  			LED2=1;        
+			}
 		}
-        /* switch led2 ON if 2 */
-        else if(strcmp(pcValue[i], "2") ==0) 
+	  
+		if (strcmp(pcParam[i] , "beep")==0)	/*如果参数名为 beep*/
 		{
-			LED2=0;        
+			if(strcmp(pcValue[i], "bibiOnce") ==0)	/*同理*/
+			{
+				/*balabala...*/
+				
+			}else if(strcmp(pcValue[i], "bibi") ==0)
+			{
+				
+			}
 		}
-		/* switch led OFF if 3 */
-        else if(strcmp(pcValue[i], "3") ==0) 
-		{
-			LED1=1;
-			LED2=1;        
-		}
-      }
     }
   }
+  
+  /* 成功执行动作后，页面也相应的改变成对应状态的
+	if(LED1 == 0 && BEEP == 0) return "/STM32F407LED_ON_BEEP_OFF.shtml";
+  */
+  
   /* uri to send after cgi call*/
   return "/STM32F4x7LED.html";  
 }
@@ -153,8 +175,10 @@ void httpd_ssi_init(void)
 void httpd_cgi_init(void)
 { 
   /* configure CGI handlers (LEDs control CGI) */
-  CGI_TAB[0] = LEDS_CGI;
+  CGI_TAB[0] = LEDS_CGI;									/*别漏掉这里，对于多个器件，借鉴原子的写法*/
   http_set_cgi_handlers(CGI_TAB, 1);
 }
+
+#endif
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

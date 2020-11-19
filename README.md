@@ -22,11 +22,7 @@ System init over!
 
 在开发过程中会上传以下正在测试的半成品代码，所以关于以下内容的代码先不要用~望谅解
 
--   完成LWIP的移植和测试（包括外部MAC+PHY芯片版本（F1）和外部PHY芯片版本（F4）），LWIP协议栈正在调试中
-
 -   完善LCD支持屏幕种类和中文字库支持，FATFS从SD读取字库写入SPI FLASH
-
--   ~~测试DCMI和IO驱动OV7725、OV2640和OV5650~~（摄像头就不弄了，以后用到再弄）
 
 -   IAP（看下面的TODO）
 
@@ -57,6 +53,8 @@ System init over!
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 
 -   **暂时没有支持的组件：**
+
+    DCMI和IO驱动OV7725、OV2640和OV5650摄像头
 
     线性回归
 
@@ -125,7 +123,7 @@ System init over!
 -   软件ringbuf，FIFO缓冲：由于应对大数据传输时，一个开源FIFO库
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
--   LWIP：在lwipopt.h里面进行配置，支持UDP、TCP Server、TCP Client，**还差HTTP**
+-   LWIP：（一个人精力有限，目前只有F4的模板比较完善，请注意！）在lwipopt.h里面进行配置，支持UDP、TCP Server、TCP Client，HTTP Server
 -   FATFS：SYSTEM_FATFS_ENABLE：已经支持SDIO SD卡，SPI SD卡，和SPI FLASH，**还差USB文件系统**
 
 ### 框架基础外设
@@ -155,7 +153,7 @@ System init over!
 -   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改动；就不支持各种FLASH了，MCU毕竟程序写不大，就算大了就用SPI的FLASH，也节约IO口。LCD的相关API说明在TFTLCD.h里面，字库也可剪裁
 -   DSP\FPU：在F4模板中默认添加，可用直接调用相关API，详情看Docs手册文档的DSP专题
 -   CAN：SYSTEM_CAN1_ENABLE：提供设置接收时只关心的帧类型和ID，提供收发API，收发可用设置帧类型和ID，STM32的CAN目前只有数据帧和遥控帧两种，每种都可以设置是标准标识符还是扩展标识符，CAN有关的学习记录和手册在Tips文件夹内，不熟悉的可用阅读，人话挺多的
--   Ethernet：F4的LWIP正在调试中，F1和F2会有延迟
+-   Ethernet：看LWIP组件
 -   DCMI：暂时没有计划去支持
 -   USB：不久的将来支持
 

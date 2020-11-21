@@ -509,6 +509,7 @@ FATFS性格：
 			这时候 设备句柄的定义用指针！然后用malloc为其申请实体空间
 				定义：		
 					FATFS* fs[_VOLUMES];
+					其它如文件、目录句柄等的定义同理
 				申请空间：	
 					for(i=0;i<_VOLUMES;i++)
 					{
@@ -520,6 +521,7 @@ FATFS性格：
 			这时候，设备句柄的定义不能为指针，直接定义实体！
 				定义：	
 					FATFS fs[_VOLUMES];
+					其它如文件、目录句柄等的定义同理
 		
 	2、在diskio.c里面必须补齐的设备的底层函数：（底层函数，应用层不应调用）
 		定义有哪些设备，比如DEV_ExFLASH（外部FLASH，MMC/NAND/SPI FLASH等）、DEV_SD、DEV_SPI_SD、DEV_USB等等
@@ -591,7 +593,7 @@ FATFS性格：
 
 初始化流程：
 	1、
-		申请动态内存版本：（以下是u8 FATFS_Init(void);的内容）
+		申请动态内存版本：（以下是u8 FATFS_Init(void);的内容，在fatfs_app.c文件里面，默认初始序列中已经调用）
 			FATFS *fs[_VOLUMES];	//创建设备句柄
 			FIL *file;	  			//文件1
 			FIL *ftemp;	  			//文件2
@@ -599,26 +601,29 @@ FATFS性格：
 			
 			for(u8 i=0;i<_VOLUMES;i++)
 			{
-				fs[i]=(FATFS*)mymalloc(SRAMIN,sizeof(FATFS));	//为磁盘i工作区申请内存	
+				fs[i]=(FATFS*)mymalloc(InrRAM,sizeof(FATFS));	//为磁盘i工作区申请内存	
 				if(!fs[i])break;
 			}
-			file=(FIL*)mymalloc(SRAMIN,sizeof(FIL));		//为file申请内存
-			ftemp=(FIL*)mymalloc(SRAMIN,sizeof(FIL));		//为ftemp申请内存
-			fatbuf=(u8*)mymalloc(SRAMIN,512);				//为fatbuf申请内存
+			file=(FIL*)mymalloc(InrRAM,sizeof(FIL));		//为file申请内存
+			ftemp=(FIL*)mymalloc(InrRAM,sizeof(FIL));		//为ftemp申请内存
+			fatbuf=(u8*)mymalloc(InrRAM,512);				//为fatbuf申请内存
 			
 			if(i==_VOLUMES&&file&&ftemp&&fatbuf)return 0;  //申请有一个失败,即失败.
 			else return 1;
-		创建静态内存版本：（在本框架里有malloc，所以不推荐静态创建，工程内除非清除全部自实现的malloc相关的内容，否则可能在malloc初始化卡住）
+		创建静态内存版本：（在本框架里有malloc，所以不推荐静态创建，写的时候定义为全局变量，否则进入HardFault_Handler）
 			FATFS fs[_VOLUMES];		//创建设备句柄
 			FIL file;	  			//文件1
 			FIL ftemp;	  			//文件2
 			u8 fatbuf[512];			//SD卡数据缓存区
+			巨坑：注意以上变量必须放到最外面定义为全局变量，不要在某一个函数内定义（main()里面也不行！）
+			否则 调用fatfs函数的时候访问这些句柄会"内存溢出或者访问越界"，从而引起HardFault_Handler！！！
 	2、挂载设备（并自动调用设备初始化函数）
 		u8 res;
 		res = f_mount(fs[0],"0:",1); if(res != RES_OK){} 			//挂载SPI驱动的FLASH
 		res = f_mount(fs[1],"1:",1); if(res != RES_OK){} 			//挂载SDIO驱动的SD卡
 		res = f_mount(fs[1],"2:",1); if(res != RES_OK){} 			//挂载USB文件设备
 		res = f_mount(fs[2],"3:",1); if(res != RES_OK){} 			//挂载SPI驱动的SD卡
+		盘符可以写字符串
 
 创建文件系统：
 		res = f_mount(fs[1],"1:",1); 					//挂载SPI驱动的FLASH
@@ -645,9 +650,19 @@ FATFS性格：
 			f_write(&ftemp0,fatbuf,readCount,&writeCount);
 				printf("demo01.txt已经写入数据个数 %d\r\n",writeCount);
 			f_close(&ftemp0);
-	
+		
+		可以写入936支持的中文
 	
 	更多文件操作可用参考原子FATFS历程里的 fattester.c 和 exfuns.c 里面的获取剩余空间、识别文件类型、得到文件夹大小、文件和文件夹复制等有用的API等等
+
+更多实用API：
+	在 .\DEVICES\FATFS plus 目录下的 fatfs_app 文件内
+	u8 f_typetell(u8 *fname);							//识别文件类型
+	u8 fatfs_getfree(u8 *drv,u32 *total,u32 *free);		//得到磁盘总容量和剩余容量
+	u32 fatfs_fdsize(u8 *fdname);						//得到文件夹大小
+	u8 fatfs_copy(u8(*fcpymsg)(u8*pname,u8 pct,u8 mode),u8 *psrc,u8 *pdst,u32 totsize,u32 cpdsize,u8 fwmode);	   //文件复制
+	u8 fatfs_fdcopy(u8(*fcpymsg)(u8*pname,u8 pct,u8 mode),u8 *psrc,u8 *pdst,u32 *totsize,u32 *cpdsize,u8 fwmode);//文件夹复制	  
+	u16 fatfs_get_filetype_tnum(u8 *path,u8 type);		//得到path路径下,目标文件的总个数
 */
 
 /*标有 & 符号的为作者自己实现的库*/

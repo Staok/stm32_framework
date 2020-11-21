@@ -109,7 +109,7 @@ u8 SD_WaitReady(void)
   {
 	if(SPI_ReadWrite_Byte(0xff)==0XFF)return 0;//OK
 	t++;		  	
-  }while(t<0XFFFFFF);
+  }while(t<0X000FFF);
   return 1;
 }
 //选择SD卡并等待卡准备好

@@ -10,7 +10,8 @@
 不使用接收中断：死循环函数 CAN1_Receive_Msg(rbuf,&ReceiveFrameType,&receiveID);
 */
 
-//CAN1发送邮箱空的中断使能
+//CAN1发送中断，发送完触发中断，非串口的缓存空中断
+//Transmit mailbox empty Interrupt
 #define CAN1_TX_INT_ENABLE	1
 
 
@@ -21,9 +22,10 @@
 #endif
 
 #if CAN1_TX_INT_ENABLE
-//	extern u8 CAN1_IT_TxMessage_flag;	//CAN1发送邮箱空的中断的标志
+	extern u8 CAN1_IT_TxMessage_flag;			//CAN1发送邮箱空的中断的标志
 	extern u8 CAN1_IT_TxMessage_data[8];		//用于发送中断的8位数据
 	extern u32 CAN1_IT_TxMessage_id;			//用于发送中断的id
+	extern CanTxMsg CAN1_IT_TxMessage;
 #endif
 
 void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode);//CAN初始化
@@ -61,10 +63,11 @@ u8 CAN1_Receive_Msg(u8* buf,u8* frameType,u32* id);							//接收数据
 
 //设置期望接收特定的类型帧和ID的信息
 //care：0表示任何ID都接收，1表示只接受与FilterId一致的ID的消息
+//FilterNumber：要设置的滤波器编号，It ranges from 0 to 13
 //frameType：期望接收帧的类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
-//FilterId：期望接收的ID
+//ExceptId：期望接收的ID
 //默认消息类型为数据帧
-void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId);
+void CAN1_setExceptId(u8 care,u8 FilterNumber,u8 frameType,u32 ExceptId);
 
 
 #endif

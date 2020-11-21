@@ -62,15 +62,16 @@ unsigned char SimuSPI_ReadWriteByte(SimuSPI *SimuSPI_Struct,unsigned char data)
 {   
     unsigned char i=0;   
     unsigned char temp=0;
-
+	
 	SimuSPI_Struct->PinSetSCLK(0);   
     for(i=0;i<8;i++)   
     {   
+		SimuSPI_Struct->Delayus(SimuSPI_Struct->IntervalTime);
         if(data&0x80)SimuSPI_Struct->PinSetMOSI(1);   
         else SimuSPI_Struct->PinSetMOSI(0);   
         data<<=1;   
-        SimuSPI_Struct->PinSetSCLK(1);  
-        SimuSPI_Struct->Delayus(SimuSPI_Struct->IntervalTime);  
+        SimuSPI_Struct->PinSetSCLK(1);
+        SimuSPI_Struct->Delayus(SimuSPI_Struct->IntervalTime);
         temp<<=1;   
         if(SimuSPI_Struct->PinGetMISO())temp++;   
 		SimuSPI_Struct->Delayus(SimuSPI_Struct->IntervalTime);  

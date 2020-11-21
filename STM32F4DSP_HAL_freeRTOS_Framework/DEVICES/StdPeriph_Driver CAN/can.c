@@ -25,13 +25,13 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 	
 	
 	//使能相关时钟
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH | RCC_AHB1Periph_GPIOI, ENABLE);//使能PORTA时钟	                   											 
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH | RCC_AHB1Periph_GPIOI, ENABLE);//使能时钟	                   											 
   	RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);//使能CAN1时钟	
 	
 	//引脚复用映射配置
-	GPIO_PinAFConfig(GPIOH,GPIO_PinSource13,GPIO_AF_CAN1); //复用为CAN1
+	GPIO_PinAFConfig(GPIOH,GPIO_PinSource13,GPIO_AF_CAN1);
 	GPIO_PinAFConfig(GPIOI,GPIO_PinSource9,GPIO_AF_CAN1);
-		
+	
 	//初始化GPIO
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;//复用功能
@@ -81,8 +81,9 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 		#if CAN1_RX0_INT_ENABLE && CAN1_TX_INT_ENABLE
 			
 			//FIFO 0 message pending Interrupt
-			//Transmit mailbox empty Interrupt
-			CAN_ITConfig(CAN1,CAN_IT_FMP0 | CAN_IT_TME,ENABLE);
+			//Transmit mailbox empty Interrupt 
+			CAN_ITConfig(CAN1,CAN_IT_FMP0,ENABLE);
+			CAN_ITConfig(CAN1,CAN_IT_TME,ENABLE);
 		#elif CAN1_RX0_INT_ENABLE
 			//FIFO 0 message pending Interrupt
 			CAN_ITConfig(CAN1,CAN_IT_FMP0,ENABLE);
@@ -93,11 +94,24 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 		
 		#endif
 		
-		NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX0_IRQn;
-		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;	// 主优先级为1
-		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;			// 次优先级为0
-		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-		NVIC_Init(&NVIC_InitStructure);
+		#if CAN1_RX0_INT_ENABLE
+			NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX0_IRQn;
+			NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;	// 主优先级为1
+			NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;			// 次优先级为0
+			NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+			NVIC_Init(&NVIC_InitStructure);
+		#endif
+
+		#if CAN1_TX_INT_ENABLE
+			NVIC_InitStructure.NVIC_IRQChannel = CAN1_TX_IRQn;
+			NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;	// 主优先级为1
+			NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;			// 次优先级为0
+			NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+			NVIC_Init(&NVIC_InitStructure);
+			
+			CAN_ITConfig(CAN1,CAN_IT_TME,DISABLE);
+		#endif
+		
 	#endif
 }
 
@@ -108,37 +122,37 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 	//FIFO 0 message pending Interrupt
 	void CAN1_RX0_IRQHandler(void)
 	{
-//		if(CAN_GetITStatus(CAN1,CAN_IT_FMP0) == SET) //FIFO 0 message pending Interrupt 
-		//看其他例程没有检查中断标志位和清除中断标志位的代码
+		if(CAN_GetITStatus(CAN1,CAN_IT_FMP0) == SET) //FIFO 0 message pending Interrupt 
 		{
 			CAN1_IT_RxMessage_flag = 1;
 			CAN_Receive(CAN1, CAN_FIFO0, &CAN1_IT_RxMessage);
 			
-//			CAN_ClearFlag(CAN1,CAN_FLAG_RQCP0);
+			/*CAN_IT_FMP0 中断 不用清标志位*/
 		}
 
 	}
 #endif
 
 #if CAN1_TX_INT_ENABLE
-//	u8 CAN1_IT_TxMessage_flag;
+	CanTxMsg CAN1_IT_TxMessage;
+	u8 CAN1_IT_TxMessage_flag;
 	u8 CAN1_IT_TxMessage_data[8];	//用于发送中断的8位数据
 	u32 CAN1_IT_TxMessage_id;		//用于发送中断的id
-	//CAN1发送邮箱空中断
+	//CAN1发送中断，发送完触发中断，非串口的缓存空中断
 	//Transmit mailbox empty Interrupt
 	void CAN1_TX_IRQHandler(void)
 	{
-		CanTxMsg CAN1_IT_TxMessage;
 		
-		//默认发送数据帧扩展帧 发送 CAN1_IT_TxMessage_data的8字节数据 和 CAN1_IT_TxMessage_id 29位id
-		CAN1_Set_Msg(&CAN1_IT_TxMessage,CAN1_IT_TxMessage_data,8,CAN_Id_Extended,CAN1_IT_TxMessage_id);  
-		CAN_Transmit(CAN1, &CAN1_IT_TxMessage);
-		
-		//关闭发送中断，等待用户填好数据手动开启
-		CAN_ITConfig(CAN1,CAN_IT_TME,DISABLE);
-//		CAN1_IT_TxMessage_flag = 0;
-		
-		CAN_ClearITPendingBit(CAN1,CAN_IT_TME);
+		if(CAN_GetITStatus(CAN1,CAN_IT_TME) == SET)
+		{	  
+//			CAN_Transmit(CAN1, &CAN1_IT_TxMessage);
+			CAN1_IT_TxMessage_flag = 1;
+			//关闭发送中断，等待下一次用户填好数据手动开启
+			CAN_ITConfig(CAN1,CAN_IT_TME,DISABLE);
+			
+//			printf("中断发送一次CAN数据完毕\r\n");
+			CAN_ClearITPendingBit(CAN1,CAN_IT_TME);
+		}
 	}
 #endif
 
@@ -146,15 +160,16 @@ void CAN1_Mode_Init(u8 tsjw,u8 tbs2,u8 tbs1,u16 brp,u8 mode)
 
 //设置期望接收特定的类型帧和ID的信息
 //care：0表示任何ID都接收，1表示只接受与FilterId一致的ID的消息
+//FilterNumber：要设置的滤波器编号，It ranges from 0 to 13
 //frameType：期望接收帧的类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
-//FilterId：期望接收的ID
+//ExceptId：期望接收的ID
 //默认消息类型为数据帧
-void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId)
+void CAN1_setExceptId(u8 care,u8 FilterNumber,u8 frameType,u32 ExceptId)
 {
 	CAN_FilterInitTypeDef  CAN_FilterInitStructure;		//配置过滤器
 	if(care == 0)
 	{
-		CAN_FilterInitStructure.CAN_FilterNumber=0;	  //过滤器0
+		CAN_FilterInitStructure.CAN_FilterNumber=FilterNumber;	  //过滤器0
 		CAN_FilterInitStructure.CAN_FilterMode=CAN_FilterMode_IdMask; //屏蔽位模式
 		CAN_FilterInitStructure.CAN_FilterScale=CAN_FilterScale_32bit;
 		CAN_FilterInitStructure.CAN_FilterIdHigh=0x0000;
@@ -168,11 +183,11 @@ void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId)
 	{
 		if(frameType == CAN_Id_Standard)	//只接受标准数据帧
 		{
-			CAN_FilterInitStructure.CAN_FilterNumber=0;
+			CAN_FilterInitStructure.CAN_FilterNumber=FilterNumber;
 			CAN_FilterInitStructure.CAN_FilterMode=CAN_FilterMode_IdMask; //屏蔽位模式
 			CAN_FilterInitStructure.CAN_FilterScale=CAN_FilterScale_32bit;
-			CAN_FilterInitStructure.CAN_FilterIdHigh = ((FilterId << 21) & 0xffff0000) >> 16;
-			CAN_FilterInitStructure.CAN_FilterIdLow = ((FilterId << 21) | CAN_ID_STD | CAN_RTR_DATA) & 0xffff;
+			CAN_FilterInitStructure.CAN_FilterIdHigh = ((ExceptId << 21) & 0xffff0000) >> 16;
+			CAN_FilterInitStructure.CAN_FilterIdLow = ((ExceptId << 21) | CAN_ID_STD | CAN_RTR_DATA) & 0xffff;
 			CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0xFFFF;	
 			CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0xFFFF;
 			CAN_FilterInitStructure.CAN_FilterFIFOAssignment=CAN_Filter_FIFO0;
@@ -180,11 +195,11 @@ void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId)
 			CAN_FilterInit(&CAN_FilterInitStructure);
 		}else								//只接受扩展数据帧
 		{
-			CAN_FilterInitStructure.CAN_FilterNumber=0;
+			CAN_FilterInitStructure.CAN_FilterNumber=FilterNumber;
 			CAN_FilterInitStructure.CAN_FilterMode=CAN_FilterMode_IdMask; //屏蔽位模式
 			CAN_FilterInitStructure.CAN_FilterScale=CAN_FilterScale_32bit;
-			CAN_FilterInitStructure.CAN_FilterIdHigh = ((FilterId << 3) & 0xffff0000) >> 16;
-			CAN_FilterInitStructure.CAN_FilterIdLow = ((FilterId << 3) | CAN_ID_EXT | CAN_RTR_DATA) & 0xffff;
+			CAN_FilterInitStructure.CAN_FilterIdHigh = ((ExceptId << 3) & 0xffff0000) >> 16;
+			CAN_FilterInitStructure.CAN_FilterIdLow = ((ExceptId << 3) | CAN_ID_EXT | CAN_RTR_DATA) & 0xffff;
 			CAN_FilterInitStructure.CAN_FilterMaskIdHigh = 0xFFFF;	
 			CAN_FilterInitStructure.CAN_FilterMaskIdLow = 0xFFFF;
 			CAN_FilterInitStructure.CAN_FilterFIFOAssignment=CAN_Filter_FIFO0;

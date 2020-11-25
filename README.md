@@ -68,31 +68,35 @@
 
     JPEG、GIF解码和BMP编解码
 
+    LittlevGL
+
 -   已经支持的外设：
 
     大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB** \ CAN \ Ethernet）
 
 -   已经支持的组件：
 
-    FreeRTOS
+    FreeRTOS 10.3.1
 
-    **LittlevGL**
+    LWIP 2.1.2
 
-    LWIP
+    FATFS ff14
 
-    FATFS
+    ARM CMSIS 5.7.0 DSP Lib
+
+    fsm 有限状态机
+
+    menu 菜单框架
 
     内存管理（malloc和free）
 
-    菜单框架
-
     无依赖的string库和sprintf库
 
-    软件模拟I2C\SPI
+    软件模拟I2C\SPI库
 
     软件ringbuf，FIFO缓冲
-
-    PID
+    
+    PID库
     
     工程添加下载到RAM执行的功能
 
@@ -114,15 +118,16 @@
 
 ### 框架常用组件
 
--   Menu框架：SYSTEM_SUPPORT_Menu：提供一个实现菜单功能的模板；推荐作为标准常用，应用逻辑围绕这个菜单框架展开编写；具体文件在sys_menu.c里面；按照里面的注释，void keyProcess(void)函数负责扫描输入，void menuProcess(void)函数负责执行菜单功能，这两个函数必须放到一个循环里一直执行
+-   Menu 菜单框架：SYSTEM_SUPPORT_Menu：提供一个作者自己实现的实现菜单功能的模板；推荐作为标准常用，应用逻辑围绕这个菜单框架展开编写；具体文件在sys_menu.c里面；按照里面的注释，void keyProcess(void)函数负责扫描输入，void menuProcess(void)函数负责执行菜单功能，这两个函数必须放到一个循环里一直执行
+-   fsm 有限状态机：提供一个作者自己实现的有限状态机（fsm），用于管理逻辑较为复杂的程序，帮助更好的写阅读性强的状态图实现，详细说明和具体用法在fsm.c和fsm.h文件内（推荐：sys_menu 用于管理输入（按键等）、输出（屏幕等）和系统参数的用户控制，fsm 用于管理 用状态图 描述的多状态、多条件的复杂逻辑任务）
 -   string、sprintf库：SYSTEM_SUPPORT_MyString：提供一个实现了string.h大部分字符操作函数的库；具体作用看MyString.c文件里的注释
 -   string、sprintf库：SYSTEM_SUPPORT_sprintf：提供一个无依赖的独立实现的sprint库，github开源库from：mpaland/printf；经过修改，可以实现对指定串口发送printf格式化的字符串
--   PID算法：SYSTEM_SUPPORT_pid：提供一个pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面
+-   PID算法库：SYSTEM_SUPPORT_pid：提供一个作者自己实现的pid算法实现库，集成了积分分离和变限积分，以及可选的不完全微分和微分先行，具体用法看pid.h里面
 -   软件ringbuf，FIFO缓冲：由于应对大数据传输时，一个开源FIFO库
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
--   LWIP：（一个人精力有限，目前只有F4的模板比较完善，请注意！）在lwipopt.h里面进行配置，支持UDP、TCP Server、TCP Client，HTTP Server
--   FATFS：SYSTEM_FATFS_ENABLE：已经支持SDIO SD卡，SPI SD卡，和SPI FLASH，**还差USB文件系统**
+-   LWIP 2.1.2：（一个人精力有限，目前只有F4的模板比较完善，请注意！）在lwipopt.h里面进行配置，支持UDP、TCP Server、TCP Client，HTTP Server
+-   FATFS ff14：SYSTEM_FATFS_ENABLE：已经支持SDIO SD卡，SPI SD卡，和SPI FLASH，**还差USB文件系统**
 
 ### 框架基础外设
 

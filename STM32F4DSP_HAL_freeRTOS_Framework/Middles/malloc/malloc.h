@@ -24,9 +24,9 @@
 //InrRAM内存参数设定，InrRAM完全处于内部SRAM里面
 #define InrRAM_BLOCK_SIZE			32  	  							//内存块大小为32字节（一般不用动，保持默认就好）
 #if VECT_TAB_SRAM	/*程序下载到SRAM内DEBUG，最大程序64KB，内存数据64KB*/
-	#define InrRAM_MAX_SIZE			40*1024  							//最大管理内存 40K （注意FreeRTOS的内存分配大小，灵活调整）
+	#define InrRAM_MAX_SIZE			40*1024  							//最大管理内存 40K （根据docs说明文件，为大局考虑，这里不要轻易动！）
 #else				/*程序下载到FLASH内固定，最大程序1024KB，内存数据128KB*/
-	#define InrRAM_MAX_SIZE			70*1024  							//最大管理内存 70K （注意FreeRTOS的内存分配大小，灵活调整）
+	#define InrRAM_MAX_SIZE			70*1024  							//最大管理内存 70K （根据docs说明文件，为大局考虑，这里不要轻易动！）
 #endif
 #define InrRAM_ALLOC_TABLE_SIZE	(InrRAM_MAX_SIZE/InrRAM_BLOCK_SIZE) 	//内存表大小（这里就莫要乱动啦）
 
@@ -40,7 +40,7 @@
 /*______________________用户配置：InrCCM___________________________*/
 //InrCCM内存参数设定，用于管理CCM(特别注意,这部分SRAM,仅CPU可以访问!!)
 #define InrCCM_BLOCK_SIZE			32  	  							//内存块大小为32字节
-#define InrCCM_MAX_SIZE			60*1024  								//最大管理内存60K
+#define InrCCM_MAX_SIZE			60*1024  								//最大管理内存60K（默认不用动）
 #define InrCCM_ALLOC_TABLE_SIZE	(InrCCM_MAX_SIZE/InrCCM_BLOCK_SIZE)		//内存表大小
 
 

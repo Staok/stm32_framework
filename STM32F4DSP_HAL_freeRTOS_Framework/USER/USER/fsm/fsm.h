@@ -1,17 +1,11 @@
 #ifndef __FSM_H
 #define __FSM_H
 
-/*定义状态机有哪些状态，各个状态的名字*/
-enum fsm_state_list
-{
-    state_1 = 0,    /*首个必须是0，不要改其他数*/
-    state_2,
-    state_3,
-    state_4,
-    state_5,
+#include "PeriphConfigCore.h"
+#include "PeriphConfig.h"
 
-    state_Max       /*这个固定在最后的不要动*/
-};
+
+#define Max_StateJump_Num   3
 
 /*说明，如果当前状态在 2 ，2状态对应的函数会循环执行，现在 e标志 发生了，但是状态并没有跳转，因为只有d或c发生才会跳转，
     后来如果 d标志 发生了，会跳到状态3，在执行一次3状态对应的函数后，就会跳转到状态1然后停止跳转，请注意。
@@ -20,71 +14,83 @@ enum fsm_state_list
     否则设为 0 是途径的每一个状态的函数都执行一次，即见者有份*/
 #define fsm_jump_NOT_runOncePasser  1
 
-/*设置启动时的状态*/
-enum fsm_state_list CurrentState = state_1;
 
-
-/*下面都是固定的，不要动*/
-
-struct fsm_states_struct
+/*定义名为 ‘XXX1’ 的状态机有哪些状态，各个状态的名字*/
+enum fsm_XXX1_StateDef_enum
 {
-    enum fsm_state_list state;
-    void (*stateActFun)();
+    XXX1_State_1 = 0,    /*首个必须是0，不要改其他数*/
+    XXX1_State_2,
+    XXX1_State_3,
+    XXX1_State_4,
+    XXX1_State_5,
 
-    unsigned int jumpConditionNum;
-    struct fsm_jumpTo_struct
-    {
-        unsigned int eventFlag;
-        enum fsm_state_list nextState;
-    }jumpCondition[state_Max - 1];  /*大小动态设置麻烦，浪费了点空间*/
+    XXX1_State_MAX       /*这个固定在最后的不要动*/
 };
 
-/*根据标志位更新当前状态，必须放到一个大循环里*/
-void fsm_state_process(void)
-{
-    #if fsm_jump_NOT_runOncePasser
-        int j;
-        char All_cleared = 0;
-        while(!All_cleared)
-        {
-            for(j = 0;j < fsm_states[(unsigned int)CurrentState].jumpConditionNum;j++)
-            {
-                /*遍历CurrentState状态的所有条件是否成立*/
-                if(fsm_states[(unsigned int)CurrentState].jumpCondition[j].eventFlag)
-                {
-                    /*如果CurrentState状态的第j个条件成立，清标志，并把其下一个状态给当前状态*/
-                    fsm_states[(unsigned int)CurrentState].jumpCondition[j].eventFlag = 0;
-                    CurrentState = fsm_states[(unsigned int)CurrentState].jumpCondition[j].nextState;
-                    break;
-                }else
-                {
-                    if(j == (fsm_states[(unsigned int)CurrentState].jumpConditionNum - 1)) All_cleared = 1;
-                }
-                
-                
-            }
-        }
-    #else
-        int j;
-        for(j = 0;j < fsm_states[(unsigned int)CurrentState].jumpConditionNum;j++)
-        {
-            /*遍历CurrentState状态的所有条件是否成立*/
-            if(fsm_states[(unsigned int)CurrentState].jumpCondition[j].eventFlag)
-            {
-                /*如果CurrentState状态的第j个条件成立，清标志，并把其下一个状态给当前状态*/
-                fsm_states[(unsigned int)CurrentState].jumpCondition[j].eventFlag = 0;
-                CurrentState = fsm_states[(unsigned int)CurrentState].jumpCondition[j].nextState;
-                return ;
-            }
-        }
-    #endif
-}
+/*定义 XXX2 状态机的各个状态要执行的函数*/
+__weak void fsm_XXX1_state_1_Fun(void);
+__weak void fsm_XXX1_state_2_Fun(void);
+__weak void fsm_XXX1_state_3_Fun(void);
+__weak void fsm_XXX1_state_4_Fun(void);
+__weak void fsm_XXX1_state_5_Fun(void);
 
-/*根据当前状态执行相应函数，必须放到一个大循环里*/
-void fsm_stateFun_process(void)
+
+
+/*定义名为 ‘XXX2’ 的状态机有哪些状态，各个状态的名字*/
+enum fsm_XXX2_StateDef_enum
 {
-    (*(fsm_states[(unsigned int)CurrentState].stateActFun))();
-}
+    XXX2_State_1 = 0,    /*首个必须是0，不要改其他数*/
+    XXX2_State_2,
+    XXX2_State_3,
+    XXX2_State_4,
+
+    XXX2_State_MAX       /*这个固定在最后的不要动*/
+};
+
+/*定义 XXX2 状态机的各个状态要执行的函数*/
+__weak void fsm_XXX2_state_1_Fun(void);
+__weak void fsm_XXX2_state_2_Fun(void);
+__weak void fsm_XXX2_state_3_Fun(void);
+__weak void fsm_XXX2_state_4_Fun(void);
+
+
+
+/*________________以下固定的，不用动________________________*/
+
+struct fsm_states_struct                    //此状态机每一个状态
+{
+	unsigned int state;                     //此状态的状态索引
+	void (*stateActFun)();                  //此状态的执行函数
+
+	unsigned int jumpNum;                   //此状态的跳转条件数量
+	struct fsm_jumpTo_struct                //此状态的每个跳转条件的标志位和对应的下一个状态的索引
+	{
+		unsigned int eventFlag;
+		unsigned int nextState;
+	}jump[Max_StateJump_Num];               /*大小动态设置麻烦，浪费了点空间*/
+};
+
+struct fsm_struct
+{
+    unsigned int CurState;                      //此状态机当前所在状态
+	struct fsm_states_struct* state;
+};
+
+
+/*fsm有限状态机的处理函数
+ *必须放到一个循环执行的区域，返回值为 *fsm 对应的处理后的当前状态
+ *对于有周期执行需要的状态机任务，可以把不同 fsm_process(&fsm_xxx) 放到不同的周期函数里！
+*/
+unsigned int fsm_process(struct fsm_struct* fsm);
+
+
+
+
+
+
+
+
+
 
 #endif
 
@@ -92,51 +98,55 @@ void fsm_stateFun_process(void)
 
 
 /*使用示例：
-    while(...)	//某一个大循环
+    char buf;
+    while(buf != 'q')
     {
-        char buf = 0;
-        fsm_state_process();	//FSM 有限状态机，处理函数	
-		fsm_stateFun_process();
-		
-		//打印当前所处的状态
-        printf("CurrentState:%d\n",(unsigned int)CurrentState + 1);
-        
-		//根据相应的事件，标记相应状态的标志位
+        buf = 0;
+        unsigned int fsm_XXX1_CurSta,fsm_XXX2_CurSta;
+        fsm_XXX1_CurSta = fsm_process(&fsm_XXX1);     //处理状态机 ‘fsm_XXX1’
+        fsm_XXX2_CurSta = fsm_process(&fsm_XXX2);     //处理状态机 ‘fsm_XXX2’
+        printf("fsm_XXX1 Current:%d\n",(unsigned int)fsm_XXX1_CurSta + 1);
+        printf("fsm_XXX2 Current:%d\n",(unsigned int)fsm_XXX2_CurSta + 1);
+
         buf = getch();
         switch(buf)
         {
             case 'a':
-                fsm_states[(unsigned int)state_1].jumpCondition[0].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_1].jump[0].eventFlag = 1;
+                fsm_XXX2.state[(unsigned int)XXX2_State_1].jump[0].eventFlag = 1;
                 break;
             case 'b':
-                fsm_states[(unsigned int)state_1].jumpCondition[1].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_1].jump[1].eventFlag = 1;
+                fsm_XXX2.state[(unsigned int)XXX2_State_2].jump[0].eventFlag = 1;
                 break;
             
             case 'c':
-                fsm_states[(unsigned int)state_2].jumpCondition[0].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_2].jump[0].eventFlag = 1;
+                fsm_XXX2.state[(unsigned int)XXX2_State_3].jump[0].eventFlag = 1;
                 break;
             case 'd':
-                fsm_states[(unsigned int)state_2].jumpCondition[1].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_2].jump[1].eventFlag = 1;
+                fsm_XXX2.state[(unsigned int)XXX2_State_2].jump[1].eventFlag = 1;
                 break;
 
             case 'e':
-                fsm_states[(unsigned int)state_3].jumpCondition[0].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_3].jump[0].eventFlag = 1;
+                fsm_XXX2.state[(unsigned int)XXX2_State_3].jump[1].eventFlag = 1;
                 break;
 
             case 'f':
-                fsm_states[(unsigned int)state_4].jumpCondition[0].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_4].jump[0].eventFlag = 1;
+                fsm_XXX2.state[(unsigned int)XXX2_State_4].jump[0].eventFlag = 1;
                 break;
 
             case 'g':
-                fsm_states[(unsigned int)state_5].jumpCondition[0].eventFlag = 1;
+                fsm_XXX1.state[(unsigned int)XXX1_State_5].jump[0].eventFlag = 1;
                 break;
             default:break;
         }
 
 
     }
-
-
 
 */
 

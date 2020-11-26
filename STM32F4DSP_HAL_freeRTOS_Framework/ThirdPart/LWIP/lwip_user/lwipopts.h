@@ -25,9 +25,9 @@
 	严重注意：使用下载到SRAM模式调试程序时不能开启 SYS_SUPPORT_LWIP ，
 				因为..留给程序的空间不够...如果多分配一些给程序空间那内存数据空间又不够了..
 */
-#define SYS_SUPPORT_LWIP		0
+#define SYS_SUPPORT_LWIP		0		/*是否启用 LWIP 2.1.2*/
 
-#define NO_SYS                  1 	 	//为1表示不使用操作系统
+#define NO_SYS                  1 	 	/*为1表示不使用操作系统*/
 										/*
 											当选择不使用操作系统时，TCP/UDP会只编译RAW API相关的程序， 并在 sys_arch.c 里面不提供操作系统相关的API ！注意严禁在操作系统的任务中调用   RAW API函数！
 											当选择使用操作系统时，  TCP/UDP会只编译CONN API相关的程序，并在 sys_arch.c 里面提供操作系统相关的API ！  注意严禁在非操作系统的环境中调用CONN API函数！

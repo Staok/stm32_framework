@@ -12,6 +12,10 @@
 
 #include "malloc.h"								/*借鉴的 内存管理 章节的源代码自实现的malloc和free*/	
 #include "sys_menu.h"							/*模板固定搭配！必须开启！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！相当于io_ctrl*/
+#include "fsm.h"								/*模板固定搭配！必须开启！提供一个有限状态机（fsm）库，用于管理逻辑较为复杂的程序，帮助更好的写阅读性强的 状态图实现*/
+												/*注：	sys_menu 用于管理输入（按键等）、输出（屏幕等）和系统参数的用户控制
+														fsm 用于管理 用状态图 描述的多状态、多条件的复杂逻辑任务
+														齐活！*/
 #include "MyString.h"							
 												/*模板固定搭配！必须开启！提供一个实现了string.h大部分字符操作函数的库*/
 int myatoi(const char *str);					/*提供一个字符串转整形的实现*/
@@ -46,7 +50,7 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
  *___________________________________________________组件选择___________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
 
-#include "isUseFreeRTOS.h"						/*FreeRTOS版本：10.3.1，默认用于任务的RAM堆栈大小为30KB，按需修改，不要有没有语句的空任务！
+#include "isUseFreeRTOS.h"						/*FreeRTOS 10.3.1，默认用于任务的RAM堆栈大小为30KB，按需修改，不要有没有语句的空任务！
 													在此.h文件里面控制是否开启，在FreeRTOSConfig.h文件里配置*/
 	
 	#if SYSTEM_SUPPORT_OS
@@ -58,7 +62,7 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 		#include "BareConfig.h"	
 	#endif
 
-#include "lwipopts.h"							/*支持lwip 2.1.2，在里面配置和控制是否开启*/
+#include "lwipopts.h"							/*lwip 2.1.2，在里面配置和控制是否开启*/
 
 #if SYS_SUPPORT_LWIP
 	#include "lwip_comm.h"

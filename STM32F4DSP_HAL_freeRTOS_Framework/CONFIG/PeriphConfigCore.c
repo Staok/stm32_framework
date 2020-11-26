@@ -156,30 +156,30 @@ void sys_Device_Init_Seq(void)
 	/*FATFS ff14 初始化*/
 	#if SYSTEM_FATFS_ENABLE
 	init_return = FATFS_Init(); if(init_return != 0){ FaultASSERT("FATFS_Init()",init_return,flag_Fault);}
+	
+	init_return = f_mount(fs[0],"DEV_ExFLASH:",1);	//挂载外部SPI FLASH
+		if(init_return == 0X0D)	//外部SPI FLASH磁盘的FAT文件系统错误，重新格式化
+		{
+			MKFS_PARM mkf_opts =	//格式化选项
+			{ .fmt = FM_SFD 		//FM_FAT32 还是 FM_SFD 不清楚，后者为没有引导区
+				//其他都保持默认就好~
+			};
+			init_return = f_mkfs("DEV_ExFLASH:",&mkf_opts,NULL,4096);//格式化FLASH,1,盘符;1,不需要引导区,8个扇区为1个簇
+			if(init_return==0)
+			{
+				f_setlabel((const TCHAR *)"0:DEV_ExFLASH");						//设置Flash磁盘的名字
+			}else FaultASSERT("f_mkfs DEV_ExFLASH",init_return,flag_Warning);	//格式化失败
+			HAL_Delay(1000);
+		}
 
-//	init_return = f_mount(fs[0],"DEV_ExFLASH:",1);	//挂载外部SPI FLASH
-//		if(init_return == 0X0D)	//外部SPI FLASH磁盘的FAT文件系统错误，重新格式化
-//		{
-//			MKFS_PARM mkf_opts =	//格式化选项
-//			{ .fmt = FM_SFD 		//FM_FAT32 还是 FM_SFD 不清楚，后者为没有引导区
-//				//其他都保持默认就好~
-//			};
-//			init_return = f_mkfs("DEV_ExFLASH:",&mkf_opts,NULL,4096);//格式化FLASH,1,盘符;1,不需要引导区,8个扇区为1个簇
-//			if(init_return==0)
-//			{
-//				f_setlabel((const TCHAR *)"0:DEV_ExFLASH");						//设置Flash磁盘的名字
-//			}else FaultASSERT("f_mkfs DEV_ExFLASH",init_return,flag_Warning);	//格式化失败
-//			HAL_Delay(1000);
-//		}
-
-//	init_return = f_mount(fs[1],"DEV_SD:",1);		//挂载SDIO驱动的SD卡
-//		if(init_return != 0){ FaultASSERT("f_mount fs[1]",init_return,flag_Warning);}
+	init_return = f_mount(fs[1],"DEV_SD:",1);		//挂载SDIO驱动的SD卡
+		if(init_return != 0){ FaultASSERT("f_mount fs[1]",init_return,flag_Warning);}
 
 //	init_return = f_mount(fs[2],"DEV_USB:",1);		//挂载USB文件设备
 //		if(init_return != 0){ FaultASSERT("f_mount fs[2]",init_return,flag_Warning);}
 
-//	init_return = f_mount(fs[3],"DEV_SPI_SD:",1);	//挂载SPI驱动的SD卡
-//		if(init_return != 0){ FaultASSERT("f_mount fs[3]",init_return,flag_Warning);}
+	init_return = f_mount(fs[3],"DEV_SPI_SD:",1);	//挂载SPI驱动的SD卡
+		if(init_return != 0){ FaultASSERT("f_mount fs[3]",init_return,flag_Warning);}
 	#endif
 	
 	/*LWIP 2.1.2 初始化*/
@@ -287,7 +287,7 @@ void FaultASSERT(char* FaultMessage,u8 code,u8 flag)
 			sprintf_(faultMessage_buf,"Warning: %s, code:%d\r\n",FaultMessage,code);
 			
 			printf_uart(UART1,"%s\r\n",faultMessage_buf);
-			printf_uart(UART1,"File&Line: %s,%d\r\n",__FILE__,__LINE__);
+//			printf_uart(UART1,"File&Line: %s,%d\r\n",__FILE__,__LINE__);	//小小警告不必显示位置了
 			POINT_COLOR = YELLOW;
 			LCD_ShowString(5,0,16,(u8*)faultMessage_buf);
 			
@@ -685,7 +685,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 		if(STSTEM_TIM3PWM_REMAP_ENABLE)	//如果全部重映射
 		{
 			//__HAL_AFIO_REMAP_TIM3_ENABLE();			
-			//TIM3通道引脚全部重映射使能，具体怎么映射看库函数注释或sys.h里
+			//TIM3通道引脚全部重映射使能，具体怎么映射看库函数注释
 			__HAL_RCC_GPIOC_CLK_ENABLE();			//开启GPIOC时钟
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)	GPIO_Initure.Pin=GPIO_PIN_6;	//如果开启通道1，PC6
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)	GPIO_Initure.Pin=GPIO_PIN_7;	//如果开启通道2，PC7
@@ -699,7 +699,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 		}else if(STSTEM_TIM3PWM_REMAP_PARTIAL)	//如果部分重映射
 		{
 			//__HAL_AFIO_REMAP_TIM3_PARTIAL();		
-			//TIM3通道引脚部分重映射使能，具体怎么映射看库函数注释或sys.h里
+			//TIM3通道引脚部分重映射使能，具体怎么映射看库函数注释
 			__HAL_RCC_GPIOB_CLK_ENABLE();			//开启GPIOB时钟
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0001)	GPIO_Initure.Pin=GPIO_PIN_4;	//如果开启通道1，PB4
 			if((STSTEM_TIM3PWM_CHANNEL_ENABLE) & B0000_0010)	GPIO_Initure.Pin=GPIO_PIN_5;	//如果开启通道2，PB5
@@ -1467,7 +1467,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 
 
 
-/*以下四行放在了sys.h里面*/
+/*以下四行放在了.h里面*/
 //#define USART1_RX_DONE_mask 0x8000
 //#define USART1_RX_MODE_mask 0x4000
 //#define USART1_RX_Rec_r_mask 0x2000
@@ -1978,26 +1978,50 @@ unsigned int Curl_rand(void)
 
 //THUMB指令不支持汇编内联
 //采用如下方法实现执行汇编指令WFI  
-void WFI_SET(void)
+//void WFI_SET(void)
+//{
+//	__ASM volatile("wfi");		  
+//}
+////关闭所有中断
+//void INTX_DISABLE(void)
+//{		  
+//	__ASM volatile("cpsid i");
+//}
+////开启所有中断
+//void INTX_ENABLE(void)
+//{
+//	__ASM volatile("cpsie i");		  
+//}
+////设置栈顶地址
+////addr:栈顶地址
+//__asm void MSR_MSP(uint32_t addr) 
+//{
+//    MSR MSP, r0 			//set Main Stack value
+//    BX r14
+//}
+ 
+__asm void WFI_SET(void)
 {
-	__ASM volatile("wfi");		  
+	WFI;		  
 }
-//关闭所有中断
-void INTX_DISABLE(void)
-{		  
-	__ASM volatile("cpsid i");
+//关闭所有中断(但是不包括fault和NMI中断)
+__asm void INTX_DISABLE(void)
+{
+	CPSID   I
+	BX      LR	  
 }
 //开启所有中断
-void INTX_ENABLE(void)
+__asm void INTX_ENABLE(void)
 {
-	__ASM volatile("cpsie i");		  
+	CPSIE   I
+	BX      LR  
 }
 //设置栈顶地址
 //addr:栈顶地址
-__asm void MSR_MSP(uint32_t addr) 
+__asm void MSR_MSP(u32 addr) 
 {
-    MSR MSP, r0 			//set Main Stack value
-    BX r14
+	MSR MSP, r0 			//set Main Stack value
+	BX r14
 }
 
 

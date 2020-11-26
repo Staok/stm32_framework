@@ -29,7 +29,7 @@
 #ifndef _SFUD_DEF_H_
 #define _SFUD_DEF_H_
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>

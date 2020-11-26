@@ -336,9 +336,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,__CC_ARM</Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,__CC_ARM,USE_USB_OTG_FS</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\NetCard;..\DEVICES\SPI FLASH;..\ThirdPart\FreeRTOS\include;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\Middles\malloc;..\Middles\lwrb;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\web_server;..\DEVICES\FATFS plus;..\DEVICES\SPI SDcard;..\DEVICES\SPI FLASH SFUD\inc</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\NetCard;..\DEVICES\SPI FLASH;..\ThirdPart\FreeRTOS\include;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\Middles\malloc;..\Middles\lwrb;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\web_server;..\DEVICES\FATFS plus;..\DEVICES\SPI SDcard;..\DEVICES\SPI FLASH SFUD\inc;..\ThirdPart\STM32 USB\STM32_USB_USER;..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\inc;..\ThirdPart\STM32 USB\STM32_USB_HOST_Library\Core\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\inc;.\USER\fsm</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -456,6 +456,11 @@
               <FileName>sys_menu.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\USER\menu\sys_menu.c</FilePath>
+            </File>
+            <File>
+              <FileName>fsm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\fsm\fsm.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -948,11 +953,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_dcmi_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_dfsdm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_dfsdm.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_dma.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_dma.c</FilePath>
@@ -993,26 +993,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_gpio.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_hcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_hcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_iwdg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_iwdg.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_pcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_pcd_ex.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_pwr.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_pwr.c</FilePath>
@@ -1051,11 +1031,6 @@
               <FileName>stm32f4xx_hal_sd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_sd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_sdram.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_sdram.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_spi.c</FileName>
@@ -1106,11 +1081,6 @@
               <FileName>stm32f4xx_ll_dma.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_ll_dma.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_dma2d.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_ll_dma2d.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_ll_exti.c</FileName>
@@ -1188,11 +1158,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_ll_usart.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_ll_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_ll_usb.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_ll_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_ll_utils.c</FilePath>
@@ -1206,6 +1171,94 @@
               <FileName>docs.bin</FileName>
               <FileType>5</FileType>
               <FilePath>..\Docs\docs.bin</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>USB_OTG &amp; CORE</GroupName>
+          <Files>
+            <File>
+              <FileName>usb_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\src\usb_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\src\usb_dcd.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dcd_int.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\src\usb_dcd_int.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\src\usbd_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_ioreq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\src\usbd_ioreq.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_req.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\src\usbd_req.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>USB_DEVICE</GroupName>
+          <Files>
+            <File>
+              <FileName>usbd_msc_bot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_bot.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc_data.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_data.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc_scsi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_scsi.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>USB_HOST</GroupName>
+        </Group>
+        <Group>
+          <GroupName>USB_USER</GroupName>
+          <Files>
+            <File>
+              <FileName>usb_bsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usb_bsp.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_desc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_desc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_storage_msd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_storage_msd.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_usr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_usr.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1662,6 +1715,11 @@
               <FileType>1</FileType>
               <FilePath>.\USER\menu\sys_menu.c</FilePath>
             </File>
+            <File>
+              <FileName>fsm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\fsm\fsm.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2153,11 +2211,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_dcmi_ex.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_dfsdm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_dfsdm.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_dma.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_dma.c</FilePath>
@@ -2198,26 +2251,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_hal_gpio.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_hal_hcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_hcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_iwdg.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_iwdg.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_pcd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_pcd_ex.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_pcd_ex.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_hal_pwr.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_pwr.c</FilePath>
@@ -2256,11 +2289,6 @@
               <FileName>stm32f4xx_hal_sd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_hal_sd.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_hal_sdram.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_hal_sdram.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_hal_spi.c</FileName>
@@ -2311,11 +2339,6 @@
               <FileName>stm32f4xx_ll_dma.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_ll_dma.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f4xx_ll_dma2d.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_ll_dma2d.c</FilePath>
             </File>
             <File>
               <FileName>stm32f4xx_ll_exti.c</FileName>
@@ -2393,11 +2416,6 @@
               <FilePath>..\HAL\Src\stm32f4xx_ll_usart.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f4xx_ll_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HAL\Src\stm32f4xx_ll_usb.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_ll_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HAL\Src\stm32f4xx_ll_utils.c</FilePath>
@@ -2411,6 +2429,94 @@
               <FileName>docs.bin</FileName>
               <FileType>5</FileType>
               <FilePath>..\Docs\docs.bin</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>USB_OTG &amp; CORE</GroupName>
+          <Files>
+            <File>
+              <FileName>usb_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\src\usb_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\src\usb_dcd.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_dcd_int.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\src\usb_dcd_int.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\src\usbd_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_ioreq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\src\usbd_ioreq.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_req.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\src\usbd_req.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>USB_DEVICE</GroupName>
+          <Files>
+            <File>
+              <FileName>usbd_msc_bot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_bot.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc_data.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_data.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_msc_scsi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\src\usbd_msc_scsi.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>USB_HOST</GroupName>
+        </Group>
+        <Group>
+          <GroupName>USB_USER</GroupName>
+          <Files>
+            <File>
+              <FileName>usb_bsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usb_bsp.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_desc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_desc.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_storage_msd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_storage_msd.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_usr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_usr.c</FilePath>
             </File>
           </Files>
         </Group>

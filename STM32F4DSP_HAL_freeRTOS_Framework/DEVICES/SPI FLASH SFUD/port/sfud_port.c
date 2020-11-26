@@ -42,11 +42,8 @@
 
 #else
 /*如果使用软件模拟SPI，需要用户修改*/
-
+	
 	#define SFUD_simuSPI_CS 	PCout(11) 		//simuSPI的CS线
-	#define SFUD_simuSPI_SCK 	simuSPI_SCK 	//simuSPI的SCK线
-	#define SFUD_simuSPI_MOSI 	simuSPI_MOSI 	//simuSPI的MOSI线
-	#define SFUD_simuSPI_MISO 	simuSPI_MISO 	//simuSPI的MISO线
 	
 	void SFUD_simuSPI_CS_IO_init(void)
 	{
@@ -227,10 +224,10 @@ void sfud_log_debug(const char *file, const long line, const char *format, ...) 
 
     /* args point to the first variable parameter */
     va_start(args, format);
-    printf("[SFUD](%s:%ld) ", file, line);
+    printf_("[SFUD](%s:%ld) ", file, line);
     /* must use vprintf to print */
     vsnprintf(log_buf, sizeof(log_buf), format, args);
-    printf("%s\n", log_buf);
+    printf_("%s\n", log_buf);
     va_end(args);
 }
 
@@ -245,9 +242,9 @@ void sfud_log_info(const char *format, ...) {
 
     /* args point to the first variable parameter */
     va_start(args, format);
-    printf("[SFUD]");
+    printf_("[SFUD]");
     /* must use vprintf to print */
     vsnprintf(log_buf, sizeof(log_buf), format, args);
-    printf("%s\n", log_buf);
+    printf_("%s\n", log_buf);
     va_end(args);
 }

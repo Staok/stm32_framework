@@ -16,11 +16,13 @@
  |___|    |___|  |_||__| |__||_|   |_||_______||__| |__||_______||___|  |_||___| |_|
 ```
 
-一个志在实现STM32F1、F2和F4工程模板的项目，包含HAL库的高级封装、菜单库、FreeRTOS、LittlevGL、LWIP、FATFS、DSP和USB等等的组件，以及包含加密、BPNN、最小二乘等诸多常用的算法，并具有良好的易用性、解耦性和可剪裁性！
+一个志在实现STM32F1、F2和F4工程模板的项目，包含HAL库的高级封装、菜单库、有限状态机模板，集成了FreeRTOS、LittlevGL、LWIP、FATFS、DSP和USB等等的组件，以及未来将加入的加密、BPNN、最小二乘、音频图片视频解码、LittlevGL等诸多常用的算法或组件，并具有良好的易用性、解耦性和可剪裁性！
 
-遵循“二项玻”的第二则进行说明介绍，没有废话，全步骤化。
+本项目的说明介绍等等部分遵循“二项玻”的第二则进行。
 
-除了开源库之外的代码，每一行都经过手动移植、修改、检查和运行，是有灵魂的。喜欢的话，点个小star鸭~
+除了开源库之外的代码，每一行都经过手动移植、修改、检查和运行，是有灵魂的。
+
+喜欢的话，点个小star鸭~
 
 ------
 
@@ -82,6 +84,8 @@
 
     LittlevGL（暂时无限延期）
 
+    BPNN（CMSIS包中的内容，吸收进来）（暂时无限延期）
+
 -   已经支持的外设：
 
     大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB** \ CAN \ Ethernet）
@@ -90,7 +94,7 @@
 
     FreeRTOS 10.3.1
 
-    LWIP 2.1.2
+    LWIP 2.1.2（支持UDP、TCP Server和TCP Client 的RAW API）
 
     HTTP协议（LWIP应用）
 

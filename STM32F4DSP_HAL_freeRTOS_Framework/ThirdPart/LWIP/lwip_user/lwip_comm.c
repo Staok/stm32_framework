@@ -586,17 +586,17 @@ u32 lwip_1ms_Tick;							//lwip本地时间计数器，单位:ms
 //lwip裸跑日常任务，必须放到10ms循环中
 void lwip_periodic_handle(void)
 {
-	lwip_1ms_Tick +=10;
+	lwip_1ms_Tick += 10;
 	
 	sys_check_timeouts(); /*check timeouts,handle all timers for all protocols in the stack*/
 	
 	#if SYS_Test_LWIP	//如果不使用TCP/UDP通讯的话
 		if(lwip_1ms_Tick % 250 == 0)
 		{
-			#if LWIP_TCP
+//			#if LWIP_TCP
 				//每250ms调用一次tcp_tmr()函数
 				tcp_tmr();
-			#endif
+//			#endif
 		}
 		
 		if(lwip_1ms_Tick % 5000 == 0)
@@ -626,7 +626,7 @@ void lwip_periodic_handle(void)
 	
 }
 
-//循环扫描网卡是否有数据发来，必须放到无延迟大循环中
+//循环扫描网卡是否有数据发来，已经放到ETH中断函数里
 void lwip_pkt_handle(void)
 {
 	//从网络缓冲区中读取接收到的数据包并将其发送给LWIP处理 

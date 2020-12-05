@@ -25,60 +25,27 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_ioreq.h"
-//#if ! defined (USE_STM32446_EVAL) && ! defined (USE_STM32469I_EVAL)
-//#include "lcd_log.h"
-//#endif
-/** @addtogroup USBD_USER
-  * @{
-  */
+
+
+enum sys_USBD_use_for_enum
+{
+	use_for_MSC = 1,
+	use_for_VCP = 2,
+	
+	//...
+};
+
+extern enum sys_USBD_use_for_enum sys_USBD_use_for_;
   
   
-  void sys_USBD_User_Init(void);	/*用户使用，USB Dvice MSC模式 初始化*/
-
-/** @addtogroup USBD_MSC_DEMO_USER_CALLBACKS
-  * @{
-  */
-
-/** @defgroup USBD_USR
-  * @brief This file is the Header file for usbd_usr.c
-  * @{
-  */ 
+u8 sys_USBD_User_Init(void);	/*用户使用，USB Dvice 初始化*/
 
 
-/** @defgroup USBD_USR_Exported_Types
-  * @{
-  */ 
 
 extern  USBD_Usr_cb_TypeDef USR_cb;
-extern  USBD_Usr_cb_TypeDef USR_FS_cb;
-extern  USBD_Usr_cb_TypeDef USR_HS_cb;
+//extern  USBD_Usr_cb_TypeDef USR_FS_cb;
+//extern  USBD_Usr_cb_TypeDef USR_HS_cb;
 
-
-
-/**
-  * @}
-  */ 
-
-
-
-/** @defgroup USBD_USR_Exported_Defines
-  * @{
-  */ 
-
-/**
-  * @}
-  */ 
-
-/** @defgroup USBD_USR_Exported_Macros
-  * @{
-  */ 
-/**
-  * @}
-  */ 
-
-/** @defgroup USBD_USR_Exported_Variables
-  * @{
-  */ 
 
 void     USBD_USR_Init(void);
 void     USBD_USR_DeviceReset (uint8_t speed);
@@ -107,29 +74,7 @@ void     USBD_USR_HS_DeviceResumed(void);
 void     USBD_USR_HS_DeviceConnected(void);
 void     USBD_USR_HS_DeviceDisconnected(void);  
 
-/**
-  * @}
-  */ 
 
-/** @defgroup USBD_USR_Exported_FunctionsPrototype
-  * @{
-  */ 
-/**
-  * @}
-  */ 
-
-#endif /*__USBD_USR_H__*/
-
-/**
-  * @}
-  */ 
-
-/**
-  * @}
-  */ 
-
-/**
-  * @}
-  */ 
+#endif
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

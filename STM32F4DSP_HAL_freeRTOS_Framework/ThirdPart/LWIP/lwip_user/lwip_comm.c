@@ -16,6 +16,8 @@
 #include "NetCard.h"
 #include "malloc.h"
 
+#if	SYS_SUPPORT_LWIP
+
 ETH_HandleTypeDef ETH_Handler;      //以太网句柄
 __align(4) ETH_DMADescTypeDef *DMARxDscrTab;	//以太网DMA接收描述符数据结构体指针
 __align(4) ETH_DMADescTypeDef *DMATxDscrTab;	//以太网DMA发送描述符数据结构体指针 
@@ -662,6 +664,6 @@ void ETH_IRQHandler(void)
     __HAL_ETH_DMA_CLEAR_IT(&ETH_Handler,ETH_DMA_IT_R);      //清除DMA接收中断标志位
 }
 
-
+#endif
 
 

@@ -2383,6 +2383,18 @@
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
+    <File>
+      <GroupNumber>17</GroupNumber>
+      <FileNumber>155</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\cdc\src\usbd_cdc_core.c</PathWithFileName>
+      <FilenameWithoutPath>usbd_cdc_core.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
   </Group>
 
   <Group>
@@ -2401,7 +2413,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>155</FileNumber>
+      <FileNumber>156</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2413,7 +2425,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>156</FileNumber>
+      <FileNumber>157</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2425,7 +2437,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>157</FileNumber>
+      <FileNumber>158</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2437,13 +2449,25 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>158</FileNumber>
+      <FileNumber>159</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_usr.c</PathWithFileName>
       <FilenameWithoutPath>usbd_usr.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>19</GroupNumber>
+      <FileNumber>160</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\ThirdPart\STM32 USB\STM32_USB_USER\usbd_cdc_vcp.c</PathWithFileName>
+      <FilenameWithoutPath>usbd_cdc_vcp.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

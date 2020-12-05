@@ -133,7 +133,7 @@ static uint8_t  *USBD_cdc_GetOtherCfgDesc (uint8_t speed, uint16_t *length);
   * @{
   */ 
 extern CDC_IF_Prop_TypeDef  APP_FOPS;
-extern uint8_t USBD_DeviceDesc   [USB_SIZ_DEVICE_DESC];
+extern uint8_t USBD_DeviceDesc_vcp   [USB_SIZ_DEVICE_DESC];
 
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
   #if defined ( __ICCARM__ ) /*!< IAR Compiler */
@@ -448,7 +448,7 @@ uint8_t  usbd_cdc_Init (void  *pdev,
               CDC_CMD_PACKET_SZE,
               USB_OTG_EP_INT);
   
-  pbuf = (uint8_t *)USBD_DeviceDesc;
+  pbuf = (uint8_t *)USBD_DeviceDesc_vcp;
   pbuf[4] = DEVICE_CLASS_CDC;
   pbuf[5] = DEVICE_SUBCLASS_CDC;
   

@@ -53,16 +53,15 @@
 #define USB_SIZ_DEVICE_DESC                     18
 #define USB_SIZ_STRING_LANGID                   4
 
-#if !defined (USE_STM3210C_EVAL)
+//#if !defined (USE_STM3210C_EVAL)
 #define         DEVICE_ID1          (0x1FFF7A10)
 #define         DEVICE_ID2          (0x1FFF7A14)
 #define         DEVICE_ID3          (0x1FFF7A18)
-
-#else
-#define         DEVICE_ID1          (0x1FFFF7E8)
-#define         DEVICE_ID2          (0x1FFFF7EA)
-#define         DEVICE_ID3          (0x1FFFF7EC)  
-#endif
+//#else
+//#define         DEVICE_ID1          (0x1FFFF7E8)
+//#define         DEVICE_ID2          (0x1FFFF7EA)
+//#define         DEVICE_ID3          (0x1FFFF7EC)  
+//#endif
 
 #define  USB_SIZ_STRING_SERIAL       0x1A
 /**
@@ -89,11 +88,11 @@
 /** @defgroup USBD_DESC_Exported_Variables
   * @{
   */ 
-extern  uint8_t USBD_DeviceDesc  [USB_SIZ_DEVICE_DESC];
-extern  uint8_t USBD_StrDesc[USB_MAX_STR_DESC_SIZ];
-extern  uint8_t USBD_OtherSpeedCfgDesc[USB_LEN_CFG_DESC]; 
-extern  uint8_t USBD_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC];
-extern  uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID];
+//extern  uint8_t USBD_DeviceDesc  [USB_SIZ_DEVICE_DESC];
+//extern  uint8_t USBD_StrDesc[USB_MAX_STR_DESC_SIZ];
+//extern  uint8_t USBD_OtherSpeedCfgDesc[USB_LEN_CFG_DESC]; 
+//extern  uint8_t USBD_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC];
+//extern  uint8_t USBD_LangIDDesc[USB_SIZ_STRING_LANGID];
 extern  USBD_DEVICE USR_desc; 
 /**
   * @}

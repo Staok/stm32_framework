@@ -153,6 +153,11 @@ void sys_Device_Init_Seq(void)
 		LCD_Init_no_FSMC();
 	#endif
 	
+	/*STM32 USB 的初始化*/
+	#if SYSTEM_USB_ENABLE
+		init_return = sys_USBD_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBD_User_Init()",init_return,flag_Fault);}
+	#endif
+	
 	/*FATFS ff14 初始化*/
 	#if SYSTEM_FATFS_ENABLE
 	init_return = FATFS_Init(); if(init_return != 0){ FaultASSERT("FATFS_Init()",init_return,flag_Fault);}
@@ -286,7 +291,7 @@ void FaultASSERT(char* FaultMessage,u8 code,u8 flag)
 		case flag_Warning:
 			sprintf_(faultMessage_buf,"Warning: %s, code:%d\r\n",FaultMessage,code);
 			
-			printf_uart(UART1,"%s\r\n",faultMessage_buf);
+			printf_uart(UART1,"%s",faultMessage_buf);
 //			printf_uart(UART1,"File&Line: %s,%d\r\n",__FILE__,__LINE__);	//小小警告不必显示位置了
 			POINT_COLOR = YELLOW;
 			LCD_ShowString(5,0,16,(u8*)faultMessage_buf);

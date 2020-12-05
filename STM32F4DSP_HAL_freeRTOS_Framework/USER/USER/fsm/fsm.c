@@ -3,7 +3,8 @@
 
 /*STEP 1: 去.h文件定义有几个状态*/
 /*STEP 2: 在下面定义每个状态要执行的函数，如果已经有则可以忽略此步*/
-/*STEP 3: 在下下面的 fsm_states 结构体内 定义状态图结构*/
+/*STEP 3: 在下下面的 struct fsm_states_struct 结构体内 定义状态图结构*/
+/*STEP 4: 在不同的周期执行函数里或者大循环里调用 fsm_process(&fsm_XXX1) 处理和执行状态机*/
 
 
 /*状态图示例：状态机——fsm_XXX1（@ http://asciiflow.com/）

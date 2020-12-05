@@ -1,5 +1,6 @@
 #include "NetCard.h"
 
+#if	SYS_SUPPORT_LWIP
 
 //NetCard_PHY初始化
 //返回值:0,成功;
@@ -38,6 +39,8 @@ u8 NetCard_PHY_Get_Speed(void)
 	speed=((NetCard_PHY_ReadPHY(31)&0x1C)>>2); //从LAN8720的31号寄存器中读取网络速度和双工模式
 	return speed;
 }
+
+#endif
 
 
 

@@ -59,7 +59,13 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 		#include "queue.h"
 		#include "TaskConfig.h"
 	#else
-		#include "BareConfig.h"	
+		#include "BareConfig.h"
+	#endif
+	
+#define SYSTEM_USB_ENABLE		1				/*STM32 USB库 使用*/
+	
+	#if SYSTEM_USB_ENABLE
+		#include "usbd_usr.h"
 	#endif
 
 #include "lwipopts.h"							/*lwip 2.1.2，在里面配置和控制是否开启*/

@@ -40,7 +40,7 @@
 #include "lwip/mem.h"
 
 
-#if !NO_SYS
+#if (!NO_SYS) && SYS_SUPPORT_LWIP
 
 //当消息指针为空时,指向一个常量pvNullPointer所指向的值.
 //在UCOS中如果OSQPost()中的msg==NULL会返回一条OS_ERR_POST_NULL
@@ -268,7 +268,7 @@ void sys_msleep(u32_t ms)
 {
 	HAL_Delay(ms);
 }
-#endif
+
 
 
 
@@ -278,6 +278,15 @@ u32_t sys_now(void)
 {
 	return lwip_1ms_Tick;
 }
+
+#else
+
+//用于防止报错，不用动
+u32_t sys_now(void){ return 0x01;}
+
+#endif
+
+
 
 
 

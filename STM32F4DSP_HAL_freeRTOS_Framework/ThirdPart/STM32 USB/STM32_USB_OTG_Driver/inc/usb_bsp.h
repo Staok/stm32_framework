@@ -69,13 +69,13 @@
 /** @defgroup USB_BSP_Exported_FunctionsPrototype
   * @{
   */ 
-void BSP_Init(void);
+//void BSP_Init(void);	//没有用到
 
 void USB_OTG_BSP_Init (USB_OTG_CORE_HANDLE *pdev);
 void USB_OTG_BSP_uDelay (const uint32_t usec);
 void USB_OTG_BSP_mDelay (const uint32_t msec);
 void USB_OTG_BSP_EnableInterrupt (USB_OTG_CORE_HANDLE *pdev);
-void USB_OTG_BSP_TimerIRQ (void);
+//void USB_OTG_BSP_TimerIRQ (void);	//没有用到
 #ifdef USE_HOST_MODE
 void USB_OTG_BSP_ConfigVBUS(USB_OTG_CORE_HANDLE *pdev);
 void USB_OTG_BSP_DriveVBUS(USB_OTG_CORE_HANDLE *pdev,uint8_t state);

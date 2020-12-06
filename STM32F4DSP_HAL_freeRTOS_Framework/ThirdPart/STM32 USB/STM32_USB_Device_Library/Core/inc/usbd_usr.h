@@ -30,7 +30,9 @@
 enum sys_USBD_use_for_enum
 {
 	use_for_MSC = 1,
-	use_for_VCP = 2,
+	use_for_VCP,
+	use_for_mouse,
+	use_for_keyboard
 	
 	//...
 };

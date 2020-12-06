@@ -32,16 +32,16 @@
 TODO：下面各个描述符具体会显示在那里，试验试验，然后在这里记录注释一下，在docs.bin记录一下
 */
 
-#define USBD_VID_msc                   	  0x0483
-#define USBD_PID_msc                   	  0x5720
-#define USBD_LANGID_STRING_msc         	  0x409
-#define USBD_MANUFACTURER_STRING_msc	  "STMicroelectronics"
-#define USBD_PRODUCT_HS_STRING_msc        "Mass Storage in HS Mode"
-#define USBD_PRODUCT_FS_STRING_msc        "Mass Storage in FS Mode"
-#define USBD_CONFIGURATION_HS_STRING_msc  "MSC Config"
-#define USBD_INTERFACE_HS_STRING_msc      "MSC Interface"
-#define USBD_CONFIGURATION_FS_STRING_msc  "MSC Config"
-#define USBD_INTERFACE_FS_STRING_msc      "MSC Interface"
+#define USBD_VID_msc                   	  	0x0483
+#define USBD_PID_msc                   	  	0x5720
+#define USBD_LANGID_STRING_msc         	  	0x409
+#define USBD_MANUFACTURER_STRING_msc	  	"STMicroelectronics"
+#define USBD_PRODUCT_HS_STRING_msc        	"Mass Storage in HS Mode"
+#define USBD_PRODUCT_FS_STRING_msc        	"Mass Storage in FS Mode"
+#define USBD_CONFIGURATION_HS_STRING_msc  	"MSC Config"
+#define USBD_INTERFACE_HS_STRING_msc      	"MSC Interface"
+#define USBD_CONFIGURATION_FS_STRING_msc  	"MSC Config"
+#define USBD_INTERFACE_FS_STRING_msc      	"MSC Interface"
 
 #define USBD_VID_vcp                        0x0483
 #define USBD_PID_vcp                        0x5740
@@ -53,6 +53,17 @@ TODO：下面各个描述符具体会显示在那里，试验试验，然后在这里记录注释一下，在docs.b
 #define USBD_INTERFACE_HS_STRING_vcp        "VCP Interface"
 #define USBD_CONFIGURATION_FS_STRING_vcp    "VCP Config"
 #define USBD_INTERFACE_FS_STRING_vcp        "VCP Interface"
+
+#define USBD_VID_hid                     	0x0483
+#define USBD_PID_hid                     	0x5710
+#define USBD_LANGID_STRING_hid            	0x409
+#define USBD_MANUFACTURER_STRING_hid      	"STMicroelectronics"
+#define USBD_PRODUCT_HS_STRING_hid        	"HID in HS mode"
+#define USBD_PRODUCT_FS_STRING_hid        	"HID in FS Mode"
+#define USBD_CONFIGURATION_HS_STRING_hid  	"HID Config"
+#define USBD_INTERFACE_HS_STRING_hid      	"HID Interface"
+#define USBD_CONFIGURATION_FS_STRING_hid  	"HID Config"
+#define USBD_INTERFACE_FS_STRING_hid      	"HID Interface"
 
 
 USBD_DEVICE USR_desc =
@@ -117,6 +128,28 @@ __ALIGN_BEGIN uint8_t USBD_DeviceDesc_vcp[USB_SIZ_DEVICE_DESC] __ALIGN_END =
   USBD_CFG_MAX_NUM              /* bNumConfigurations */
 };                              /* USB_DeviceDescriptor */
 
+/* USB Standard Device Descriptor */
+__ALIGN_BEGIN uint8_t USBD_DeviceDesc_hid[USB_SIZ_DEVICE_DESC] __ALIGN_END = {
+  0x12,                         /* bLength */
+  USB_DEVICE_DESCRIPTOR_TYPE,   /* bDescriptorType */
+  0x00,                         /* bcdUSB */
+  0x02,
+  0x00,                         /* bDeviceClass */
+  0x00,                         /* bDeviceSubClass */
+  0x00,                         /* bDeviceProtocol */
+  USB_OTG_MAX_EP0_SIZE,         /* bMaxPacketSize */
+  LOBYTE(USBD_VID_hid),             /* idVendor */
+  HIBYTE(USBD_VID_hid),             /* idVendor */
+  LOBYTE(USBD_PID_hid),             /* idVendor */
+  HIBYTE(USBD_PID_hid),             /* idVendor */
+  0x00,                         /* bcdDevice rel. 2.00 */
+  0x02,
+  USBD_IDX_MFC_STR,             /* Index of manufacturer string */
+  USBD_IDX_PRODUCT_STR,         /* Index of product string */
+  USBD_IDX_SERIAL_STR,          /* Index of serial number string */
+  USBD_CFG_MAX_NUM              /* bNumConfigurations */
+};
+
 #ifdef USB_OTG_HS_INTERNAL_DMA_ENABLED
   #if defined ( __ICCARM__ ) /*!< IAR Compiler */
     #pragma data_alignment=4   
@@ -139,6 +172,21 @@ __ALIGN_BEGIN uint8_t USBD_DeviceQualifierDesc_msc[USB_LEN_DEV_QUALIFIER_DESC] _
 
 /* USB Standard Device Descriptor */
 __ALIGN_BEGIN uint8_t USBD_DeviceQualifierDesc_vcp[USB_LEN_DEV_QUALIFIER_DESC]
+  __ALIGN_END = {
+  USB_LEN_DEV_QUALIFIER_DESC,
+  USB_DESC_TYPE_DEVICE_QUALIFIER,
+  0x00,
+  0x02,
+  0x00,
+  0x00,
+  0x00,
+  0x40,
+  0x01,
+  0x00,
+};
+  
+/* USB Standard Device Descriptor */
+__ALIGN_BEGIN uint8_t USBD_DeviceQualifierDesc_hid[USB_LEN_DEV_QUALIFIER_DESC]
   __ALIGN_END = {
   USB_LEN_DEV_QUALIFIER_DESC,
   USB_DESC_TYPE_DEVICE_QUALIFIER,
@@ -215,6 +263,10 @@ uint8_t *  USBD_USR_DeviceDescriptor( uint8_t speed , uint16_t *length)
 		case use_for_VCP:
 				*length = sizeof(USBD_DeviceDesc_vcp);
 				return (uint8_t*)USBD_DeviceDesc_vcp;
+		case use_for_keyboard:
+		case use_for_mouse:
+				*length = sizeof(USBD_DeviceDesc_hid);
+				return (uint8_t*)USBD_DeviceDesc_hid;
 	}
 	/*默认按照VCP来*/
 	*length = sizeof(USBD_DeviceDesc_vcp);
@@ -266,6 +318,17 @@ uint8_t *  USBD_USR_ProductStrDescriptor( uint8_t speed , uint16_t *length)
 				USBD_GetString((uint8_t *)(uint8_t *)USBD_PRODUCT_FS_STRING_vcp, USBD_StrDesc, length);    
 			}
 			return USBD_StrDesc;
+		case use_for_keyboard:
+		case use_for_mouse:
+			if(speed == 0)
+			{   
+				USBD_GetString((uint8_t *)(uint8_t *)USBD_PRODUCT_HS_STRING_hid, USBD_StrDesc, length);
+			}
+			else
+			{
+				USBD_GetString((uint8_t *)(uint8_t *)USBD_PRODUCT_FS_STRING_hid, USBD_StrDesc, length);    
+			}
+			return USBD_StrDesc;
 	}
 	/*默认按照VCP来*/
 	if(speed == 0)
@@ -295,6 +358,10 @@ uint8_t *  USBD_USR_ManufacturerStrDescriptor( uint8_t speed , uint16_t *length)
 			return USBD_StrDesc;
 		case use_for_VCP:
 			USBD_GetString((uint8_t *)(uint8_t *)USBD_MANUFACTURER_STRING_vcp, USBD_StrDesc, length);
+			return USBD_StrDesc;
+		case use_for_keyboard:
+		case use_for_mouse:
+			USBD_GetString((uint8_t *)(uint8_t *)USBD_MANUFACTURER_STRING_hid, USBD_StrDesc, length);
 			return USBD_StrDesc;
 	}
 	/*默认按照VCP来*/
@@ -350,7 +417,17 @@ uint8_t *  USBD_USR_ConfigStrDescriptor( uint8_t speed , uint16_t *length)
 				USBD_GetString((uint8_t *)(uint8_t *)USBD_CONFIGURATION_FS_STRING_vcp, USBD_StrDesc, length); 
 			}
 			return USBD_StrDesc;
-
+		case use_for_keyboard:
+		case use_for_mouse:
+			if(speed  == USB_OTG_SPEED_HIGH)
+			{  
+				USBD_GetString((uint8_t *)(uint8_t *)USBD_CONFIGURATION_HS_STRING_hid, USBD_StrDesc, length);
+			}
+			else
+			{
+				USBD_GetString((uint8_t *)(uint8_t *)USBD_CONFIGURATION_FS_STRING_hid, USBD_StrDesc, length); 
+			}
+			return USBD_StrDesc;
 	}
 	/*默认按照VCP来*/
 	if(speed  == USB_OTG_SPEED_HIGH)
@@ -395,8 +472,18 @@ uint8_t *  USBD_USR_InterfaceStrDescriptor( uint8_t speed , uint16_t *length)
 			{
 				USBD_GetString((uint8_t *)(uint8_t *)USBD_INTERFACE_FS_STRING_vcp, USBD_StrDesc, length);
 			}
-			return USBD_StrDesc; 
-
+			return USBD_StrDesc;
+		case use_for_keyboard:
+		case use_for_mouse:
+			if(speed == 0)
+			{
+				USBD_GetString((uint8_t *)(uint8_t *)USBD_INTERFACE_HS_STRING_hid, USBD_StrDesc, length);
+			}
+			else
+			{
+				USBD_GetString((uint8_t *)(uint8_t *)USBD_INTERFACE_FS_STRING_hid, USBD_StrDesc, length);
+			}
+			return USBD_StrDesc;
 	}
 	/*默认按照VCP来*/
 	if(speed == 0)

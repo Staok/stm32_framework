@@ -81,6 +81,18 @@
   * @}
   */ 
 
+
+/** @defgroup USB_HID_Class_Layer_Parameter
+  * @{
+  */ 
+#define HID_IN_EP                    0x81
+#define HID_IN_PACKET                4
+
+/**
+  * @}
+  */ 
+
+
 /* Class Layer Parameter */
 
 #define MSC_IN_EP                    0x81

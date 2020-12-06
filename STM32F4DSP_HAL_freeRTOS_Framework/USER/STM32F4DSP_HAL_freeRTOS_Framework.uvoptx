@@ -2250,8 +2250,8 @@
   </Group>
 
   <Group>
-    <GroupName>USB_OTG &amp; CORE</GroupName>
-    <tvExp>0</tvExp>
+    <GroupName>USB_OTG_CORE</GroupName>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -2330,7 +2330,7 @@
   </Group>
 
   <Group>
-    <GroupName>USB_DEVICE</GroupName>
+    <GroupName>USB_DEVICE_Class</GroupName>
     <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -2395,6 +2395,18 @@
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
+    <File>
+      <GroupNumber>17</GroupNumber>
+      <FileNumber>156</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\hid\src\usbd_hid_core.c</PathWithFileName>
+      <FilenameWithoutPath>usbd_hid_core.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
   </Group>
 
   <Group>
@@ -2413,7 +2425,7 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>156</FileNumber>
+      <FileNumber>157</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2425,7 +2437,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>157</FileNumber>
+      <FileNumber>158</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2437,7 +2449,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>158</FileNumber>
+      <FileNumber>159</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2449,7 +2461,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>159</FileNumber>
+      <FileNumber>160</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -2461,7 +2473,7 @@
     </File>
     <File>
       <GroupNumber>19</GroupNumber>
-      <FileNumber>160</FileNumber>
+      <FileNumber>161</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>

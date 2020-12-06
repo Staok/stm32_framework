@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx,ARM_MATH_CM4,__CC_ARM,USE_USB_OTG_FS</Define>
               <Undefine></Undefine>
-              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\NetCard;..\DEVICES\SPI FLASH;..\ThirdPart\FreeRTOS\include;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\Middles\malloc;..\Middles\lwrb;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\web_server;..\DEVICES\FATFS plus;..\DEVICES\SPI SDcard;..\DEVICES\SPI FLASH SFUD\inc;..\ThirdPart\STM32 USB\STM32_USB_USER;..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\inc;..\ThirdPart\STM32 USB\STM32_USB_HOST_Library\Core\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\inc;.\USER\fsm;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\cdc\inc</IncludePath>
+              <IncludePath>.\SYS\Inc;.\USER;.\USER\BareConfig;.\USER\TaskConfig;.\USER\menu;..\CORE;..\CONFIG;..\HAL\Inc;..\DEVICES\TFTLCD;..\DEVICES\NetCard;..\DEVICES\SPI FLASH;..\ThirdPart\FreeRTOS\include;..\ThirdPart\FreeRTOS\portable\RVDS\ARM_CM4F;..\ThirdPart\LWIP\lwip-2.1.2\include;..\ThirdPart\LWIP\lwip_user;..\ThirdPart\DSP_LIB\Inc;..\ThirdPart\FATFS;..\Middles\malloc;..\Middles\lwrb;..\Middles\MyString;..\Middles\pid;..\Middles\printf;..\Middles\simu_i2c_spi;..\ThirdPart\LWIP\lwip_user\tcp_server;..\ThirdPart\LWIP\lwip_user\tcp_client;..\ThirdPart\LWIP\lwip_user\udp;..\ThirdPart\LWIP\lwip_user\web_server;..\DEVICES\FATFS plus;..\DEVICES\SPI SDcard;..\DEVICES\SPI FLASH SFUD\inc;..\ThirdPart\STM32 USB\STM32_USB_USER;..\ThirdPart\STM32 USB\STM32_USB_OTG_Driver\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Core\inc;..\ThirdPart\STM32 USB\STM32_USB_HOST_Library\Core\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\msc\inc;.\USER\fsm;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\cdc\inc;..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\hid\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1175,7 +1175,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>USB_OTG &amp; CORE</GroupName>
+          <GroupName>USB_OTG_CORE</GroupName>
           <Files>
             <File>
               <FileName>usb_core.c</FileName>
@@ -1210,7 +1210,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>USB_DEVICE</GroupName>
+          <GroupName>USB_DEVICE_Class</GroupName>
           <Files>
             <File>
               <FileName>usbd_msc_bot.c</FileName>
@@ -1236,6 +1236,11 @@
               <FileName>usbd_cdc_core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\cdc\src\usbd_cdc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_hid_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\hid\src\usbd_hid_core.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2443,7 +2448,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>USB_OTG &amp; CORE</GroupName>
+          <GroupName>USB_OTG_CORE</GroupName>
           <Files>
             <File>
               <FileName>usb_core.c</FileName>
@@ -2478,7 +2483,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>USB_DEVICE</GroupName>
+          <GroupName>USB_DEVICE_Class</GroupName>
           <Files>
             <File>
               <FileName>usbd_msc_bot.c</FileName>
@@ -2504,6 +2509,11 @@
               <FileName>usbd_cdc_core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\cdc\src\usbd_cdc_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>usbd_hid_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\ThirdPart\STM32 USB\STM32_USB_Device_Library\Class\hid\src\usbd_hid_core.c</FilePath>
             </File>
           </Files>
         </Group>

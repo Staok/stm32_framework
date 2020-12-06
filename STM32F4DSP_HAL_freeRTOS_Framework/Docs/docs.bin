@@ -369,64 +369,82 @@ API使用：
 			}
 			
 			
-		VCP模式（USB模拟虚拟串口）：
-			在 usbd_cdc_vcp.c 文件里面：
-				接收：
-					从USB口接收数据后会自动调用 uint16_t VCP_DataRx(uint8_t * Buf, uint32_t Len) 函数
-					只需构造一个数据存在里面就行，然后标个标志位
-					
-				发送：
-					目前暂用一个一个字节的发送。
-					先在 APP_Rx_Buffer[APP_Rx_ptr_in] 里面存一个字节
-					然后调用 uint16_t VCP_DataTx(void) 函数一次
-					例如：
-						APP_Rx_Buffer[APP_Rx_ptr_in] = aRxBuffer[0];
-						VCP_DataTx();
-				设定要模拟的串口的模式：
-					uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t * Buf, uint32_t Len)
-					
-					
-		MSC模式（大容量存储）：
-			就像FATFS的diskio.c定义一样，在 usbd_storage_msd.c 文件里面：
-				定义有几个设备： #define STORAGE_LUN_NBR 	2
-				填写 标准查询数据(每个lun占36字节)： STORAGE_Inquirydata[]
-				完成这几个函数：
-					int8_t STORAGE_Init (uint8_t lun);
-					int8_t STORAGE_GetCapacity (uint8_t lun,uint32_t *block_num,uint32_t *block_size);
-					int8_t  STORAGE_IsReady (uint8_t lun);
-					int8_t  STORAGE_IsWriteProtected (uint8_t lun);
-					int8_t STORAGE_Read (uint8_t lun,uint8_t *buf,uint32_t blk_addr,uint16_t blk_len);
-					int8_t STORAGE_Write (uint8_t lun,uint8_t *buf,uint32_t blk_addr,uint16_t blk_len);
-					int8_t STORAGE_GetMaxLun (void);
-					
-					STORAGE_GetMaxLun()要注意，里面是先检测SD卡在不在线，如果在则返回 (STORAGE_LUN_NBR - 1)，表示有两个设备 0和1
-						如果SD卡不在，则返回 (STORAGE_LUN_NBR - 2)，表示只有一个设备（SPI FLASH），标号0
-				查询标志位使用举例：
-					if(USB_STATUS_REG)	//状态改变了，状态会在 usbd_storage_msd.c 文件里面被回调函数自动改变
+	VCP模式（USB模拟虚拟串口）：
+		在 usbd_cdc_vcp.c 文件里面：
+			接收：
+				从USB口接收数据后会自动调用 uint16_t VCP_DataRx(uint8_t * Buf, uint32_t Len) 函数
+				只需构造一个数据存在里面就行，然后标个标志位
+				
+			发送：
+				目前暂用一个一个字节的发送。
+				先在 APP_Rx_Buffer[APP_Rx_ptr_in] 里面存一个字节
+				然后调用 uint16_t VCP_DataTx(void) 函数一次
+				例如：
+					APP_Rx_Buffer[APP_Rx_ptr_in] = aRxBuffer[0];
+					VCP_DataTx();
+			设定要模拟的串口的模式：
+				uint16_t VCP_Ctrl(uint32_t Cmd, uint8_t * Buf, uint32_t Len)
+				
+				
+	MSC模式（大容量存储）：
+		就像FATFS的diskio.c定义一样，在 usbd_storage_msd.c 文件里面：
+			定义有几个设备： #define STORAGE_LUN_NBR 	2
+			填写 标准查询数据(每个lun占36字节)： STORAGE_Inquirydata[]
+			完成这几个函数：
+				int8_t STORAGE_Init (uint8_t lun);
+				int8_t STORAGE_GetCapacity (uint8_t lun,uint32_t *block_num,uint32_t *block_size);
+				int8_t  STORAGE_IsReady (uint8_t lun);
+				int8_t  STORAGE_IsWriteProtected (uint8_t lun);
+				int8_t STORAGE_Read (uint8_t lun,uint8_t *buf,uint32_t blk_addr,uint16_t blk_len);
+				int8_t STORAGE_Write (uint8_t lun,uint8_t *buf,uint32_t blk_addr,uint16_t blk_len);
+				int8_t STORAGE_GetMaxLun (void);
+				
+				STORAGE_GetMaxLun()要注意，里面是先检测SD卡在不在线，如果在则返回 (STORAGE_LUN_NBR - 1)，表示有两个设备 0和1
+					如果SD卡不在，则返回 (STORAGE_LUN_NBR - 2)，表示只有一个设备（SPI FLASH），标号0
+			查询标志位使用举例：
+				if(USB_STATUS_REG)	//状态改变了，状态会在 usbd_storage_msd.c 文件里面被回调函数自动改变
+				{
+					USB_STATUS_REG = 0;
+					LCD_Fill(10,160,240,160+16,WHITE);//清除显示			  	   
+					if(USB_STATUS_REG&0x01)//正在写		  
 					{
-						USB_STATUS_REG = 0;
-						LCD_Fill(10,160,240,160+16,WHITE);//清除显示			  	   
-						if(USB_STATUS_REG&0x01)//正在写		  
-						{
-							LCD_ShowString(10,160,tftlcd_data.width,tftlcd_data.height,16,"USB Writing...");//提示USB正在写入数据	 
-						}
-						
-						if(USB_STATUS_REG&0x02)//正在读
-						{
-							LCD_ShowString(10,160,tftlcd_data.width,tftlcd_data.height,16,"USB Reading...");//提示USB正在读出数据  		 
-						}	 										  
-						
-						if(USB_STATUS_REG&0x04)
-							LCD_ShowString(10,180,tftlcd_data.width,tftlcd_data.height,16,"USB Write Err ");//提示写入错误
-						else 
-							LCD_Fill(10,180,240,180+16,WHITE);//清除显示	  
-						
-						if(USB_STATUS_REG&0x08)
-							LCD_ShowString(10,210,tftlcd_data.width,tftlcd_data.height,16,"USB Read  Err ");//提示读出错误
-						else 
-							LCD_Fill(10,210,240,210+16,WHITE);//清除显示    
-						
+						LCD_ShowString(10,160,tftlcd_data.width,tftlcd_data.height,16,"USB Writing...");//提示USB正在写入数据	 
 					}
+					
+					if(USB_STATUS_REG&0x02)//正在读
+					{
+						LCD_ShowString(10,160,tftlcd_data.width,tftlcd_data.height,16,"USB Reading...");//提示USB正在读出数据  		 
+					}	 										  
+					
+					if(USB_STATUS_REG&0x04)
+						LCD_ShowString(10,180,tftlcd_data.width,tftlcd_data.height,16,"USB Write Err ");//提示写入错误
+					else 
+						LCD_Fill(10,180,240,180+16,WHITE);//清除显示	  
+					
+					if(USB_STATUS_REG&0x08)
+						LCD_ShowString(10,210,tftlcd_data.width,tftlcd_data.height,16,"USB Read  Err ");//提示读出错误
+					else 
+						LCD_Fill(10,210,240,210+16,WHITE);//清除显示    
+					
+				}
+				
+				
+	HID（人机接口）：可以模拟鼠标（点击，xy移动和滚轮）或者键盘
+			
+			有待移植的键盘例程：https://blog.csdn.net/xuquanlin_1680/article/details/80502183
+			鼠标控制举例：
+				uint32_t counter = 0;
+				char buf[4] = {0};		//不能带有unsigned标识符！
+				//这段默认放在1ms循环执行里，USBD_HID_GetPollingInterval(&USB_OTG_dev)为10，即10ms发送一次数据
+				if (counter++ >= USBD_HID_GetPollingInterval(&USB_OTG_dev))
+				{
+					//buf 的四个字节（0 1 2 3）分别是 鼠标单击，x，y，滚轮
+					//	说明：	x\y正值左上，负值右下
+					buf[0] = 0;buf[3] = 0;
+					buf[1] = 1;buf[2] = -1;
+					USBD_HID_SendReport(&USB_OTG_dev, (uint8_t*)buf, 4);
+					counter = 0;
+				}
 	
 
 */

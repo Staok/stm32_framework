@@ -197,6 +197,7 @@ int8_t STORAGE_GetMaxLun (void)
 {
 //	if(SDCardInfo.LogBlockNbr)return STORAGE_LUN_NBR-1;
 //	else return STORAGE_LUN_NBR-2;
+	return STORAGE_LUN_NBR-1;
 }
 
 

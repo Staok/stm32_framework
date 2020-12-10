@@ -40,8 +40,8 @@ u8 FATFS_Init(void)
 	file=(FIL*)mymalloc(InrRAM,sizeof(FIL));		//为file申请内存
 	ftemp=(FIL*)mymalloc(InrRAM,sizeof(FIL));		//为ftemp申请内存
 	fatbuf=(u8*)mymalloc(InrRAM,512);				//为fatbuf申请内存
-	if(i==FF_VOLUMES&&file&&ftemp&&fatbuf)return 0;  //申请有一个失败,即失败.
-	else return 1;	
+	if(i==FF_VOLUMES&&file&&ftemp&&fatbuf)return 0; 
+	else return 1;	//申请有一个失败,即失败.
 }
 
 //将小写字母转为大写字母,如果是数字,则保持不变.

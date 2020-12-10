@@ -30,21 +30,12 @@
 
 在开发过程中会上传以下正在测试的半成品代码，所以关于以下内容的代码先不要用~望谅解
 
--   完善LCD支持屏幕种类和中文字库支持，FATFS从SD读取字库写入SPI FLASH
-
 -   IAP（看下面的TODO）
-
--   大V的USB的相关所有例程移植和测试（F1和F4）
-
--   线性回归
-
--   常用校验、加密算法
-
--   Modbus协议
 
     搞完这些，UP主就要先去搞FPGA了，有缘再更新这里
 
     理解了原理的东西，通用性低的东西，就不用时间去走一遍前人走过的路了，就酱
+
 
 ## 各个进展
 
@@ -60,7 +51,7 @@
 
 目前主要完善的对象，已经完成大部分外设驱动，剩下的高级外设如：IAP和USB会主要在此平台完成，前两个平台F1和F2会有延迟
 
-## 计划外设和组件
+## 计划外设和组件（我真的累了=_=）
 
 （加**粗体**为暂时尚未实现的外设或者组件）
 
@@ -68,27 +59,29 @@
 
 -   **暂时没有支持的组件：**
 
-    DCMI和IO驱动OV7725、OV2640和OV5650摄像头（暂时无限延期）
-
     线性回归
 
     常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）
 
-    音频编解码（MP3转PCM，外接一个功放直接播放）（暂时无限延期）
-
     Modbus协议
 
-    MQTT协议（包含cjson，LWIP应用）（暂时无限延期）
+    完善LCD支持屏幕种类和中文字库支持（原子和普中例子），FATFS从SD读取字库写入SPI FLASH
 
-    JPEG、GIF解码和BMP编解码（暂时无限延期）
+    DCMI和IO驱动OV7725、OV2640和OV5650摄像头				（暂时无限延期）
 
-    LittlevGL（暂时无限延期）
+    音频编解码（MP3转PCM，外接一个功放直接播放）			  （暂时无限延期）
 
-    BPNN（CMSIS包中的内容，吸收进来）（暂时无限延期）
+    MQTT协议（包含cjson，LWIP应用）									  （暂时无限延期）
+
+    JPEG、GIF解码和BMP编解码												 （暂时无限延期）
+
+    LittlevGL																				   （暂时无限延期）
+
+    NN（CMSIS包中关于NN的内容，吸收进来）								 （暂时无限延期）
 
 -   已经支持的外设：
 
-    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ **USB** \ CAN \ Ethernet）
+    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ USB \ CAN \ Ethernet）
 
 -   已经支持的组件：
 
@@ -100,6 +93,8 @@
 
     FATFS ff14
 
+    USB （ST UM1021）
+
     ARM CMSIS 5.7.0 DSP Lib
 
     fsm 有限状态机
@@ -109,7 +104,7 @@
     内存管理（malloc和free）
 
     无依赖的string库和sprintf库
-
+    
     软件模拟I2C\SPI库
     
     软件ringbuf，FIFO缓冲
@@ -118,7 +113,7 @@
     
     工程添加下载到RAM执行的功能
 
-## 外设和组件说明
+## 组件和外设说明
 
 （标为“缺省”的为暂未实现的，以后会加上- -，工作量好大的！ ）
 
@@ -126,7 +121,7 @@
 -   外设驱动代码分别在sys_config.c和periphconfig.c两个文件里，其所有的外设API声明均在sys.h里，所有的独立GPIO的API均在periphconfig.h里，用户程序调用外设控制API时，按需调用这两个文件即可
 -   MCU外设配置的统一函数为void sys_MCU_Init_Seq(void)，一般无需改动；外接器件初始化统一函数为void sys_Device_Init_Seq(void)，需要自行按需修改
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里的上面
--   F4模板请看Docs手册文档
+-   **F4模板请看Docs手册文档，里面包含了所有已经支持的组件和外设的使用说明**
 
 ### 裸跑或者FreeRTOS选择
 
@@ -134,7 +129,7 @@
 
     FreeRTOS说明：所有API均罗列在TaskConfig.h里！关于FreeRTOS的信号量和事件标志组，均用任务通知替代！关于FreeRTOS的任务与任务、任务与中断间的通讯只用消息队列，功能最全！
 
-### 框架常用组件
+### 组件
 
 -   Menu 菜单框架：SYSTEM_SUPPORT_Menu：提供一个作者自己实现的实现菜单功能的模板；推荐作为标准常用，应用逻辑围绕这个菜单框架展开编写；具体文件在sys_menu.c里面；按照里面的注释，void keyProcess(void)函数负责扫描输入，void menuProcess(void)函数负责执行菜单功能，这两个函数必须放到一个循环里一直执行
 -   fsm 有限状态机：提供一个作者自己实现的有限状态机（fsm），用于管理逻辑较为复杂的程序，帮助更好的写阅读性强的状态图实现，详细说明和具体用法在fsm.c和fsm.h文件内（推荐：sys_menu 用于管理输入（按键等）、输出（屏幕等）和系统参数的用户控制，fsm 用于管理 用状态图 描述的多状态、多条件的复杂逻辑任务）
@@ -145,9 +140,10 @@
 -   内存管理（malloc和free）：提供一个自实现的内存分配和释放函数，可用于内部RAM和外部RAM，参考了正点原子的“内存管理”章节的源代码
 -   LittlevGL：暂时缺省
 -   LWIP 2.1.2：（一个人精力有限，目前只有F4的模板比较完善，请注意！）在lwipopt.h里面进行配置，支持UDP、TCP Server、TCP Client，HTTP Server
--   FATFS ff14：SYSTEM_FATFS_ENABLE：已经支持SDIO SD卡，SPI SD卡，和SPI FLASH，**还差USB文件系统**
+-   FATFS ff14：SYSTEM_FATFS_ENABLE：已经支持SDIO SD卡，SPI SD卡，SPI FLASH和USB HOST MSC
+-   USB （ST UM1021）：详细使用说明请看“Docs.bin”里面的“STM32 USB库 使用”章节，里面介绍了USB Device的VCP、MSC和HID以及USB HOST的MSC和HID
 
-### 框架基础外设
+### 外设
 
 （再次说明，具体使用方法看相应宏定义旁的注释，均在sys_config.h（F1）里或者PeriphConfigCore.h（F2和F4）里）
 
@@ -174,9 +170,9 @@
 -   FSMC：SYSTEM_FSMC_ENABLE：大容量芯片系列外设，可以用于外部SRAM或者LCD驱动，默认外部RAM用FSMC的块1区3，LCD用FSMC的块1区4，慎改动；就不支持各种FLASH了，MCU毕竟程序写不大，就算大了就用SPI的FLASH，也节约IO口。LCD的相关API说明在TFTLCD.h里面，字库也可剪裁
 -   DSP\FPU：在F4模板中默认添加，可用直接调用相关API，详情看Docs手册文档的DSP专题
 -   CAN：SYSTEM_CAN1_ENABLE：提供设置接收时只关心的帧类型和ID，提供收发API，收发可用设置帧类型和ID，STM32的CAN目前只有数据帧和遥控帧两种，每种都可以设置是标准标识符还是扩展标识符，CAN有关的学习记录和手册在Tips文件夹内，不熟悉的可用阅读，人话挺多的
--   Ethernet：看LWIP组件
+-   Ethernet：看“LWIP组件”
 -   DCMI：暂时没有计划去支持
--   USB：不久的将来支持
+-   USB：看“USB （ST UM1021）组件”
 
 如果觉得好用，使用时还请别忘加上本仓库的地址哦：https://github.com/Staok/stm32_framework
 

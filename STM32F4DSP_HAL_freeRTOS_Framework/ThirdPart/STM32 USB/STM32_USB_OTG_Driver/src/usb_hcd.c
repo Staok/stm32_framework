@@ -195,7 +195,7 @@ uint32_t HCD_GetCurrentFrame (USB_OTG_CORE_HANDLE *pdev)
   * @retval URB_STATE
   * 
   */
-URB_STATE HCD_GetURB_State (USB_OTG_CORE_HANDLE *pdev , uint8_t ch_num) 
+USB_OTG_URBStateTypeDef HCD_GetURB_State (USB_OTG_CORE_HANDLE *pdev , uint8_t ch_num) 
 {
   return pdev->host.URB_State[ch_num] ;
 }
@@ -221,7 +221,7 @@ uint32_t HCD_GetXferCnt (USB_OTG_CORE_HANDLE *pdev, uint8_t ch_num)
   * @retval HC_STATUS
   * 
   */
-HC_STATUS HCD_GetHCState (USB_OTG_CORE_HANDLE *pdev ,  uint8_t ch_num) 
+USB_OTG_HCStateTypeDef HCD_GetHCState (USB_OTG_CORE_HANDLE *pdev ,  uint8_t ch_num) 
 {
   return pdev->host.HC_Status[ch_num] ;
 }

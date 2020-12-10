@@ -16,16 +16,16 @@
 /*
 选择 USB Device 用于哪种 class
 	选项				class
-	use_for_MSC			MSC
-	use_for_VCP			VCP
-	use_for_mouse		HID
-	use_for_keyboard	HID（有待移植的键盘例程：https://blog.csdn.net/xuquanlin_1680/article/details/80502183）
+	use_for_MSC			MSC（用于把本机模拟为一个U盘，把本地外挂的SPI FLASH或者SD卡模拟成U盘供电脑端操作）
+	use_for_VCP			VCP（用于把本机模拟为一个USB虚拟串口，上位机需要先安装STM32 VCP驱动）
+	use_for_mouse		HID（用于把本机模拟为一个鼠标）
+	use_for_keyboard	HID（用于把本机模拟为一个键盘）（有待移植的键盘例程：https://blog.csdn.net/xuquanlin_1680/article/details/80502183）
 	...
 	
 	注意只能在开机的时候选择一次，运行时改动无效
 	加入新的class的时候，先在 usbd_usr.h 里面加入枚举，再主要对比着修改 usbd_desc.c 和 usbd_conf.h
 */
-enum sys_USBD_use_for_enum sys_USBD_use_for_ = use_for_mouse;
+const enum sys_USBD_use_for_enum sys_USBD_use_for_ = use_for_mouse;
 
 /*USB Device使用说明
 连接状况标志位使用例子：
@@ -129,7 +129,7 @@ vu8 bDeviceState=0;		//默认没有连接
 USB_OTG_CORE_HANDLE  USB_OTG_dev;
 
 /*
-用户使用，USB Dvice MSC模式 初始化
+用户使用，USB Dvice初始化
 返回0成功，返回其他失败
 */
 u8 sys_USBD_User_Init(void)
@@ -139,7 +139,7 @@ u8 sys_USBD_User_Init(void)
 		case use_for_MSC:
 			MSC_BOT_Data = mymalloc(InrRAM,MSC_MEDIA_PACKET);	//申请内存，MSC_MEDIA_PACKET 默认占 InrRAM 12KB
 			if(MSC_BOT_Data == NULL) return 1;
-						/*USB句柄	   识别HS还是FS		  描述符(在usbd_desc.c里面)   MSC(在MSC class里面)	 用户回调函数定义*/
+						/*USB句柄	      识别HS还是FS	描述符(在usbd_desc.c里面)   MSC(在MSC class里面)	 用户回调函数定义*/
 			USBD_Init(&USB_OTG_dev,		USB_OTG_FS_CORE_ID,		&USR_desc,				&USBD_MSC_cb,			&USR_cb);
 			break;
 		

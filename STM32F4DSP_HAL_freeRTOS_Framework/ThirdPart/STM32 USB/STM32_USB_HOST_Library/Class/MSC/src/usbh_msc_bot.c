@@ -153,7 +153,7 @@ void USBH_MSC_HandleBOTXfer (USB_OTG_CORE_HANDLE *pdev ,USBH_HOST *phost)
   static uint8_t error_direction;
   USBH_Status status;
   
-  URB_STATE URB_Status = URB_IDLE;
+  USB_OTG_URBStateTypeDef URB_Status = URB_IDLE;
   
   if(HCD_IsDeviceConnected(pdev))
   {  

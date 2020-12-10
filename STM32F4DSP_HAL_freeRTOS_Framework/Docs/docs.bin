@@ -341,22 +341,39 @@ API使用：
  *_______________________________________________STM32 USB库 使用________________________________________________________*
  *_____________________________________///                               \\\____________________________________________*/
 /*
-	说明：
+说明：
 		历史原因，目前使用的是标准库版本的库（下面是库的全名），不再更新但可能比HAL的稳定（HAL库版本在对应芯片的Cube包里面），暂时先用这个
 			（标准库版本的库的全名："UM1021 STM32F105/7xx, STM32F2xx and STM32F4xx USB On-The-Go host and device library"）
 		STM32F4xx/STM32F2xx的 USB IP 核均为 OTG（VBUS可以控制，可以监测）（STM32F103的USB不带OTG，且只有USB Device）
-		STM32F4xx/STM32F2xx的 USB HOST 和 USB Device 分为FS和HS（前者最高12Mbps，自带PHY（全部引脚：DM DP ID SOF），
+		STM32F4xx/STM32F2xx的 USB HOST 和 USB Device 分为FS和HS（前者最高12Mbps，自带PHY（全部引脚：DM DP ID（可以省） SOF（用于音频）），
 													   后者需要通过ULPI接口连接外部USB PHY芯片（全部引脚：8个数据+4个命令线））
 		STM32F4x9的HS内嵌有PHY，对于HS可以选择使用内嵌PHY,其他和STM32F4xx一样
 		
-	初始化标程：（已经添加到初始化序列里面了）
+		本模板暂默认使用FS，若要用HS，也不难，初始化好ULPI接口和时钟，用USE_USB_OTG_HS替换USE_USB_OTG_FS宏定义等，参考官方例子
+			HS使用外部PHY的宏定义：USE_USB_OTG_HS ,USE_EMBEDDED_PHY
+			HS使用内部PHY的宏定义：USE_USB_OTG_HS,USE_ULPI_PHY（这个PHY是FS的，不知道会不会影响速度）
+		
+		USB库的大量回调函数中，大量设备接入时的信息默认都从串口1打印出，通过 FaultASSERT() 或者 printf_uart() 函数进行打印
+		
+		USB Device 或 HOST 选择：
+			从 Select Target 选择 USB Device 或者 USB HOST
+		USB Class 选择：
+			在 usbd_usr.c 或者 usbh_usr.c 中的 sys_USBD_use_for_ 或者 sys_USBH_use_for_ 进行选择
+		
+初始化标程：（已经添加到初始化序列里面了）
 		/*STM32 USB 的初始化*/
-		#if SYSTEM_USB_ENABLE
-			init_return = sys_USBD_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBD_User_Init()",init_return,flag_Fault);}
+		#if ( (SYSTEM_USB_ENABLE) && ( (USE_DEVICE_MODE) || (USE_HOST_MODE) ) )
+			#if (USE_DEVICE_MODE)
+				init_return = sys_USBD_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBD_User_Init()",init_return,flag_Fault);}
+			#endif
+			
+			#if (USE_HOST_MODE)
+				init_return = sys_USBH_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBH_User_Init()",init_return,flag_Fault);}
+			#endif
 		#endif
 		
 		
-	USB Device使用说明：
+USB Device使用说明：
 		连接状况标志位使用例子：
 			u8 Divece_STA;
 			if(Divece_STA != bDeviceState)
@@ -446,7 +463,75 @@ API使用：
 					counter = 0;
 				}
 	
+USB HOST使用说明
+	必须在一个大循环里添加以下程序：（所在循环里不能有延时）（默认已经在BareConfig.c的循环里添加）
+		#if ((SYSTEM_USB_ENABLE) && (USE_HOST_MODE))
+			//Host Task handler
+			//USBH_Process 函数仅在 U 盘识别阶段，需要频繁反复调用，但是当 U 盘被识别后，剩下的操作（U 盘读写），都可以由 USB 中断处理。
+			USBH_Process(&USB_OTG_Core, &USB_Host);
+			
+			if(sys_USBH_use_for_ == use_for_HID)	//只有在使用HOST HID的时候进行死机检测并处理
+			{
+				if(bDeviceState==1)//连接建立了
+				{
+					if(USBH_Check_HIDCommDead(&USB_OTG_Core,&HID_Machine))//检测USB HID通信,是否还正常? 
+					{ 	    
+						USBH_HID_Reconnect();//重连
+					}					
+				}
+				else	//连接未建立的时候,检测
+				{
+					if(USBH_Check_EnumeDead(&USB_Host))	//检测USB HOST 枚举是否死机了?死机了,则重新初始化 
+					{ 	    
+						USBH_HID_Reconnect();//重连
+					}		
+				}
+			}
+			
+			//检查设备是否连接
+			if(HCD_IsDeviceConnected(&USB_OTG_Core))
+			{
+				
+			}
+		#endif
 
+	连接状况标志位使用例子：
+		u8 Divece_STA;
+		if(Divece_STA != bDeviceState)
+		{
+			if(bDeviceState == 1)
+				LCD_ShowString(10,140,tftlcd_data.width,tftlcd_data.height,16,"USB Connected    ");//提示USB连接已经建立
+			else 
+				LCD_ShowString(10,140,tftlcd_data.width,tftlcd_data.height,16,"USB DisConnected ");//提示USB被拔出了
+			Divece_STA = bDeviceState;
+		}
+	
+	
+	VCP模式（USB模拟虚拟串口）：
+		USB HOST不支持 VCP，HOST这么腻害，就用于VCP太浪费了
+
+
+	MSC模式（大容量存储）：
+		必须打开FATFS启用的宏 SYSTEM_FATFS_ENABLE
+		当U盘插入USB HOST接口后，会执行下面的用户程序一次，在此程序中默认会用FATS挂载 DEV_USB设备，即挂载USB UOST MSC文件设备（U盘）
+		u8 USH_MSC_User_App(void)
+		
+		成功后就可以用FATFS的API操作通过USB MSC挂载的外部U盘了
+	
+	
+	HID（人机接口）：可以模拟鼠标（点击，xy移动和滚轮）或者键盘
+		在此文件的最下面，需要完成四个用户API程序：
+			若在USB HOST接口插入的是 鼠标HID设备，则在以下函数内填入此设备插入后执行一次的用户程序（刷新相应的界面，标志位等等）
+			void USR_MOUSE_Init	(void)
+
+			若在USB HOST接口插入的是 键盘HID设备，则在以下函数内填入此设备插入后执行一次的用户程序（刷新相应的界面，标志位等等）
+			void  USR_KEYBRD_Init(void)
+			
+			鼠标和键盘的用户应用程序，每当设备输入一次，则会被回调一次
+			void USR_MOUSE_ProcessData(HID_MOUSE_Data_TypeDef *data)
+			void  USR_KEYBRD_ProcessData (uint8_t data)
+		
+		以上四个API的原型在 usbh_hid_keybd.c 和 usbh_hid_mouse.c 里面
 */
 
 /*_____________________________________\\\                               ///____________________________________________*

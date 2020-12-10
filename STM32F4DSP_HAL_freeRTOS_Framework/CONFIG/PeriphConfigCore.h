@@ -62,10 +62,18 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 		#include "BareConfig.h"
 	#endif
 	
-#define SYSTEM_USB_ENABLE		1				/*STM32 USB库 使用*/
-	
+#if USE_USB_OTG_FS
+	#define SYSTEM_USB_ENABLE		1			/*STM32 USB库使用，这里不用动，从 Select Target 选择 USB Device 或者 USB HOST*/
+#else
+	#define SYSTEM_USB_ENABLE		0
+#endif
 	#if SYSTEM_USB_ENABLE
-		#include "usbd_usr.h"
+		#if (USE_DEVICE_MODE)
+			#include "usbd_usr.h"
+		#endif
+		#if (USE_HOST_MODE)
+			#include "usbh_usr.h"
+		#endif
 	#endif
 
 #include "lwipopts.h"							/*lwip 2.1.2，在里面配置和控制是否开启*/
@@ -108,8 +116,8 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 	
 /*DEVICES所有头文件*/
 #include "TFTLCD.h"
-//#include "OLED.h"
-//#include "mpu6050.h"
+#include "OLED.h"
+#include "mpu6050.h"
 
 
 /*_____________________________________\\\                               ///____________________________________________*

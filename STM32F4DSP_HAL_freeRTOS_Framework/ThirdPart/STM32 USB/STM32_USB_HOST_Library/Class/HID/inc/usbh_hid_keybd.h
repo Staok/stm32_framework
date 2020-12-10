@@ -57,8 +57,8 @@
 /** @defgroup USBH_HID_KEYBD_Exported_Defines
   * @{
   */ 
-//#define QWERTY_KEYBOARD
-#define AZERTY_KEYBOARD
+#define QWERTY_KEYBOARD		//通用键盘
+//#define AZERTY_KEYBOARD	//法国版键盘
 
 #define  KBD_LEFT_CTRL                                  0x01
 #define  KBD_LEFT_SHIFT                                 0x02

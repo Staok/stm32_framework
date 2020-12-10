@@ -20,11 +20,11 @@
 /* Definitions of physical drive number for each drive */
 #define DEV_ExFLASH			0	/* 外部SPI FLASH等					Example: Map Ext FLASH to physical drive 0 */
 #define DEV_SD				1	/* SDIO驱动的SD卡					Example: Map MMC/SD card to physical drive 1 */
-#define DEV_USB				2	/* USB文件设备						Example: Map USB MSD to physical drive 2 */
+#define DEV_USB				2	/* USB UOST MSC文件设备（U盘）		Example: Map USB MSD to physical drive 2 */
 #define DEV_SPI_SD			3	/* SPI驱动的SD卡					Example: Map SPI MMC/SD card to physical drive 3 */
 
 #define ExFLASH_SECTOR_SIZE 	512
-#define ExFLASH_SECTOR_COUNT	(2*1024*12) //比如要分12MB空间，则可以改为：12*1024*1024/ExFLASH_SECTOR_SIZE 更直观
+#define ExFLASH_SECTOR_COUNT	(12*1024*1024/ExFLASH_SECTOR_SIZE) //默认对SPI FLASH分12MB空间的文件系统
 #define ExFLASH_BLOCK_SIZE		8			//每个 BLOCK 有 8 个扇区
 
 /*-----------------------------------------------------------------------*/
@@ -65,9 +65,14 @@ DSTATUS disk_initialize (
 			return stat;
 
 		case DEV_USB : 		/*USB文件系统初始化*/
-			//stat = 
-
-			return stat;
+			#if ((SYSTEM_USB_ENABLE) && (USE_HOST_MODE))
+				if(sys_USBH_use_for_ == use_for_MSC)
+				{
+					if(USBH_UDISK_Status())return 0;
+					else return 1;
+				}
+				return stat;
+			#endif
 		
 		case DEV_SPI_SD :	/*SPI SD卡初始化*/
 			#if SYSTEM_SPI_SD_ENABLE
@@ -122,8 +127,14 @@ DRESULT disk_read (
 				return res;
 
 			case DEV_USB :
-				
-				return res;
+				#if ((SYSTEM_USB_ENABLE) && (USE_HOST_MODE))
+					if(sys_USBH_use_for_ == use_for_MSC)
+					{
+						res = (DRESULT)USBH_UDISK_Read(buff,sector,count);
+						return res;
+					}
+					return res;
+				#endif
 			
 			case DEV_SPI_SD : /*SPI SD卡读*/
 				#if SYSTEM_SPI_SD_ENABLE
@@ -188,8 +199,14 @@ DRESULT disk_write (
 				return res;
 
 			case DEV_USB :
-				
-				return res;
+				#if ((SYSTEM_USB_ENABLE) && (USE_HOST_MODE))
+					if(sys_USBH_use_for_ == use_for_MSC)
+					{
+						res = (DRESULT)USBH_UDISK_Write((u8*)buff,sector,count);
+						return res;
+					}
+					return res;
+				#endif
 			
 			case DEV_SPI_SD : /*SPI SD卡写*/
 				#if SYSTEM_SPI_SD_ENABLE
@@ -276,8 +293,34 @@ DRESULT disk_ioctl (
 				return res;
 
 			case DEV_USB :
-				
-				return res;
+				#if ((SYSTEM_USB_ENABLE) && (USE_HOST_MODE))
+					if(sys_USBH_use_for_ == use_for_MSC)
+					{
+						switch(cmd)
+						{
+							case CTRL_SYNC:
+								res = RES_OK; 
+								break;	 
+							case GET_SECTOR_SIZE:
+								*(DWORD*)buff = 512; 
+								res = RES_OK;
+								break;	 
+							case GET_BLOCK_SIZE:
+								*(WORD*)buff = 512;
+								res = RES_OK;
+								break;	 
+							case GET_SECTOR_COUNT:
+								*(WORD*)buff = USBH_MSC_Param.MSCapacity;
+								res = RES_OK;
+								break;
+							default:
+								res = RES_PARERR;
+								break;
+						}
+						return res;
+					}
+					return res;
+				#endif
 			
 			case DEV_SPI_SD : /*SPI SD卡控制*/
 				#if SYSTEM_SPI_SD_ENABLE

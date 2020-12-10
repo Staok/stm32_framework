@@ -124,9 +124,12 @@ typedef struct _HID_Process
   uint8_t              ep_addr;
   uint16_t             poll; 
   __IO uint16_t        timer; 
-  HID_cb_TypeDef             *cb;
+  HID_cb_TypeDef       *cb;
 }
 HID_Machine_TypeDef;
+
+extern HID_Machine_TypeDef	HID_Machine;
+u8 USBH_Check_HIDCommDead(USB_OTG_CORE_HANDLE *pcore,HID_Machine_TypeDef *phidm);
 
 /**
   * @}

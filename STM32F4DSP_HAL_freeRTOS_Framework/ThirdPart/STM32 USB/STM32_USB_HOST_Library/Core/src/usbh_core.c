@@ -669,7 +669,7 @@ USBH_Status USBH_HandleControl (USB_OTG_CORE_HANDLE *pdev, USBH_HOST *phost)
   uint8_t direction;  
   static uint16_t timeout = 0;
   USBH_Status status = USBH_OK;
-  URB_STATE URB_Status = URB_IDLE;
+  USB_OTG_URBStateTypeDef URB_Status = URB_IDLE;
   
   phost->Control.status = CTRL_START;
 

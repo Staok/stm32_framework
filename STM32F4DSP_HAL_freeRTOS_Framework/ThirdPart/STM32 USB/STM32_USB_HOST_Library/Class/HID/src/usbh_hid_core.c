@@ -261,44 +261,52 @@ static USBH_Status USBH_HID_InterfaceInit ( USB_OTG_CORE_HANDLE *pdev,
   {
     if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_HUB)
     {
-      LCD_ErrLog("Hub is not supported.\n");
+		FaultASSERT("Hub is not supported.\n",0,flag_Warning);
+//		printf_("Hub is not supported.\n");
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_CDCC)
     {
-      LCD_ErrLog("Communications and CDC Control device is not supported.\n");
+		FaultASSERT("Communications and CDC Control device is not supported.\n",0,flag_Warning);
+//		printf_("Communications and CDC Control device is not supported.\n");
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_MSC)
     {
-      LCD_ErrLog("MSC device is not supported.\n");
+		FaultASSERT("MSC device is not supported.\n",0,flag_Warning);
+//		printf_("MSC device is not supported.\n");
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_PRINTER)
     {
-      LCD_ErrLog("Printer device is not supported.\n");
+		FaultASSERT("Printer device is not supported.\n",0,flag_Warning);
+//		printf_("Printer device is not supported.\n");
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_SMARTCARD)
     {
-      LCD_ErrLog("Smart Card device is not supported.\n");
+		FaultASSERT("Smart Card device is not supported.\n",0,flag_Warning);
+//		printf_("Smart Card device is not supported.\n");
     }
     
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_VIDEO)
     {
-      LCD_ErrLog("Video device  is not supported.\n");
+		FaultASSERT("Video device  is not supported.\n",0,flag_Warning);
+//		printf_("Video device  is not supported.\n");
     }
     
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_AVD)
     {
-      LCD_ErrLog("Audio/Video Devices is not supported.\n");
+		FaultASSERT("Audio/Video Devices is not supported.\n",0,flag_Warning);
+//		printf_("Audio/Video Devices is not supported.\n");
     }
     
     else
     {
-      LCD_ErrLog ("The attached device is not supported. \n");
+		FaultASSERT("The attached device is not supported. \n",0,flag_Warning);
+//		printf_ ("The attached device is not supported. \n");
     }
     
     pphost->usr_cb->DeviceNotSupported();  
@@ -384,7 +392,8 @@ static USBH_Status USBH_HID_ClassRequest(USB_OTG_CORE_HANDLE *pdev ,
     
   case HID_REQ_SET_IDLE:
     
-    classReqStatus = USBH_Set_Idle (pdev, pphost, 0, 0);
+    classReqStatus = USBH_Set_Idle (pdev, pphost, 100, 0);	//由0修改为100,提高兼容性
+  //classReqStatus = USBH_Set_Idle (pdev, pphost, 100, 0);
     
     /* set Idle */
     if (classReqStatus == USBH_OK)
@@ -575,7 +584,8 @@ static USBH_Status USBH_Set_Idle (USB_OTG_CORE_HANDLE *pdev,
   phost->Control.setup.b.wValue.w = (duration << 8 ) | reportId;
   
   phost->Control.setup.b.wIndex.w = 0;
-  phost->Control.setup.b.wLength.w = 0;
+  phost->Control.setup.b.wLength.w = 100;		//这里由0修改为 100 以后,识别率明显提高
+//phost->Control.setup.b.wLength.w = 100; 
   
   return USBH_CtlReq(pdev, phost, 0 , 0 );
 }

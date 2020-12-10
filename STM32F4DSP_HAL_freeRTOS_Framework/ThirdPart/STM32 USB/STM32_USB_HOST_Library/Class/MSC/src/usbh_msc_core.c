@@ -217,44 +217,52 @@ static USBH_Status USBH_MSC_InterfaceInit ( USB_OTG_CORE_HANDLE *pdev,
   {
     if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_HUB)
     {
-      LCD_ErrLog("Hub is not supported.\n");
+//      LCD_ErrLog("Hub is not supported.\n");
+		FaultASSERT("Hub is not supported.\n",NULL,flag_Warning);
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_CDCC)
     {
-      LCD_ErrLog("Communications and CDC Control device is not supported.\n");
+//      LCD_ErrLog("Communications and CDC Control device is not supported.\n");
+		FaultASSERT("Communications and CDC Control device is not supported.\n",NULL,flag_Warning);
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_HID)
     {
-      LCD_ErrLog("HID device is not supported.\n");
+//      LCD_ErrLog("HID device is not supported.\n");
+		FaultASSERT("HID device is not supported.\n",NULL,flag_Warning);
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_PRINTER)
     {
-      LCD_ErrLog("Printer device is not supported.\n");
+//      LCD_ErrLog("Printer device is not supported.\n");
+		FaultASSERT("Printer device is not supported.\n",NULL,flag_Warning);
     }
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_SMARTCARD)
     {
-      LCD_ErrLog("Smart Card device is not supported.\n");
+//      LCD_ErrLog("Smart Card device is not supported.\n");
+		FaultASSERT("Smart Card device is not supported.\n",NULL,flag_Warning);
     }
     
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_VIDEO)
     {
-      LCD_ErrLog("Video device  is not supported.\n");
+//      LCD_ErrLog("Video device  is not supported.\n");
+		FaultASSERT("Video device  is not supported.\n",NULL,flag_Warning);
     }
     
     
     else if (pphost->device_prop.Itf_Desc[0].bInterfaceClass == USB_AVD)
     {
-      LCD_ErrLog("Audio/Video Devices is not supported.\n");
+//      LCD_ErrLog("Audio/Video Devices is not supported.\n");
+		FaultASSERT("Audio/Video Devices is not supported.\n",NULL,flag_Warning);
     }
     
     else
     {
-      LCD_ErrLog ("The attached device is not supported. \n");
+//      LCD_ErrLog ("The attached device is not supported. \n");
+		FaultASSERT("The attached device is not supported. \n",NULL,flag_Warning);
     }
     
     pphost->usr_cb->DeviceNotSupported();

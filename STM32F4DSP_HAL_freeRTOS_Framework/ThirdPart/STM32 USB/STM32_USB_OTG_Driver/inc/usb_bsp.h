@@ -25,6 +25,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usb_core.h"
+#include "PeriphConfigCore.h"
 
 /** @addtogroup USB_OTG_DRIVER
   * @{

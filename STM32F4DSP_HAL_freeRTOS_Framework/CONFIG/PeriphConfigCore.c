@@ -154,8 +154,14 @@ void sys_Device_Init_Seq(void)
 	#endif
 	
 	/*STM32 USB 的初始化*/
-	#if SYSTEM_USB_ENABLE
-		init_return = sys_USBD_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBD_User_Init()",init_return,flag_Fault);}
+	#if ( (SYSTEM_USB_ENABLE) && ( (USE_DEVICE_MODE) || (USE_HOST_MODE) ) )
+		#if (USE_DEVICE_MODE)
+			init_return = sys_USBD_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBD_User_Init()",init_return,flag_Fault);}
+		#endif
+		
+		#if (USE_HOST_MODE)
+			init_return = sys_USBH_User_Init(); if(init_return != 0){ FaultASSERT("sys_USBH_User_Init()",init_return,flag_Fault);}
+		#endif
 	#endif
 	
 	/*FATFS ff14 初始化*/
@@ -176,13 +182,15 @@ void sys_Device_Init_Seq(void)
 			}else FaultASSERT("f_mkfs DEV_ExFLASH",init_return,flag_Warning);	//格式化失败
 			HAL_Delay(1000);
 		}
-
+	
 	init_return = f_mount(fs[1],"DEV_SD:",1);		//挂载SDIO驱动的SD卡
 		if(init_return != 0){ FaultASSERT("f_mount fs[1]",init_return,flag_Warning);}
 
-//	init_return = f_mount(fs[2],"DEV_USB:",1);		//挂载USB文件设备
-//		if(init_return != 0){ FaultASSERT("f_mount fs[2]",init_return,flag_Warning);}
 
+	init_return = f_mount(fs[2],"DEV_USB:",1);		//挂载USB UOST MSC文件设备（U盘）
+		if(init_return != 0){ FaultASSERT("f_mount fs[2]",init_return,flag_Warning);}
+
+	
 	init_return = f_mount(fs[3],"DEV_SPI_SD:",1);	//挂载SPI驱动的SD卡
 		if(init_return != 0){ FaultASSERT("f_mount fs[3]",init_return,flag_Warning);}
 	#endif

@@ -37,7 +37,7 @@ enum sys_USBD_use_for_enum
 	//...
 };
 
-extern enum sys_USBD_use_for_enum sys_USBD_use_for_;
+extern const enum sys_USBD_use_for_enum sys_USBD_use_for_;
   
   
 u8 sys_USBD_User_Init(void);	/*用户使用，USB Dvice 初始化*/

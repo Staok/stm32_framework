@@ -122,12 +122,27 @@ static void  MOUSE_Init ( void)
 */
 static void  MOUSE_Decode(uint8_t *data)
 {
-  HID_MOUSE_Data.button = data[0];
+//  HID_MOUSE_Data.button = data[0];
 
-  HID_MOUSE_Data.x      = data[1];
-  HID_MOUSE_Data.y      = data[2];
-  
-  USR_MOUSE_ProcessData(&HID_MOUSE_Data);
+//  HID_MOUSE_Data.x      = data[1];
+//  HID_MOUSE_Data.y      = data[2];
+//  
+//  USR_MOUSE_ProcessData(&HID_MOUSE_Data);
+	
+	if(HID_Machine.length==5||HID_Machine.length==6||HID_Machine.length==8)//5/6/8字节长度的USB鼠标数据处理
+	{
+		HID_MOUSE_Data.button = data[0]; 
+		HID_MOUSE_Data.x      = data[1];
+		HID_MOUSE_Data.y      = data[3]<<4|data[2]>>4;
+		HID_MOUSE_Data.z      = data[4]; 
+	}else if(HID_Machine.length==4)	//4字节长度的USB 鼠标数据处理
+	{ 
+		HID_MOUSE_Data.button = data[0]; 
+		HID_MOUSE_Data.x      = data[1];
+		HID_MOUSE_Data.y      = data[2];
+		HID_MOUSE_Data.z      = data[3];
+	} 
+	USR_MOUSE_ProcessData(&HID_MOUSE_Data);
 
 }
 /**

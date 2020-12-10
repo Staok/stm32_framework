@@ -29,6 +29,28 @@ void Bare_Begin(void)
 			lwip_periodic_handle();
 		#endif
 		
+		#if ((SYSTEM_USB_ENABLE) && (USE_HOST_MODE))
+			USBH_Process(&USB_OTG_Core, &USB_Host);
+			
+			if(sys_USBH_use_for_ == use_for_HID)	//只有在使用HOST HID的时候进行死机检测并处理
+			{
+				if(bDeviceState==1)//连接建立了
+				{
+					if(USBH_Check_HIDCommDead(&USB_OTG_Core,&HID_Machine))//检测USB HID通信,是否还正常? 
+					{ 	    
+						USBH_HID_Reconnect();//重连
+					}					
+				}
+				else	//连接未建立的时候,检测
+				{
+					if(USBH_Check_EnumeDead(&USB_Host))	//检测USB HOST 枚举是否死机了?死机了,则重新初始化 
+					{ 	    
+						USBH_HID_Reconnect();//重连
+					}		
+				}
+			}
+		#endif
+		
 		/*注意：这里尽量不要用10毫秒中断标志！这里只用100毫秒、300毫秒、1秒和一分钟的中断标志，够用了*/
 		if(Timer_IT_flags._10msec_flag == TRUE)
 		{

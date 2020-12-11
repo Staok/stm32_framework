@@ -368,7 +368,8 @@ u8 Stm32_Clock_Init(void)
 	/** Initializes the RCC Oscillators according to the specified parameters
 	* in the RCC_OscInitTypeDef structure.
 	*/
-	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_LSE;
+//	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_LSE;
+	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
 	RCC_OscInitStruct.LSEState = RCC_LSE_OFF;
 	RCC_OscInitStruct.LSIState = RCC_LSI_ON;
@@ -378,7 +379,7 @@ u8 Stm32_Clock_Init(void)
 	RCC_OscInitStruct.PLL.PLLM = 8;
 	RCC_OscInitStruct.PLL.PLLN = 336;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;				//PLLP 168M
-	RCC_OscInitStruct.PLL.PLLQ = 7;
+	RCC_OscInitStruct.PLL.PLLQ = 7;							//USB/SDIO/随机数产生器等的主PLL分频系数(PLL之后的分频),取值范围:2~15
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 		return HAL_ERROR;

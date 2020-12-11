@@ -68,10 +68,10 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 	#define SYSTEM_USB_ENABLE		0
 #endif
 	#if SYSTEM_USB_ENABLE
-		#if (USE_DEVICE_MODE)
+		#ifdef USE_DEVICE_MODE
 			#include "usbd_usr.h"
 		#endif
-		#if (USE_HOST_MODE)
+		#ifdef USE_HOST_MODE
 			#include "usbh_usr.h"
 		#endif
 	#endif

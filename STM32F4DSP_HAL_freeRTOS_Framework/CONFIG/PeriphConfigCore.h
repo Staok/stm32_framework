@@ -157,9 +157,10 @@ unsigned int Curl_rand(void);					/*提供实现伪随机数的函数*/
 											/*默认均为：8位数据，1位停止，无校验，收发模式，开启接受中断*/
 											/*注：串口2、3的接收回调函数没有补全，用时再补，和串口1的同理*/
 											
-#define SYSTEM_CAN1_ENABLE			0		/*使用CAN1,默认不使用中断，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据*/
+#define SYSTEM_CAN1_ENABLE			0		/*使用CAN1，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据*/
 	#define CAN1_RX0_INT_ENABLE		1		/*CAN1接收中断使能*/
-											/*更多API详看docs.txt*/
+	#define CAN1_TX_INT_ENABLE		0		/*CAN1发送结束中断使能*/
+											/*更多API详看docs.bin*/
 											/*默认引脚：	PB8     ------> CAN1_RX		可到源码处修改
 															PB9     ------> CAN1_TX		可以按照 stm32f407ze.pdf 手册的 62页 开始自行选择引脚，可选的还挺多的*/
 
@@ -439,15 +440,27 @@ u8 Stm32_Clock_Init(void);					/*时钟系统配置*/
 
 /*_______________________________CAN1___________________________________*/
 #if SYSTEM_CAN1_ENABLE
-	u8 CAN1_Receive_Msg(u8* buf,u8* len,u8* frameType,u32* id);
+	
+	u8 CAN1_Set_Msg(CAN_TxHeaderTypeDef* TxMessage,u8 len,u8 frameType,u32 id);
+	u8 CAN1_Receive_Msg(u8* buf,u8* len, u8* frameType,u32* id);
 	u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id);
-	void sys_CAN1_Init(void);
-	void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId);
+	
+	void CAN1_Mode_Init(uint32_t tsjw, uint32_t tbs1, uint32_t tbs2, uint32_t brp, uint32_t mode);
+	void CAN1_setExceptId(u8 care,u8 FilterNumber,u8 frameType,u32 ExceptId);
 	
 	#if CAN1_RX0_INT_ENABLE
 		extern CAN_RxHeaderTypeDef	CAN1_IT_RxMessage;	//CAN1从中断接收到数据的结构体
 		extern u8 CAN1_IT_Rxdata[8];					//CAN1从中断接收到的数据
 		extern u8 CAN1_IT_RxMessage_flag;				//CAN1从中断接收到数据的标志
+	#endif
+	
+	#define sys_CAN1_ENABLE_Tx()	HAL_CAN_ActivateNotification(&CAN1_Handler, CAN_IT_TX_MAILBOX_EMPTY)
+	#define sys_CAN1_DISABLE_Tx()	HAL_CAN_DeactivateNotification(&CAN1_Handler,CAN_IT_TX_MAILBOX_EMPTY)
+	#if CAN1_TX_INT_ENABLE
+		extern CAN_TxHeaderTypeDef CAN1_IT_TxMessage;	//CAN1从中断发送数据的结构体
+		extern u8 CAN1_IT_TxMessage_flag;				//CAN1发送完毕标志位
+		extern u8 CAN1_IT_TxMessage_data[8];			//CAN1发送中断的8位数据
+		extern u32 CAN1_IT_TxMessage_id;				//CAN1发送中断的id
 	#endif
 #endif
 /*_______________________________MCO___________________________________*/

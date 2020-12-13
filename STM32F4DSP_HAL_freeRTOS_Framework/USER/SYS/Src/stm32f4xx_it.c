@@ -37,7 +37,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
-#include "isUseFreeRTOS.h"
 
 /** @addtogroup STM32F4xx_HAL_Examples
   * @{
@@ -151,6 +150,15 @@ void PendSV_Handler(void)
 }
 #endif
 
+#include "stm32f4xx_hal.h"
+
+/*systick统一为1ms中断，所以这里固定+1（举例，如果是100Hz中断，这里+10，以此类推）*/
+void HAL_IncTick(void)
+{
+  ++uwTick;
+}
+
+#include "isUseFreeRTOS.h"
 /**
   * @brief  This function handles SysTick Handler.
   * @param  None
@@ -162,10 +170,10 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   HAL_IncTick();
-	if(xTaskGetSchedulerState()!=taskSCHEDULER_NOT_STARTED)//系统已经运行
-	{
-		xPortSysTickHandler();	
-	}
+  if(xTaskGetSchedulerState()!=taskSCHEDULER_NOT_STARTED)//系统已经运行
+  {
+    xPortSysTickHandler();	
+  }
 }
 #else
 void SysTick_Handler(void)

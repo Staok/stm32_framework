@@ -109,7 +109,8 @@ void sys_MCU_Init_Seq(void)
 	#endif
 	
 	#if SYSTEM_CAN1_ENABLE
-		sys_CAN1_Init();
+		CAN1_Mode_Init(CAN_SJW_1TQ,CAN_BS1_6TQ,CAN_BS2_7TQ,6,CAN_MODE_NORMAL);	//42M外设，500Kbps波特率
+//		CAN1_Mode_Init(CAN_SJW_1TQ,CAN_BS1_7TQ,CAN_BS2_8TQ,21,CAN_MODE_NORMAL);	//42M外设，125Kbps波特率
 	#endif
 	
 	#if SYSTEM_StdbyWKUP_ENABLE
@@ -345,9 +346,9 @@ u8 Stm32_Clock_Init(void)
 		PLLCLK = SYSCLK = AHBCLK = HCLK 均为168MHz；APB2外设为84MHz，APB2定时器为168MHz；APB1外设为42Mhz，APB1定时器为84Mhz
 		
 		ETH\FSMC\USB FS\USB HS\GPIO\DMA 的最高速度具体看手册
-		RTC 时钟取自 LSE = 32.768K 	（默认不开，使能RTC时会开）
-		IWDG时钟取自 LSI = 32K 		（默认开）
-					 HSI = 16M		（默认不开）
+		RTC 时钟取自 LSE = 32.768K	启用RTC时会开
+		IWDG时钟取自 LSI = 32K		启用看门狗时会开
+					 HSI = 16M
 		DCMI 54 Mbyte/s max
 		
 		APB2外设(84M)：SDIO\EXT IT\USART1\USART6\SPI1\ADC123
@@ -368,12 +369,8 @@ u8 Stm32_Clock_Init(void)
 	/** Initializes the RCC Oscillators according to the specified parameters
 	* in the RCC_OscInitTypeDef structure.
 	*/
-//	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_LSE;
 	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE;
 	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-	RCC_OscInitStruct.LSEState = RCC_LSE_OFF;
-	RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-	RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;	//8M
 	RCC_OscInitStruct.PLL.PLLM = 8;
@@ -410,25 +407,38 @@ u8 Stm32_Clock_Init(void)
 	HAL_RCC_EnableCSS();
 	
 	
-	#if SYSTEM_SUPPORT_OS
-		//这里为了兼容FreeRTOS
+//	#if SYSTEM_SUPPORT_OS
+//	  //这里为了兼容FreeRTOS，把systick设置为1ms中断
+//		u32 reload;
+//		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
+//		reload=SystemCoreClock/1000000;				//每秒钟的计数次数 单位为M  
+//		reload*=1000000/configTICK_RATE_HZ;			//根据configTICK_RATE_HZ设定溢出时间   
+//		
+//		SysTick->CTRL|=SysTick_CTRL_TICKINT_Msk;   	//开启SYSTICK中断
+//		SysTick->LOAD=reload; 						//每1/configTICK_RATE_HZ秒中断一次	
+//		SysTick->CTRL|=SysTick_CTRL_ENABLE_Msk;   	//开启SYSTICK
+//		
+//		HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);	
+//		HAL_NVIC_EnableIRQ(SysTick_IRQn);
+//	#else
+//		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
+//		
+//		HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+//		HAL_NVIC_EnableIRQ(SysTick_IRQn);
+//	#endif
+	
+	/*systick 统一设置成1ms中断*/
 		u32 reload;
 		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
-		reload=SystemCoreClock/1000000;				//每秒钟的计数次数 单位为M  
-		reload*=1000000/configTICK_RATE_HZ;			//根据configTICK_RATE_HZ设定溢出时间   
+		reload = SystemCoreClock/1000000;				//每秒钟的计数次数 单位为M  
+		reload *= (1000000/1000);						//设定溢出时间，1KHz
 		
 		SysTick->CTRL|=SysTick_CTRL_TICKINT_Msk;   	//开启SYSTICK中断
-		SysTick->LOAD=reload; 						//每1/configTICK_RATE_HZ秒中断一次	
+		SysTick->LOAD=reload; 						//每1/1000秒中断一次
 		SysTick->CTRL|=SysTick_CTRL_ENABLE_Msk;   	//开启SYSTICK
 		
-		HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);	
+		HAL_NVIC_SetPriority(SysTick_IRQn, 1, 0);
 		HAL_NVIC_EnableIRQ(SysTick_IRQn);
-	#else
-		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
-		
-		HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-		HAL_NVIC_EnableIRQ(SysTick_IRQn);
-	#endif
 	
 	return HAL_OK;
 }

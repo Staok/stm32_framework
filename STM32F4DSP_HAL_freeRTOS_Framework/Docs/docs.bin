@@ -150,11 +150,15 @@ DMAx的数据流和通道分配完整表在 “dm00031020-stm32f405415-stm32f407417-stm32f4274
 优先级分组为4，只有0~15的16级抢占优先级
 
 TODO：需要优化优先级分配，一部分不重要的放到5以后，小于5的只有少数
+		按键和其他CAN外设等全部放到5以后
+		TIM4放到2
+		TIM2在3
+		TIM6\7放到5以后
 
 优先级	0			1				2				3				4				5				...
 	   保留	    TIM4(时基)	 	按键外部中断	按键外部中断	TIM6(辅助时基)
-				TIM5(测时)		TIM3（PWNM）	TIM7(辅助时基)	
-								CAN1接收		TIM2（多功能）   
+				TIM5(测时)		TIM3（PWNM）	TIM7(辅助时基)
+				systick(1KHz)	CAN1接收		TIM2（多功能）
 */
 
 /*_____________________________________\\\                               ///____________________________________________*
@@ -1151,14 +1155,16 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 											}
 											myfree(InrRAM,buf4uart1);
 
-&	SYSTEM_CAN1_ENABLE		使用CAN1,默认不使用中断，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据
-							默认发送只能用数据帧，默认初始化为500k位/s
+&	SYSTEM_CAN1_ENABLE		使用CAN1，引脚默认上拉，默认使用过滤器0，关联FIFO0，默认接收任何ID的消息数据
+							默认发送只有数据帧，没有遥控帧
 							默认引脚：	PB8     ------> CAN1_RX		可到源码处修改
 										PB9     ------> CAN1_TX		可以按照 stm32f407ze.pdf 手册的 62页 开始自行选择引脚，可选的还挺多的
 							opt:
 								可选是否使用接收中断
+								可选是否使用接收中断
 							API:
-								发送：不分是否使用中断
+								发送：
+								无中断模式，can1发送一组数据
 									can发送一组数据			     
 									参数：msg:数据指针,最大为8个字节
 									参数：len:数据长度(最大为8)
@@ -1168,16 +1174,52 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 									返回值:0,成功;
 											其他,失败;
 									u8 CAN1_Send_Msg(u8* msg,u8 len,u8 frameType,u32 id);
+								中断模式：（打开宏 CAN1_TX_INT_ENABLE）
+									标程，以下程序放在一个大循环里，越快越好
+									u8 isCAN1_IT_Tx = 0;		//放在全局变量
+									
+									static PreisCAN1_IT_Tx = 1;	//私有变量，莫动
+									if(isCAN1_IT_Tx)
+									{
+										PreisCAN1_IT_Tx = isCAN1_IT_Tx;
+										
+										if(CAN1_IT_TxMessage_flag)
+										{
+											u32 TxMailbox;
+											CAN1_IT_TxMessage_flag = 0;
+											
+											CAN1_IT_TxMessage_id = ...		//填ID
+											CAN1_IT_TxMessage_data[i] = ...	//填要发送的八个字节
+											
+											/*参数：长度，类型（填标准帧还是扩展帧：CAN_ID_STD 或者 CAN_ID_EXT）和ID，据此合成用于发送的 CAN1_IT_TxMessage*/
+											CAN1_Set_Msg(&CAN1_IT_TxMessage, 8, CAN_ID_EXT, CAN1_IT_TxMessage_id);
+											
+											/*发送一次数据*/
+											HAL_CAN_AddTxMessage(&CAN1_Handler, &CAN1_IT_TxMessage, CAN1_IT_TxMessage_data, &TxMailbox);
+											
+											/*开启发送中断*/
+											sys_CAN1_ENABLE_Tx();
+										}
+									}else
+									{
+										if(PreisCAN1_IT_Tx != isCAN1_IT_Tx)
+										{
+											PreisCAN1_IT_Tx = isCAN1_IT_Tx;
+											sys_CAN1_DISABLE_Tx();
+										}
+									}
+									
+									然后，再用用户的标志位isCAN1_IT_Tx对中断方式的是否发送进行控制
 								接收：
 									不使用中断的死循环检测
 										can口接收数据查询，不使用中断方式时的使用
 										参数：buf:数据缓存区,最大为8个字节
-										参数：len:数据长度(最大为8)
+										参数：len：数据长度（字节数，8以内）
 										参数：frameType:帧类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
 										参数：id:ID标识符，若frameType为0，则为标准标识符，若frameType为其他则为扩展标识符
 										返回值:0,有数据被收到;
 												其他,没有接收到数据;
-										u8 CAN1_Receive_Msg(u8* buf,u8* len,u8* frameType,u32* id);
+										u8 CAN1_Receive_Msg(u8* buf,u8* len, u8* frameType,u32* id);
 									使用中断（打开宏 CAN1_RX0_INT_ENABLE）
 										CAN_RxHeaderTypeDef	CAN1_IT_RxMessage;	CAN1从中断接收到数据的结构体，用于下面的信息获取
 										u8 CAN1_IT_Rxdata[8];					CAN1从中断接收到的数据，最多8个字节
@@ -1196,10 +1238,13 @@ P.S：复制下面的宏定义标志，然后在CONFIG文件内寻找即可快速定位配置源码
 								设置接收滤波器：硬件检测只接收特定类型帧和ID的数据（减轻MCU工作量）
 									设置期望接收特定的类型帧和ID的信息
 									参数：care：0表示任何ID都接收，1表示只接受与FilterId一致的ID的消息
+									参数：FilterNumber：要设置的滤波器编号，It ranges from 0 to 13
 									参数：frameType：期望接收帧的类型，0为标准帧（ID为11位），1为扩展帧（ID为29位）
 									参数：FilterId：期望接收的ID
 									默认消息类型为数据帧
-									void CAN1_setExceptId(u8 care,u8 frameType,u32 FilterId);
+									void CAN1_setExceptId(u8 care,u8 FilterNumber,u8 frameType,u32 ExceptId);
+								进入睡眠模式和退出睡眠模式：
+									详看HAL库API
 									
 &	SYSTEM_UseTIM5ForTiming_ENABLE		使用TIM5测量一个函数运行的时间，单位us
 										测量一个函数运行时间，返回单位为us的运行时间，没有超时退出机制，不适合在有操作系统的环境中用

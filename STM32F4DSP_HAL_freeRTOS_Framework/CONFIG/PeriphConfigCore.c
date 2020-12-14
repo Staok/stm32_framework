@@ -428,17 +428,20 @@ u8 Stm32_Clock_Init(void)
 //	#endif
 	
 	/*systick 统一设置成1ms中断*/
-		u32 reload;
-		HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
-		reload = SystemCoreClock/1000000;				//每秒钟的计数次数 单位为M  
-		reload *= (1000000/1000);						//设定溢出时间，1KHz
-		
-		SysTick->CTRL|=SysTick_CTRL_TICKINT_Msk;   	//开启SYSTICK中断
-		SysTick->LOAD=reload; 						//每1/1000秒中断一次
-		SysTick->CTRL|=SysTick_CTRL_ENABLE_Msk;   	//开启SYSTICK
-		
-		HAL_NVIC_SetPriority(SysTick_IRQn, 1, 0);
-		HAL_NVIC_EnableIRQ(SysTick_IRQn);
+//	u32 reload;
+//	HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);//SysTick频率为HCLK
+//	reload = SystemCoreClock/1000000;				//每秒钟的计数次数 单位为M  
+//	reload *= (1000000/1000);						//设定溢出时间，1KHz
+//	
+//	SysTick->CTRL|=SysTick_CTRL_TICKINT_Msk;   	//开启SYSTICK中断
+//	SysTick->LOAD = (uint32_t)(reload - 1UL);	//每1/1000秒中断一次
+//	SysTick->CTRL|=SysTick_CTRL_ENABLE_Msk;   	//开启SYSTICK
+//	
+//	HAL_NVIC_SetPriority(SysTick_IRQn, 1, 0);
+//	HAL_NVIC_EnableIRQ(SysTick_IRQn);
+	
+	/*systick 统一设置成1ms中断，一句话配置*/
+	HAL_SYSTICK_Config(SystemCoreClock / 1000);
 	
 	return HAL_OK;
 }

@@ -387,12 +387,8 @@ API使用：
 			（标准库版本的库的全名："UM1021 STM32F105/7xx, STM32F2xx and STM32F4xx USB On-The-Go host and device library"）
 		STM32F4xx/STM32F2xx的 USB IP 核均为 OTG（VBUS可以控制，可以监测）（STM32F103的USB不带OTG，且只有USB Device）
 		STM32F4xx/STM32F2xx的 USB HOST 和 USB Device 分为FS和HS（前者最高12Mbps，自带PHY（全部引脚：DM DP ID（可以省） SOF（用于音频）），
-													   后者需要通过ULPI接口连接外部USB PHY芯片（全部引脚：8个数据+4个命令线））
-		STM32F4x9的HS内嵌有PHY，对于HS可以选择使用内嵌PHY,其他和STM32F4xx一样
-		
-		本模板暂默认使用FS，若要用HS，也不难，初始化好ULPI接口和时钟，用USE_USB_OTG_HS替换USE_USB_OTG_FS宏定义等，参考官方例子
-			HS使用外部PHY的宏定义：USE_USB_OTG_HS ,USE_EMBEDDED_PHY
-			HS使用内部PHY的宏定义：USE_USB_OTG_HS,USE_ULPI_PHY（这个PHY是FS的，不知道会不会影响速度）
+			后者需要通过ULPI接口连接外部USB PHY芯片（全部引脚：8个数据（D0~D7）+4个命令线（CLK，NXT，DIR，）））
+		STM32F4x9的HS可以使用FS的PHY（USE_EMBEDDED_PHY: if the USB OTG HS Core is to be used in Full speed mode），其他和STM32F4xx一样
 		
 		USB库的大量回调函数中，大量设备接入时的信息默认都从串口1打印出，通过 FaultASSERT() 或者 printf_uart() 函数进行打印
 		
@@ -400,6 +396,25 @@ API使用：
 			从 Select Target 选择 USB Device 或者 USB HOST
 		USB Class 选择：
 			在 usbd_usr.c 或者 usbh_usr.c 中的 sys_USBD_use_for_ 或者 sys_USBH_use_for_ 进行选择
+			
+		若要换成USB HS外设（最高480Mbps），看官方例程，改动的不多：
+			对于不支持内嵌USB PHY的F4x7系列：
+				添加宏：USE_USB_OTG_HS ,USE_ULPI_PHY
+				usb_bsp.c 文件内改动：初始化ULPI接口（没有DM DP等的事），初始化AHB1的HS和HS_ULPI的外设时钟，
+					初始化并使能 OTG_HS_IRQn、OTG_HS_EP1_OUT_IRQn 和 OTG_HS_EP1_IN_IRQn中断
+				usb_desc.c 文件没有改动
+				usb_usr.c 文件没有改动
+				stm32xxx_it.c 文件内改动：增加 OTG_HS_IRQHandler() 、 OTG_HS_EP1_IN_IRQHandler() 和 OTG_HS_EP1_OUT_IRQHandler() 中断函数
+				usb_conf.h 文件：不用动，对比官方文档看一看是否一致
+			对于支持内嵌USB PHY的F4x9系列：
+				通过ULPI接口使用外部PHY芯片：
+					添加宏：USE_USB_OTG_HS ,USE_ULPI_PHY
+					其他用时再看...
+				使用内嵌PHY：（使用FS的PHY，所以速度最多是FS的12Mbps）
+					添加宏：USE_USB_OTG_HS ,USE_EMBEDDED_PHY
+					（USE_EMBEDDED_PHY: if the USB OTG HS Core is to be used in Full speed mode）
+					其他用时再看...
+				
 		
 初始化标程：（已经添加到初始化序列里面了）
 		/*STM32 USB 的初始化*/

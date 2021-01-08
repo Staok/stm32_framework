@@ -1,4 +1,4 @@
-
+加一个uint64的系统运行微秒变量，可以通过一个函数获取
 
 开启CSS时钟安全系统（在 NMI 的处理程序中必须通过设置时钟中断寄存器 (RCC_CIR) 里的 CSSC 位来清除 CSS 中断。）
 启动时钟安全系统CSS：
@@ -31,25 +31,19 @@ MCU的寄存器、内存的数据保存起来，同时对外设进行
 
 
 
-下面这个借鉴到 FaultAsert里面
-#define PDEBUG(fmt, args...) printk( KERN_DEBUG "scull: " fmt, ## args)
- 宏定义中的省略号表示一串可变的参数, 这一串参数可用args加以引用.
-例
-PDEBUG("a=%d, b=%d", a, b);  宏展开   printk( KERN_DEBUG "scull: " "a=%d, b=%d", a, b);
-
-
 
 记录学习网页
 https://blog.csdn.net/k331922164/article/details/46275247?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-1.control
 https://wenku.baidu.com/view/5d1f4e9277232f60dccca13f.html
 
 
+加cpu的id与bootloader和program的版本号，还有加密密钥等信息的静态const变量，可以通过协议通过通讯获取到读出来
 
-F4模板 把systick固定改为1ms，看看 stm32f4xx_hal.c 文件里面的有关函数 修改初始化里面的systick的初始化，做成可以自设的，默认设为1Khz！！！
 
-时钟初始化那里 修改 先这么来
-//	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_LSE;
-	RCC_OscInitStruct.OscillatorType=RCC_OSCILLATORTYPE_HSE;
+串口发送卡住可能跟没有发送中断有关
+改进
+接收有两个协议，一个是以\r\n结尾，一个存到软件FIFO中，fifo和串口接收到缓冲区都用动态申请，切换模式的时候把原来模式的内存释放掉
+发送使用dma和中断，填好数据再启动发送dma，要借鉴网上成熟的例子先
 
-关于CAN部分 再把CSEM最新的和模板的对比一下看看，加上发送中断
+
 

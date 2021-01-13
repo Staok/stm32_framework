@@ -61,7 +61,7 @@
     -   基于ymodem——https://blog.csdn.net/u010632165/article/details/103789247
     -   方案参考——https://mp.weixin.qq.com/s/YWUSDmYeo3s2j1KfbTrVBA
     -   官方总结大全，最后看——https://bbs.21ic.com/icview-2080934-1-1.html
-    -   
+    -   开源bootloader，https://github.com/feaser/openblt
 
 -   安全考虑：
 

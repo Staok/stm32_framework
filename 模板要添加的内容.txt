@@ -39,11 +39,23 @@ https://wenku.baidu.com/view/5d1f4e9277232f60dccca13f.html
 
 加cpu的id与bootloader和program的版本号，还有加密密钥等信息的静态const变量，可以通过协议通过通讯获取到读出来
 
+32模板
+通讯接口一律用dma+发送接收中断
+串口，i2c，spi，can（现在有中断了，看看有没有dma）
+玩熟它！
 
 串口发送卡住可能跟没有发送中断有关
 改进
 接收有两个协议，一个是以\r\n结尾，一个存到软件FIFO中，fifo和串口接收到缓冲区都用动态申请，切换模式的时候把原来模式的内存释放掉
 发送使用dma和中断，填好数据再启动发送dma，要借鉴网上成熟的例子先
+
+
+
+从这里扒驱动！！！
+https://github.com/MaJerle/stm32fxxx-hal-libraries
+
+他这里有不少不错的组件，可用之
+https://github.com/MaJerle?tab=repositories
 
 
 

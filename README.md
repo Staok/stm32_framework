@@ -1,4 +1,4 @@
-# stm32_framework
+# [stm32_framework](https://github.com/Staok/stm32_framework)
 ```
    _______  _______  __   __  _______  _______ 
   |       ||       ||  |_|  ||       ||       |
@@ -18,6 +18,8 @@
 
 一个志在实现STM32F1、F2和F4工程模板的项目，包含HAL库的高级封装、菜单库、有限状态机模板，集成了FreeRTOS、LWIP、FATFS、DSP、USB、IAP等等的组件，以及未来将加入的加密、BPNN、最小二乘、音频图片视频解码、LittlevGL等诸多常用的算法或组件，并具有良好的易用性、解耦性和可剪裁性！
 
+那么就有小伙伴说了：“STM32这么简单，有啥玩的”，那么您玩出一个花儿来给我看看，Talk is cheap。
+
 本项目的说明介绍等等部分遵循“二项玻”的第二则进行。
 
 除了开源库之外的代码，每一行都经过手动移植、修改、检查和运行，是有灵魂的。
@@ -28,28 +30,26 @@
 
 ## 近期计划
 
-更新：近期计划搞完了，我真的累了=_=
-
-UP主就要先去搞FPGA了，有缘再更新这里
+这段时间比较忙学业，日常想法都放在了 “模板要添加的内容.txt” 里面。
 
 理解了原理的东西，通用性低的东西，就不用时间去走一遍前人走过的路了，就酱
 
 
 ## 各个进展
 
-### STM32F1xx：
+### STM32F1xx
 
 不是目前主要完善的对象，已经完成的大部分外设驱动并且调好
 
-### STM32F207IE：
+### STM32F207IE
 
 不是目前主要完善的对象，已经粗糙的完成的大部分外设驱动，有很多bugs，**暂时不要用**
 
-### STM32F4xx：
+### STM32F4xx
 
 目前主要完善的对象，已经完成大部分外设驱动
 
-## 计划外设和组件（我真的累了=_=）
+## 计划外设和组件
 
 （加**粗体**为暂时尚未实现的外设或者组件）
 
@@ -85,17 +85,17 @@ UP主就要先去搞FPGA了，有缘再更新这里
 
 -   已经支持的组件：
 
-    FreeRTOS 10.3.1
+    [FreeRTOS](https://www.freertos.org/) 10.3.1
 
-    LWIP 2.1.2（支持UDP、TCP Server和TCP Client 的RAW API）
+    [LWIP](http://savannah.nongnu.org/projects/lwip/) 2.1.2（支持UDP、TCP Server和TCP Client 的RAW API）
 
     HTTP协议（LWIP应用）
 
-    FATFS ff14
+    [FATFS](http://elm-chan.org/fsw/ff/00index_e.html) ff14
 
-    USB （ST UM1021）
+    [USB （ST UM1021）](https://www.st.com/en/embedded-software/stsw-stm32046.html)
 
-    ARM CMSIS 5.7.0 DSP Lib
+    [ARM CMSIS](https://github.com/ARM-software/CMSIS_5) 5.7.0 DSP Lib
 
     fsm 有限状态机
 
@@ -103,17 +103,17 @@ UP主就要先去搞FPGA了，有缘再更新这里
 
     内存管理（malloc和free）
 
-    无依赖的string库和sprintf库
-    
     软件模拟I2C\SPI库
-    
-    软件ringbuf，FIFO缓冲
     
     PID库
     
     工程添加下载到RAM执行的功能
     
     IAP
+    
+    [无依赖的sprintf库](https://github.com/mpaland/printf)
+    
+    [lwrb (软件ringbuf，FIFO缓冲)](https://github.com/MaJerle/lwrb)
 
 ## 组件和外设说明
 
@@ -125,7 +125,7 @@ UP主就要先去搞FPGA了，有缘再更新这里
 -   本框架是正经的框架，有命名规范和应用规范的说明，在sys.h（F1）里或者PeriphConfigCore.h（F2和F4）里的上面
 -   **F4模板请看Docs手册文档，里面包含了所有已经支持的组件和外设的使用说明**
 
-### 裸跑或者FreeRTOS选择
+### 是否启用OS
 
 -   sys.h和FreeRTOSConfig.h里面的宏定义SYSTEM_SUPPORT_OS：是否开启FreeRTOS，不开为裸跑；具体应用逻辑编写和任务配置分别在TaskConfig.c和BareConfig.c里面
 

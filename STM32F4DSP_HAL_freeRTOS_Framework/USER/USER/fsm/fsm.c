@@ -19,7 +19,7 @@ v  b        d       +
 |                   ^
 |                   |
 +-------------------+   */
-struct fsm_states_struct fsm_XXX1_state_define[5] = 	/*定义描述名为‘fsm_XXX1’的状态机的状态图*/
+struct fsm_states_struct fsm_XXX1_state_define[XXX1_State_MAX] = 	/*定义描述名为‘fsm_XXX1’的状态机的状态图*/
 {                                                 	/*跳转条件都初始化为0*/
 	/*状态      执行函数         跳转条件数量       各个条件跳转后的状态（注：根据跳转条件的优先级从高到低往下写）*/
 	{(unsigned int)XXX1_State_1,   fsm_XXX1_state_1_Fun,	2,{  	{0,(unsigned int)XXX1_State_5	},
@@ -38,6 +38,7 @@ struct fsm_states_struct fsm_XXX1_state_define[5] = 	/*定义描述名为‘fsm_
 struct fsm_struct fsm_XXX1 =							/*定义名为‘fsm_XXX1’的状态机*/
 {
     .CurState   =   (unsigned int)XXX1_State_1,			/*定义初始状态*/
+	.StateNum	=	XXX1_State_MAX,						/*此状态机包含的状态数量*/
     .state      =   fsm_XXX1_state_define,				/*填入描述名为‘fsm_XXX1’的状态机的状态图的结构体*/
 };
 
@@ -50,7 +51,7 @@ struct fsm_struct fsm_XXX1 =							/*定义名为‘fsm_XXX1’的状态机*/
 +-------------------------<--------------+                     |
 ^                                f                             |
 +---------------------------------------<----------------------+    */
-struct fsm_states_struct fsm_XXX2_state_define[4] = 	/*定义描述名为‘fsm_XXX2’的状态机的状态图*/
+struct fsm_states_struct fsm_XXX2_state_define[XXX2_State_MAX] = 	/*定义描述名为‘fsm_XXX2’的状态机的状态图*/
 {                                                 	/*跳转条件都初始化为0*/
 	/*状态      执行函数         跳转条件数量       各个条件跳转后的状态（注：根据跳转条件的优先级从高到低往下写）*/
 	{(unsigned int)XXX2_State_1,   fsm_XXX2_state_1_Fun,	1,{     {0,(unsigned int)XXX2_State_2	},   }},
@@ -66,6 +67,7 @@ struct fsm_states_struct fsm_XXX2_state_define[4] = 	/*定义描述名为‘fsm_
 struct fsm_struct fsm_XXX2 =           					/*定义名为‘fsm_XXX2’的状态机*/
 {
     .CurState   =   (unsigned int)XXX2_State_1,			/*定义初始状态*/
+	.StateNum	=	XXX2_State_MAX,						/*此状态机包含的状态数量*/
     .state      =   fsm_XXX2_state_define,				/*填入描述名为‘fsm_XXX2’的状态机的状态图的结构体*/
 };
 
@@ -121,6 +123,24 @@ unsigned int fsm_process(struct fsm_struct* fsm)
 
     (*(fsm->state[CurSta].stateActFun))();
     return CurSta;
+}
+
+/*清除状态机 *fsm 所有状态的所有跳转条件
+*/
+void fsm_clear_all_jumpFlag(struct fsm_struct* fsm)
+{
+    unsigned int s,j;
+
+    for(s = 0; s < fsm->StateNum; s++)
+    {
+        for(j = 0; j < fsm->state[s].jumpNum; j++)
+        {
+            if(fsm->state[s].jump[j].eventFlag)
+            {
+                fsm->state[s].jump[j].eventFlag = 0;
+            }
+        }
+    }
 }
 
 

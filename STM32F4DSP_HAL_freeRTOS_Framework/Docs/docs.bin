@@ -757,7 +757,7 @@ FreeRTOS：使用“Netconn”API
  *_____________________________________///                               \\\____________________________________________*/
 /*
 启用宏：SYSTEM_FATFS_ENABLE（在PeriphConfigCore.h的“组件选择”里）
-版本：ff14，启动FATFS文件系统，管理SDIO驱动的SD卡，SPI驱动的SD卡，SPI FLASH，USB口的U盘，USB文件系统等等
+版本：ff14，启动FATFS文件系统，管理SDIO驱动的SD卡，SPI驱动的SD卡，SPI FLASH等等
 FATSF支持FAT12/FAT16/FAT32/exFAT，官网（含API说明）：http://elm-chan.org/fsw/ff/00index_e.html
 
 FATFS性格：
@@ -804,7 +804,7 @@ FATFS性格：
 		本模板推荐尽量用绝对路径，即直接寻址的方式找文件
 		而不用f_opendir()之类的文件夹操作API
 	2、默认配置支持4个文件设备，默认使用UTF-8编码
-	3、FATFS的配置文件里没有完全配置好：ffconf.h里在最后的RTOS支持
+	3、TODO：FATFS的配置文件里没有完全配置好：ffconf.h里在最后的RTOS支持
 	4、文件操作器件尽量不要被中断等打断！
 
 推荐的常用API：
@@ -918,8 +918,6 @@ FATFS性格：
 			f_close(&ftemp0);
 		
 		可以写入936支持的中文
-	
-	更多文件操作可用参考原子FATFS历程里的 fattester.c 和 exfuns.c 里面的获取剩余空间、识别文件类型、得到文件夹大小、文件和文件夹复制等有用的API等等
 
 更多实用API：
 	在 .\DEVICES\FATFS plus 目录下的 fatfs_app 文件内

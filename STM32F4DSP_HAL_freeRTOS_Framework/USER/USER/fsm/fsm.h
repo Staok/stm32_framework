@@ -24,7 +24,7 @@ enum fsm_XXX1_StateDef_enum
     XXX1_State_4,
     XXX1_State_5,
 
-    XXX1_State_MAX       /*这个固定在最后的不要动*/
+    XXX1_State_MAX       /*这个固定在最后的不要动，也表示此状态机包含的状态数量*/
 };
 
 /*定义 XXX2 状态机的各个状态要执行的函数*/
@@ -44,7 +44,7 @@ enum fsm_XXX2_StateDef_enum
     XXX2_State_3,
     XXX2_State_4,
 
-    XXX2_State_MAX       /*这个固定在最后的不要动*/
+    XXX2_State_MAX       /*这个固定在最后的不要动，也表示此状态机包含的状态数量*/
 };
 
 /*定义 XXX2 状态机的各个状态要执行的函数*/
@@ -72,7 +72,8 @@ struct fsm_states_struct                    //此状态机每一个状态
 
 struct fsm_struct
 {
-    unsigned int CurState;                      //此状态机当前所在状态
+    unsigned int CurState;                  //此状态机当前所在状态
+	const unsigned int StateNum;			//此状态机包含的状态数量
 	struct fsm_states_struct* state;
 };
 
@@ -82,15 +83,7 @@ struct fsm_struct
  *对于有周期执行需要的状态机任务，可以把不同 fsm_process(&fsm_xxx) 放到不同的周期函数里！
 */
 unsigned int fsm_process(struct fsm_struct* fsm);
-
-
-
-
-
-
-
-
-
+void fsm_clear_all_jumpFlag(struct fsm_struct* fsm);
 
 #endif
 
@@ -98,6 +91,15 @@ unsigned int fsm_process(struct fsm_struct* fsm);
 
 
 /*使用示例：
+int main()
+{
+    char message[2][10] = {"start!","end!"},scanf_buf;
+    srand((int)time(0));
+    printf("\n%s\n",message[0]);
+    //——————————————————————————————开始————————————————————————————
+    
+	
+	
     char buf;
     while(buf != 'q')
     {
@@ -142,12 +144,28 @@ unsigned int fsm_process(struct fsm_struct* fsm);
             case 'g':
                 fsm_XXX1.state[(unsigned int)XXX1_State_5].jump[0].eventFlag = 1;
                 break;
+
+            case '0':
+                fsm_clear_all_jumpFlag(&fsm_XXX1);
+                fsm_clear_all_jumpFlag(&fsm_XXX2);
+                break;
             default:break;
         }
 
 
     }
 
+
+
+
+
+
+    //——————————————————————————————结束————————————————————————————
+	printf("\n%s\n",message[1]);
+    printf("Press Enter to exit");
+    scanf("%c",&scanf_buf);
+    return 0;
+}
 */
 
 

@@ -8,7 +8,7 @@
 #include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"						/*在里面的stm32f4xx_hal_conf.h里面选择用哪些外设的HAL库——————！按需要进行修改！*/
 
-#include "arm_math.h"							/*ARM DSP LIB CMSIS 5.7.0*/
+#include "arm_math.h"							/*ARM CMSIS 5.7.0 DSP Lib*/
 
 #include "malloc.h"								/*借鉴的 内存管理 章节的源代码自实现的malloc和free*/	
 #include "sys_menu.h"							/*模板固定搭配！必须开启！提供一个菜单模板，把系统的输入、输出、执行功能的标志位控制全部打包！相当于io_ctrl*/

@@ -272,7 +272,7 @@ void sys_Device_Init_Seq(void)
 *描述：表示某步骤运行有问题，串口提示，灯提示，声提示
 *参数：		错误或者警告信息
 			故障代号
-			错误类别（可选flag_Fault或flag_Warning）
+			错误类别（可选 flag_Fault 或 flag_Warning ）
 *返回值：	1、NULL
 ********************************/
 void FaultASSERT(char* FaultMessage,u8 code,u8 flag)

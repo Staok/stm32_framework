@@ -25,7 +25,7 @@
 	严重注意：使用下载到SRAM模式调试程序时不能开启 SYS_SUPPORT_LWIP ，
 				因为..留给程序的空间不够...如果多分配一些给程序空间那内存数据空间又不够了..
 */
-#define SYS_SUPPORT_LWIP		0		/*是否启用 LWIP 2.1.2*/
+#define SYS_SUPPORT_LWIP				0			/*是否启用 LWIP 2.1.2*/
 
 #define NO_SYS                  1 	 	/*为1表示不使用操作系统*/
 										/*

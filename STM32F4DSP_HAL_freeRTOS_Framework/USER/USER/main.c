@@ -32,16 +32,16 @@
 
 int main(void)
 {
-	HAL_Init();                    		/*初始化HAL库*/
-	sys_MCU_Init_Seq();					/*MCU外设初始化序列，所有初始化写到这里面——————！按需要进行修改！*/
+	HAL_Init();                     /*初始化HAL库*/
+	sys_MCU_Init_Seq();             /*MCU外设初始化序列，所有初始化写到这里面——————！按需要进行修改！*/
 	HAL_Delay(66);
-	sys_Device_Init_Seq();				/*器件外设初始化，并开机自检——————！按需要进行修改！*/
+	sys_Device_Init_Seq();          /*器件外设初始化，并开机自检——————！按需要进行修改！*/
 	while(1)
 	{
 		#if SYSTEM_SUPPORT_OS
-			Task_Begin(); 				/*开始跑FreeRTOS*/
+			Task_Begin();           /*开始跑FreeRTOS*/
 		#else
-			Bare_Begin();				/*开始跑裸机*/
+			Bare_Begin();           /*开始跑裸机*/
 		#endif
 	}
 }

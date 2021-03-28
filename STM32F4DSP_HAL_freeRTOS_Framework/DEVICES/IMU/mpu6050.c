@@ -1,6 +1,9 @@
 #include "mpu6050.h"
 #include "filter.h"
 
+/*说明  要使用软件 I2C 库，应该把 SYSTEM_SUPPORT_simui2c 宏定义打开，并补充 SimuI2C_Handle 的内容*/
+//SimuI2C SimuI2C_Handle;
+
 /**
   * 函数功能: 写数据到MPU6050寄存器
   * 输入参数: 无
@@ -86,7 +89,7 @@ void MPU6050_Init(void)
 	MPU6050_ReadData(MPU6050_RA_WHO_AM_I,&MPU6050_ID,1);    //读器件地址
 	if(MPU6050_ID != MPU6050_ADDRESS)
 	{		
-		FaultASSERT("MPU6050 dectected error!\r\n");
+		FaultASSERT("MPU6050 dectected error!\r\n",1,flag_Warning);
 	}else
 	{
 //		MPU6050_WriteReg(MPU6050_RA_SMPLRT_DIV , 0x07);	   	 	//陀螺仪采样率，1KHz
@@ -199,84 +202,86 @@ float __FirstOrderLPF(float NewValue)
   * 返 回 值: 无
   * 说    明: 这个函数必须10ms循环调用；加速度单位为 g，陀螺仪单位为 度/ms
   */
+
+/* TODO 还没写好...*/
 void MPU6050_GetAngle(float* Angle[3],float* AngleSpeed[3],u8 which_filter)
 {
-	u8 i;
-	
-	short MPU6050_Gyro_origin[3];	//从MPU6050读出的陀螺仪原始数据
-	short MPU6050_Accel_origin[3];	//从MPU6050读出的加速度计原始数据
-	
-	float MPU6050_Gyro[3];			//从MPU6050读出的陀螺仪转换为单位g的数值
-	float MPU6050_Accel[3];			//从MPU6050读出的加速度计转换为单位度/ms的数值
-	
-	static float MPU6050_Angle[3];			//计算得到的三轴角度
-	static float MPU6050_AngleSpeed[3];		//计算得到的三轴角速度（对于非卡尔曼滤波，为直接用陀螺仪数据经过滤波的值）
-	
-	/*读出原始数据*/
-	MPU6050ReadAcc(MPU6050_Accel_origin);
-	MPU6050ReadGyro(MPU6050_Gyro_origin);
-	
-	/*原始数据限幅*/
-	for(i = 0;i < 3;i++)
-	{
-//		if(MPU6050_Gyro_origin[i] > )
-//		{
-//			
-//		}
-//		
-//		if(MPU6050_Accel_origin[i] > )
-//		{
-//			
-//		}
-	}
-	
-	/*单位转换，加速度单位为 g，陀螺仪单位为 度/ms*/
-	for(i = 0;i < 3;i++)
-	{
-//		MPU6050_Gyro[i]  =	((float)MPU6050_Gyro_origin[i]) 	*	xx.xxf;
-//		MPU6050_Accel[i] =	((float)MPU6050_Accel_origin[i])	*	xx.xxf;
-	}
-	
-	/*把加速度计的值(Gx/Gy/Gz (g)) 转为与陀螺仪同位置的 角度值(θx/θy/θz (度))*/
-	MPU6050_Accel[0] = atan2f(MPU6050_Accel[1], MPU6050_Accel[2])*180.0f/PI_F;	//tan(θx) = tan(θyz) = Ry/Rz
-	MPU6050_Accel[1] = atan2f(MPU6050_Accel[0], MPU6050_Accel[2])*180.0f/PI_F;	//tan(θy) = tan(θxz) = Rx/Rz
-	MPU6050_Accel[2] = atan2f(MPU6050_Accel[0], MPU6050_Accel[1])*180.0f/PI_F;	//tan(θz) = tan(θxy) = Rx/Ry
-	
-	
-	switch(which_filter)
-	{
-		case 1:
-			float angleAnddot[3][2];
-			for(i = 0;i < 3;i++)
-			{
-				Kalman_Filter(MPU6050_Accel[i], MPU6050_Gyro[i], MPU6050_Angle[i],angleAnddot[i]);
-				MPU6050_Angle[i] = 		angleAnddot[i][0];
-				MPU6050_AngleSpeed[i] = angleAnddot[i][1];
-			}
-			break;
-		case 2:
-			for(i = 0;i < 3;i++)
-			{
-				MPU6050_Angle[i] = first_order_filter_for_mpu(&MPU6050_Accel[i], &MPU6050_Gyro[i],&MPU6050_Angle[i]);
-				MPU6050_AngleSpeed[i] = __FirstOrderLPF(MPU6050_GyroF[i]); //对于非卡尔曼滤波，为直接用陀螺仪数据经过滤波的值
-			}
-			break;
-		case 3:
-			for(i = 0;i < 3;i++)
-			{
-				MPU6050_Angle[i] = QingHua_AngleCal(&MPU6050_Accel[i], &MPU6050_Gyro[i],&MPU6050_Angle[i]);
-				MPU6050_AngleSpeed[i] = __FirstOrderLPF(MPU6050_GyroF[i]); //对于非卡尔曼滤波，为直接用陀螺仪数据经过滤波的值
-			}
-			break;
-		default:
-			break;
-	}
-	
-	for(i = 0;i < 3;i++)
-	{
-		Angle[i] 		= MPU6050_Angle[i];
-		AngleSpeed[i]	= MPU6050_AngleSpeed[i];
-	}
+//	u8 i;
+//	
+//	short MPU6050_Gyro_origin[3];	//从MPU6050读出的陀螺仪原始数据
+//	short MPU6050_Accel_origin[3];	//从MPU6050读出的加速度计原始数据
+//	
+//	float MPU6050_Gyro[3];			//从MPU6050读出的陀螺仪转换为单位g的数值
+//	float MPU6050_Accel[3];			//从MPU6050读出的加速度计转换为单位度/ms的数值
+//	
+//	static float MPU6050_Angle[3];			//计算得到的三轴角度
+//	static float MPU6050_AngleSpeed[3];		//计算得到的三轴角速度（对于非卡尔曼滤波，为直接用陀螺仪数据经过滤波的值）
+//	
+//	/*读出原始数据*/
+//	MPU6050ReadAcc(MPU6050_Accel_origin);
+//	MPU6050ReadGyro(MPU6050_Gyro_origin);
+//	
+//	/*原始数据限幅*/
+//	for(i = 0;i < 3;i++)
+//	{
+////		if(MPU6050_Gyro_origin[i] > )
+////		{
+////			
+////		}
+////		
+////		if(MPU6050_Accel_origin[i] > )
+////		{
+////			
+////		}
+//	}
+//	
+//	/*单位转换，加速度单位为 g，陀螺仪单位为 度/ms*/
+//	for(i = 0;i < 3;i++)
+//	{
+////		MPU6050_Gyro[i]  =	((float)MPU6050_Gyro_origin[i]) 	*	xx.xxf;
+////		MPU6050_Accel[i] =	((float)MPU6050_Accel_origin[i])	*	xx.xxf;
+//	}
+//	
+//	/*把加速度计的值(Gx/Gy/Gz (g)) 转为与陀螺仪同位置的 角度值(θx/θy/θz (度))*/
+//	MPU6050_Accel[0] = atan2f(MPU6050_Accel[1], MPU6050_Accel[2])*180.0f/PI_F;	//tan(θx) = tan(θyz) = Ry/Rz
+//	MPU6050_Accel[1] = atan2f(MPU6050_Accel[0], MPU6050_Accel[2])*180.0f/PI_F;	//tan(θy) = tan(θxz) = Rx/Rz
+//	MPU6050_Accel[2] = atan2f(MPU6050_Accel[0], MPU6050_Accel[1])*180.0f/PI_F;	//tan(θz) = tan(θxy) = Rx/Ry
+//	
+//	
+//	switch(which_filter)
+//	{
+//		case 1:
+//			float angleAnddot[3][2];
+//			for(i = 0;i < 3;i++)
+//			{
+//				Kalman_Filter(MPU6050_Accel[i], MPU6050_Gyro[i], MPU6050_Angle[i],angleAnddot[i]);
+//				MPU6050_Angle[i] = 		angleAnddot[i][0];
+//				MPU6050_AngleSpeed[i] = angleAnddot[i][1];
+//			}
+//			break;
+//		case 2:
+//			for(i = 0;i < 3;i++)
+//			{
+//				MPU6050_Angle[i] = first_order_filter_for_mpu(&MPU6050_Accel[i], &MPU6050_Gyro[i],&MPU6050_Angle[i]);
+//				MPU6050_AngleSpeed[i] = __FirstOrderLPF(MPU6050_GyroF[i]); //对于非卡尔曼滤波，为直接用陀螺仪数据经过滤波的值
+//			}
+//			break;
+//		case 3:
+//			for(i = 0;i < 3;i++)
+//			{
+//				MPU6050_Angle[i] = QingHua_AngleCal(&MPU6050_Accel[i], &MPU6050_Gyro[i],&MPU6050_Angle[i]);
+//				MPU6050_AngleSpeed[i] = __FirstOrderLPF(MPU6050_GyroF[i]); //对于非卡尔曼滤波，为直接用陀螺仪数据经过滤波的值
+//			}
+//			break;
+//		default:
+//			break;
+//	}
+//	
+//	for(i = 0;i < 3;i++)
+//	{
+//		Angle[i] 		= MPU6050_Angle[i];
+//		AngleSpeed[i]	= MPU6050_AngleSpeed[i];
+//	}
 }
 
 

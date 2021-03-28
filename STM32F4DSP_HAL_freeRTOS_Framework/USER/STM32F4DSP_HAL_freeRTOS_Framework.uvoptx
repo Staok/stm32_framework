@@ -927,7 +927,7 @@
 
   <Group>
     <GroupName>USER_USER</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1214,8 +1214,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\DEVICES\MPU6050\filter.c</PathWithFileName>
-      <FilenameWithoutPath>filter.c</FilenameWithoutPath>
+      <PathWithFileName>..\DEVICES\OLED\OLED.c</PathWithFileName>
+      <FilenameWithoutPath>OLED.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1226,8 +1226,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\DEVICES\MPU6050\mpu6050.c</PathWithFileName>
-      <FilenameWithoutPath>mpu6050.c</FilenameWithoutPath>
+      <PathWithFileName>..\DEVICES\MAX7219\max7219_drive.c</PathWithFileName>
+      <FilenameWithoutPath>max7219_drive.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1238,8 +1238,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\DEVICES\OLED\OLED.c</PathWithFileName>
-      <FilenameWithoutPath>OLED.c</FilenameWithoutPath>
+      <PathWithFileName>..\DEVICES\IMU\filter.c</PathWithFileName>
+      <FilenameWithoutPath>filter.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1250,8 +1250,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\DEVICES\MAX7219\max7219_drive.c</PathWithFileName>
-      <FilenameWithoutPath>max7219_drive.c</FilenameWithoutPath>
+      <PathWithFileName>..\DEVICES\IMU\mpu6050.c</PathWithFileName>
+      <FilenameWithoutPath>mpu6050.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

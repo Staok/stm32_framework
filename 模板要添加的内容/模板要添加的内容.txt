@@ -1,0 +1,129 @@
+如果要开始下面的大改，首先把docs.bin改成md格式，然后把readme.md里面的内容整合到docs.bin里面，再出一份简洁的readme.md，整理良好格式，也顺便复习一遍
+
+
+先把下面基本的可以直接改动的先做好，然后改架构（参考我的C规范和华为规范：https://blog.csdn.net/m0_38106923/article/details/105042594）。
+
+把新的芯片驱动
+ch395q
+max10400
+整理好
+stm32 framework的芯片驱动，都拿出来，独立出工程目录，独自建一个芯片驱动库，接口留着就可以了。
+
+看这个有没有可用的地方
+嵌入式编程之动态接口技术(经验干货)
+https://mp.weixin.qq.com/s?__biz=MzAwNjYwMjYyOA==&mid=2247483844&idx=1&sn=9138ecb64777aead7c1ccaffca860317&chksm=9b0bab2fac7c2239043030e48507b29e7212e285eee364b47910558f58e53c3e7f1423963b10&cur_album_id=1384745737233432577&scene=189#rd
+
+改框架：
+
+先把每个文件所用到的头文件单独列出，而不是现在的调用两个顶层.h文件，.h文件的include精简化，.c也一样
+
+使用 https://github.com/mysterywolf/formatting 工具对代码转utf-8
+
+
+Stm32模板，再加一个Hal库的Hello world最小模板，F1 F2 F4各一个文件夹打包
+
+项目中的一些规则与 C 规范有出入，都已后者为准，前者作废
+
+F1的MDK结构和文件内容都是老的了，均已F4模板为准，将来按照F4对F1重构 
+
+硬件I2C解决
+https://blog.csdn.net/zhengyangliu123/article/details/106308915
+
+尽快慎重的选择一个开源协议，并加在仓库中，各种文件加上开源协议的注释（包括所有自写的组件），说明文件里面标上开源协议，并写上协议的中文
+
+模板的说明里面，组件加上sfud的说明，并说明调用链：spi flash IC——spi(软件或硬件)——sfud——fatfs——文件系统应用层api
+
+
+原来 io结构体方式初始化那个文件，改名为ioconfig
+每一个外设的初始化函数单独一个文件，每个.c和.h文件都还用原来的宏定义可剪裁，然后都在periphconfig里面include，其他文件用到哪个include哪个
+每一个外设的io初始化在上面ioconfig文件里面的结构体方式初始化，每一个外设的IO初始化单独调用我写的那个用枚举来初始化的API，写在每个外设初始化sys_xxx_enable()函数里面
+
+
+
+菜单的lcd显示和按键检测的api都独立出来，像软件spi那样，分离
+
+所有函数内尽量减少局部变量，因为在跳转中断保护现场时会都保存到栈里，局部变量比较多的话比较危险，尽量减少或者拿出来放到全局变量
+
+
+——————————————————————————————————
+加细节：
+
+两个编写应用的文件改名
+bare_metal_main 裸机主函数文件
+rtos_main freeRTOS主函数文件
+
+
+看门狗喂狗不要放在定时器中断里，放在大while循环里的一个周期执行的段内
+
+
+剩下的外设：普中的LCD，IAP，安富莱的modbus
+
+
+加一个uint64的系统运行微秒变量，可以通过一个函数获取
+
+
+因为lwip,freertos等库已经调用stdio和srting库了
+所以stm32的printf使用stdio.h（写成支持切换串口），字符串处理使用string.h，目前的sprint和mystring库留给空间较小的mcu准备
+
+模拟sdio，实现一下
+
+牛顿多项式插值 算法，实现拟合n个点
+
+
+研究下stm32HAL库的霍尔接口
+
+开启CSS时钟安全系统（在 NMI 的处理程序中必须通过设置时钟中断寄存器 (RCC_CIR) 里的 CSSC 位来清除 CSS 中断。）
+启动时钟安全系统CSS：
+RCC_ClockSecuritySystemCmd(ENABLE); (NMI中断是不可屏蔽的！)
+外部振荡器实现时，产生中断，对应的中断程序：
+void NMIException(void)
+{
+if (RCC_GetITStatus(RCC_IT_CSS) != RESET)
+{  // HSE、PLL已被禁止(但是PLL设置未变)
+… …  // 客户添加相应的系统保护代码处
+// 下面为HSE恢复后的预设置代码
+RCC_HSEConfig(RCC_HSE_ON);  // 使能HSE
+RCC_ITConfig(RCC_IT_HSERDY, ENABLE); // 使能HSE就绪中断
+RCC_ITConfig(RCC_IT_PLLRDY, ENABLE); // 使能PLL就绪中断
+RCC_ClearITPendingBit(RCC_IT_CSS); // 清除时钟安全系统中断的挂起位
+// 至此，一旦HSE时钟恢复，将发生HSERDY中断，在RCC中断处理程序里，
+系统时钟可以设置到以前的状态
+}
+}
+
+
+
+PVD中断
+当VDD下降到
+PVD阀值以下和/或当VDD上升到PVD阀值之上时，根据
+外部中断第16线的上升/下降边沿触发设置，就会产生
+PVD中断。在中断处理程序中执行紧急关闭任务：将
+MCU的寄存器、内存的数据保存起来，同时对外设进行
+相应的保护操作。
+
+
+
+
+记录学习网页
+https://blog.csdn.net/k331922164/article/details/46275247?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-1.control
+https://wenku.baidu.com/view/5d1f4e9277232f60dccca13f.html
+
+
+加cpu的id与bootloader和program的版本号，还有加密密钥等信息的静态const变量，可以通过协议通过通讯获取到读出来
+
+32模板
+通讯接口一律用dma+发送/接收中断
+串口，i2c，spi，can（现在有中断了，看看有没有dma）
+玩熟它！
+
+串口发送卡住可能跟没有发送中断有关
+改进
+接收有两个协议，一个是以\r\n结尾，一个存到软件FIFO中，fifo和串口接收到缓冲区都用动态申请，切换模式的时候把原来模式的内存释放掉
+发送使用dma和中断，填好数据再启动发送dma，要借鉴网上成熟的例子先
+
+
+
+MCU系统的安全内容。[STM32信息安全概览：是时候KO安全问题了！](https://zhuanlan.zhihu.com/p/351366807) 
+内容包含“STM32 MCU底层硬件具备的安全能力能够覆盖存储访问保护、代码/系统隔离、启动入口限定、防篡改检测、密码学算法加速等多方面的安全需求”。慢慢的学一点用一点。
+
+

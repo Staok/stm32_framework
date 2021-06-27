@@ -1,0 +1,32 @@
+
+https://github.com/cesanta/mongoose
+适合于嵌入式的，看看，说不定能替代lwip，因为这个还包括mqtt，SSL/TLS，
+APIs for TCP, UDP, HTTP, WebSocket, MQTT.
+还介绍一个json解析组件
+
+https://gitee.com/zhengnianli/EmbedSummary/tree/master
+
+
+https://github.com/mattiasgustavsson/libs
+
+
+LCD 驱动 换成这个
+https://github.com/RobertoBenjami/stm32_graphics_display_drivers
+https://github.com/RobertoBenjami/stm32_graphics_display_drivers
+
+完善LCD支持屏幕种类和中文字库支持（原子和普中例子），FATFS从SD读取字库写入SPI FLASH
+
+
+从这里扒驱动！！！
+https://github.com/MaJerle/stm32fxxx-hal-libraries
+
+他这里有不少不错的组件，可用之
+https://github.com/MaJerle?tab=repositories
+
+
+设备管理结构，可以尝试，把现有的GPIO声明融合到这个设备管理结构里面，设备管理结构体包含很多信息，IO，中断，名字等等
+https://blog.csdn.net/lin_strong/article/details/102626503
+
+
+USB栈，说不定好用，因为总不能依赖 stm32那个usb库，那样换个mcu就不行了
+https://github.com/hathach/tinyusb

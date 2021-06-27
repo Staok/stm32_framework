@@ -1,4 +1,4 @@
-# [stm32_framework](https://github.com/Staok/stm32_framework)
+# stm32_framework
 ```
    _______  _______  __   __  _______  _______ 
   |       ||       ||  |_|  ||       ||       |
@@ -34,20 +34,23 @@
 
 理解了原理的东西，通用性低的东西，就不用时间去走一遍前人走过的路了，就酱
 
+2021.6 最新留言：作者对目前的代码架构很不满意，已经打算在未知的未来进行 一部分大改和一部分直接重构，所以驱动写法可以看一看和复制粘贴，但是不推荐直接用工程本体，将来一定再改善到非常好。**所以本项目暂时烂尾，见谅。**
 
 ## 各个进展
 
+下面三个看一看驱动就好
+
 ### STM32F1xx
 
-不是目前主要完善的对象，已经完成的大部分外设驱动并且调好
+~~不是目前主要完善的对象，已经完成的大部分外设驱动并且调好~~
 
 ### STM32F207IE
 
-不是目前主要完善的对象，已经粗糙的完成的大部分外设驱动，有很多bugs，**暂时不要用**
+~~不是目前主要完善的对象，已经粗糙的完成的大部分外设驱动，有很多bugs~~
 
 ### STM32F4xx
 
-目前主要完善的对象，已经完成大部分外设驱动
+~~目前主要完善的对象，已经完成大部分外设驱动~~
 
 ## 计划外设和组件
 
@@ -57,31 +60,31 @@
 
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 
--   **暂时没有支持的组件：**
+- **暂时没有支持的组件：**
 
-    线性回归算法库
+  线性回归算法库
 
-    常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）
+  常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）
 
-    Modbus协议
+  Modbus协议
 
-    完善LCD支持屏幕种类和中文字库支持（原子和普中例子），FATFS从SD读取字库写入SPI FLASH
+  DCMI和IO驱动OV7725、OV2640和OV5650摄像头--------------（暂时无限延期）
 
-    DCMI和IO驱动OV7725、OV2640和OV5650摄像头				（暂时无限延期）
+  音频编解码（MP3转PCM，外接一个功放直接播放）------------（暂时无限延期）
 
-    音频编解码（MP3转PCM，外接一个功放直接播放）			  （暂时无限延期）
+  MQTT协议（包含cjson，LWIP应用）--------------------------------（暂时无限延期）
 
-    MQTT协议（包含cjson，LWIP应用）									  （暂时无限延期）
+  JPEG、GIF解码和BMP编解码-----------------------------------------（暂时无限延期）
 
-    JPEG、GIF解码和BMP编解码												 （暂时无限延期）
+  LittlevGL---------------------------------------------------------------------（暂时无限延期）
 
-    LittlevGL																				   （暂时无限延期）
+  NN（CMSIS包中关于NN的内容，吸收进来）---------------------（暂时无限延期）
 
-    NN（CMSIS包中关于NN的内容，吸收进来）						 （暂时无限延期）
+  [IAP](https://github.com/Staok/u-iap)
 
 -   已经支持的外设：
 
-    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ IAP \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ USB \ CAN \ Ethernet）
+    大部分HAL库外设驱动的高级封装（ MCO \ RTC \ CRC \ TIM \ ADC \ DAC \ IWDG \ USART \ SPI \ WFI \ FLASH \ **IAP** \ IO \ SDIO \ **DCMI** \ FSMC \ DMA \ RNG \ DSP \ FPU \ USB \ CAN \ Ethernet）
 
 -   已经支持的组件：
 
@@ -108,8 +111,6 @@
     PID库
     
     工程添加下载到RAM执行的功能
-    
-    IAP
     
     [无依赖的sprintf库](https://github.com/mpaland/printf)
     
@@ -157,7 +158,7 @@
 
 -   USB （ST UM1021）：详细使用说明请看“Docs.bin”里面的“STM32 USB库 使用”章节，里面介绍了USB Device的VCP、MSC和HID以及USB HOST的MSC和HID
 
--   IAP：详情计划请看“STM32F4DSP_HAL_IAP”文件夹内说明文档
+-   IAP：[详见这里](https://github.com/Staok/u-iap)
 
 ### 外设
 

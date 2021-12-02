@@ -56,31 +56,29 @@
 
 （加**粗体**为暂时尚未实现的外设或者组件）
 
--   精简模板！可以把printf，sting和LCD等组件真真正的可以选择性不包含在工程中，先实现FLASH占用小于10KB
-
 -   **不会支持的外设**：LTDC LCD \ IRDA \ CRYP \ HASH
 
-- **暂时没有支持的组件：**
+- **暂时没有支持的组件：**（暂时无限延期）
 
   线性回归算法库
 
   常用校验、加密算法（3DES、AES、RC6、TEA、RSA、MD5、SHA1、SHA256）
 
-  Modbus协议
+  Modbus 协议
 
-  DCMI和IO驱动OV7725、OV2640和OV5650摄像头--------------（暂时无限延期）
+  DCMI 和 IO 驱动 OV7725、OV2640 和 OV5650 摄像头
 
-  音频编解码（MP3转PCM，外接一个功放直接播放）------------（暂时无限延期）
+  音频编解码（MP3转PCM，外接一个功放直接播放）
 
-  MQTT协议（包含cjson，LWIP应用）--------------------------------（暂时无限延期）
+  MQTT 协议（包含 cjson，LWIP 应用）
 
-  JPEG、GIF解码和BMP编解码-----------------------------------------（暂时无限延期）
+  JPEG、GIF 解码和BMP编解码
 
-  LittlevGL---------------------------------------------------------------------（暂时无限延期）
+  LittlevGL
 
-  NN（CMSIS包中关于NN的内容，吸收进来）---------------------（暂时无限延期）
+  NN（CMSIS 包中关于 NN 的内容，吸收进来）
 
-  [IAP](https://github.com/Staok/u-iap)
+  [IAP](https://github.com/Staok/u-iap)（自实现）
 
 -   已经支持的外设：
 
@@ -90,9 +88,7 @@
 
     [FreeRTOS](https://www.freertos.org/) 10.3.1
 
-    [LWIP](http://savannah.nongnu.org/projects/lwip/) 2.1.2（支持UDP、TCP Server和TCP Client 的RAW API）
-
-    HTTP协议（LWIP应用）
+    [LWIP](http://savannah.nongnu.org/projects/lwip/) 2.1.2（支持UDP、TCP Server和TCP Client 的RAW API，HTTP WebServer）
 
     [FATFS](http://elm-chan.org/fsw/ff/00index_e.html) ff14
 
@@ -100,21 +96,21 @@
 
     [ARM CMSIS](https://github.com/ARM-software/CMSIS_5) 5.7.0 DSP Lib
 
-    fsm 有限状态机
+    fsm 有限状态机库（自实现）
 
-    menu 菜单框架
+    menu 菜单框架（自实现）
 
-    内存管理（malloc和free）
+    内存管理（malloc 和 free）（自实现）
 
-    软件模拟I2C\SPI库
+    软件模拟 I2C \ SPI 库（自实现）
+
+    [PID 库](https://github.com/Staok/pid_realize)（自实现）
     
-    PID库
+    工程添加下载到 RAM 执行的功能
     
-    工程添加下载到RAM执行的功能
+    [无依赖的 sprintf 库](https://github.com/mpaland/printf)
     
-    [无依赖的sprintf库](https://github.com/mpaland/printf)
-    
-    [lwrb (软件ringbuf，FIFO缓冲)](https://github.com/MaJerle/lwrb)
+    [lwrb (软件 ringbuf，FIFO 缓冲)](https://github.com/MaJerle/lwrb)
 
 ## 组件和外设说明
 

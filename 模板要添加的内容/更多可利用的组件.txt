@@ -4,6 +4,11 @@ https://github.com/cesanta/mongoose
 APIs for TCP, UDP, HTTP, WebSocket, MQTT.
 还介绍一个json解析组件
 
+freeRTOS的LTS版本，框架RTOS换成这个，再看看coreJSON、FreeRTOS+TCP的介绍和API，利用网页翻译，如果感觉不错就用FreeRTOS的全家桶，换掉目前框架内的所有同品
+https://www.freertos.org/lts-libraries.html
+
+写个 switch case 的状态机框架，广泛借鉴一下，并说明与逻辑框架不同，逻辑框架用于多任务，状态机用于每个任务内的复杂逻辑
+
 https://gitee.com/zhengnianli/EmbedSummary/tree/master
 
 

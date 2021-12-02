@@ -1,12 +1,26 @@
+！！！以下，都先只在 M4平台改，改成通用的方便移植的，然后对于 F1和 F2 暂时就不用动了，说明什么时候用就在M4的工程里扒驱动和核心代码即可！！！
+F1的MDK结构和文件内容都是老的了，均已F4模板为准
+
+首先
+Stm32模板，再加一个Hal库的Hello world最小模板，F1 F2 F4各一个文件夹打包
+
 如果要开始下面的大改，首先把docs.bin改成md格式，然后把readme.md里面的内容整合到docs.bin里面，再出一份简洁的readme.md，整理良好格式，也顺便复习一遍
+
+改 io 和 菜单 源文件，使用 ARR_LEN 来获取结构体元素个数，而不是自己单独定义
+
+精简模板！可以把printf，sting和LCD等组件真真正的可以选择性不包含在工程中，先实现FLASH占用小于10KB
 
 
 先把下面基本的可以直接改动的先做好，然后改架构（参考我的C规范和华为规范：https://blog.csdn.net/m0_38106923/article/details/105042594）。
 
 把新的芯片驱动
+can的驱动弄成最新的了吗？
 ch395q
 max10400
 整理好
+
+https://github.com/Mculover666/HAL_Driver_Lib    基于STM32 HAL库的外设驱动库
+
 stm32 framework的芯片驱动，都拿出来，独立出工程目录，独自建一个芯片驱动库，接口留着就可以了。
 
 看这个有没有可用的地方
@@ -17,17 +31,14 @@ https://mp.weixin.qq.com/s?__biz=MzAwNjYwMjYyOA==&mid=2247483844&idx=1&sn=9138ec
 
 先把每个文件所用到的头文件单独列出，而不是现在的调用两个顶层.h文件，.h文件的include精简化，.c也一样
 
+代码格式化工具大整理，先整理比较流行的工具 在 vscode 和 MDK IAR等等的，可以自定格式的
+最基本的要支持：码转utf-8、tab变4空格、多余空格删除等等就很好了
 使用 https://github.com/mysterywolf/formatting 工具对代码转utf-8
+        https://github.com/mysterywolf/formatting
 
-
-Stm32模板，再加一个Hal库的Hello world最小模板，F1 F2 F4各一个文件夹打包
 
 项目中的一些规则与 C 规范有出入，都已后者为准，前者作废
 
-F1的MDK结构和文件内容都是老的了，均已F4模板为准，将来按照F4对F1重构 
-
-硬件I2C解决
-https://blog.csdn.net/zhengyangliu123/article/details/106308915
 
 尽快慎重的选择一个开源协议，并加在仓库中，各种文件加上开源协议的注释（包括所有自写的组件），说明文件里面标上开源协议，并写上协议的中文
 
@@ -44,6 +55,9 @@ https://blog.csdn.net/zhengyangliu123/article/details/106308915
 
 所有函数内尽量减少局部变量，因为在跳转中断保护现场时会都保存到栈里，局部变量比较多的话比较危险，尽量减少或者拿出来放到全局变量
 
+stm32 USB 每次上电初始化USB类型之后就不能再变
+那么可以 上电根据外部的指令或者拨码开关等来确定初始化哪一种usb device或usb host
+这样可以实现32单片机支持多种USB类型
 
 ——————————————————————————————————
 加细节：
@@ -112,9 +126,16 @@ https://wenku.baidu.com/view/5d1f4e9277232f60dccca13f.html
 加cpu的id与bootloader和program的版本号，还有加密密钥等信息的静态const变量，可以通过协议通过通讯获取到读出来
 
 32模板
-通讯接口一律用dma+发送/接收中断
+通讯接口一律用dma 发送/接收
 串口，i2c，spi，can（现在有中断了，看看有没有dma）
 玩熟它！
+
+串口DMA
+https://mp.weixin.qq.com/s/ZZU5QLQ9DqNZd8Bf8aN_oQ
+记录：在高波特率传输场景下，串口非常有必要使用DMA。因为用中断频率很高 会容易出问题 不稳定
+
+硬件I2C解决
+https://blog.csdn.net/zhengyangliu123/article/details/106308915
 
 串口发送卡住可能跟没有发送中断有关
 改进
@@ -127,3 +148,4 @@ MCU系统的安全内容。[STM32信息安全概览：是时候KO安全问题了
 内容包含“STM32 MCU底层硬件具备的安全能力能够覆盖存储访问保护、代码/系统隔离、启动入口限定、防篡改检测、密码学算法加速等多方面的安全需求”。慢慢的学一点用一点。
 
 
+在最最后，组件库更新到最新版，比如Sprintf库跟进最新，CMSIS跟进最新等

@@ -26,6 +26,8 @@
 
 喜欢的话，点个小star鸭~
 
+仓库容量比较大（软件工程 约 200MB，资料 约 400MB）。
+
 ------
 
 ## 近期计划
@@ -196,4 +198,44 @@ System is starting...
 ...
 System init over!
 ```
+
+## STM32 学习路线
+
+[超快 STM32 系统入门指南 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/406496862)。
+
+## STM32 资源站
+
+各大厂家对 STM32 出了特别特别特别丰富的教程和例程，如果比较熟悉外设，直接看他们的例程源码即可，快速掌握各种技巧。各大家的官网和资料下载地址如下：
+
+正点原子：
+
+- [OpenEdv-开源电子网-正点原子论坛](https://link.zhihu.com/?target=http%3A//www.openedv.com/forum.php) 有问题可以在这里找，也可以平时没事逛一逛。
+- [正点原子官方的个人空间_ 哔哩哔哩 _bilibili](https://link.zhihu.com/?target=https%3A//space.bilibili.com/394620890) 所有教学视频。
+- [原子哥教学平台，专注电子技术教学 (yuanzige.com)](https://link.zhihu.com/?target=https%3A//www.yuanzige.com/)。
+- [正点原子资料下载中心 — 正点原子资料下载中心 1.0.0 文档 (openedv.com)](https://link.zhihu.com/?target=http%3A//www.openedv.com/docs/index.html) 各种开发板的电路原理图、例程和教程 统统薅走！
+
+野火：
+
+- [野火电子论坛 - (firebbs.cn)](https://link.zhihu.com/?target=https%3A//www.firebbs.cn/) 论坛。
+- [野火_ firege的个人空间 _ 哔哩哔哩 _bilibili](https://link.zhihu.com/?target=https%3A//space.bilibili.com/356820657) 所有教学视频。
+- [野火产品资料下载中心 — 野火产品资料下载中心 文档 (embedfire.com)](https://link.zhihu.com/?target=http%3A//doc.embedfire.com/products/link/zh/latest/index.html%23) 薅羊毛。
+
+安富莱：
+
+- [硬汉嵌入式论坛 - Powered by Discuz! (armbbs.cn)](https://link.zhihu.com/?target=http%3A//www.armbbs.cn/) 论坛。
+- [武汉安富莱电子有限公司官方网站。STM32开发板,无线IO模块,H7-TOOL工具,嵌入式系统 (armfly.com)](https://link.zhihu.com/?target=http%3A//www.armfly.com/) 官网。
+- [【安富莱】各种开发板和模块的资料下载汇总贴（2021-08-30） - 安富莱电子 - 博客园 (cnblogs.com)](https://link.zhihu.com/?target=https%3A//www.cnblogs.com/armfly/p/11270280.html) 资料下载站。
+
+硬石：
+
+- [硬石电子 - 社区 (ing10bbs.com)](https://link.zhihu.com/?target=http%3A//www.ing10bbs.com/forum.php) 论坛。
+- [硬石科技的个人空间_ 哔哩哔哩 _bilibili](https://link.zhihu.com/?target=https%3A//space.bilibili.com/324575605) 教学视频。
+- [硬石开源资料下载链接(该帖总是最新资料) - 硬石资料更新 - 硬石社区社区 (ing10bbs.com)](https://link.zhihu.com/?target=http%3A//www.ing10bbs.com/forum.php%3Fmod%3Dviewthread%26tid%3D1458%26extra%3Dpage%3D1) 资料下载站。
+
+原子、野火、安富莱和硬石各有侧重，可以广泛借鉴：野火、正点原子 非常全面；安富莱偏 M4F 的 DSP 使用；硬石偏电机控制，有 步进电机、有刷电机、无刷电机。
+
+STM32 官网资料下载站，是源头，可以找到任何官方的东西，包括选型手册，好好把握：
+
+- 中文站：[STM32 | 产品 | STM32/STM8 | MCU单片机 | 意法半导体STM | 意法半导体STM | STM32/STM8微控制器 | MCU单片机 (stmcu.com.cn)](https://link.zhihu.com/?target=https%3A//www.stmcu.com.cn/Product/pro_detail/cat_code/PRODUCTSTM32/family/81/layout/product)。
+- ST 官方：[微控制器与微处理器 - STMicroelectronics](https://link.zhihu.com/?target=https%3A//www.st.com/zh/microcontrollers-microprocessors.html)。
 
